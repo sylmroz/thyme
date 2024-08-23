@@ -1,4 +1,4 @@
-project(sandbox VERSION 0.0.1)
+project(app VERSION 0.0.1)
 
 set(header_path "${${PROJECT_NAME}_SOURCE_DIR}/include")
 
@@ -8,7 +8,14 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_BINARY_DIR} ${header_path})
 
-target_link_libraries(${PROJECT_NAME} PUBLIC thyme)
+find_package(spdlog REQUIRED)
+
+target_link_libraries(${PROJECT_NAME}
+	PUBLIC
+		thyme
+	PRIVATE 
+		spdlog::spdlog_header_only
+)
 
 if (WIN32)
 	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD

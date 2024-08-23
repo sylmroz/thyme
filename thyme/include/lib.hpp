@@ -1,5 +1,5 @@
 #include <thyme/export_macros.hpp>
 
-namespace thyme {
+namespace Thyme {
     THYME_API double getPi();
 }

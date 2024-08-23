@@ -14,4 +14,4 @@ if(NOT DEFINED BUILD_TESTING)
 endif()
 
 add_subdirectory("thyme")
-add_subdirectory("sandbox")
+add_subdirectory("app")
