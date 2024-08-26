@@ -9,9 +9,10 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 
 add_library(${PROJECT_NAME} SHARED
-    "${souce_path}/lib.cpp"
-    "${souce_path}/logger.cpp"
-)
+    
+    "${souce_path}/core/logger.cpp"
+    "${souce_path}/core/engine.cpp"
+    "${souce_path}/core/application.cpp")
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
 

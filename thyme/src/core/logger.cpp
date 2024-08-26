@@ -1,4 +1,4 @@
-#include "logger.hpp"
+#include "core/logger.hpp"
 
 Thyme::Logger::Logger(spdlog::level::level_enum consoleLoglevel, spdlog::level::level_enum fileLoglevel, std::string_view loggerName) {
     auto consoleLogger = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
