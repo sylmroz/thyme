@@ -1,6 +1,6 @@
 project(thyme VERSION 0.0.1)
 
-set(header_path "${${PROJECT_NAME}_SOURCE_DIR}/include")
+set(header_path "${${PROJECT_NAME}_SOURCE_DIR}/include/thyme")
 set(souce_path "${${PROJECT_NAME}_SOURCE_DIR}/src")
 
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
@@ -8,11 +8,11 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 
-add_library(${PROJECT_NAME} SHARED
-    
-    "${souce_path}/core/logger.cpp"
-    "${souce_path}/core/engine.cpp"
-    "${souce_path}/core/application.cpp")
+add_library(${PROJECT_NAME}
+    "src/core/application.cpp"
+    "src/core/engine.cpp"
+    "src/core/logger.cpp"
+)
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
 

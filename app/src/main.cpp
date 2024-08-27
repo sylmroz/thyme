@@ -1,5 +1,5 @@
-#include <core/logger.hpp>
-#include <core/application.hpp>
+#include <thyme/core/application.hpp>
+#include <thyme/core/logger.hpp>
 
 #include <iostream>
 

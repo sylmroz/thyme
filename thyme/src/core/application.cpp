@@ -1,6 +1,6 @@
-#include "core/application.hpp"
+#include "thyme/core/application.hpp"
 
-#include "core/logger.hpp"
+#include "thyme/core/logger.hpp"
 
 Thyme::Application::Application() {
     ThymeLogger::init(spdlog::level::info, spdlog::level::off);
