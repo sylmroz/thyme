@@ -14,16 +14,18 @@ namespace Thyme {
 
 class THYME_API Logger {
 public:
-    Logger(spdlog::level::level_enum consoleLoglevel, spdlog::level::level_enum fileLoglevel,
-           std::string_view loggerName);
+    Logger(spdlog::level::level_enum level, std::string_view loggerName) {
+        logger = spdlog::stdout_color_mt(loggerName.data());
+        logger->set_pattern("%^[%T:%e] [%n] [%l] [%@]: %v%$");
+    }
 
-    std::unique_ptr<spdlog::logger> logger;
+    std::shared_ptr<spdlog::logger> logger;
 };
 
 class ThymeLogger {
 public:
-    static void init(spdlog::level::level_enum consoleLoglevel, spdlog::level::level_enum fileLoglevel) noexcept {
-        s_logger = std::make_unique<Logger>(consoleLoglevel, fileLoglevel, "Thyme");
+    static void init(spdlog::level::level_enum level) noexcept {
+        s_logger = std::make_unique<Logger>(level, "Thyme");
     }
 
     static Logger* getLogger() {
@@ -44,8 +46,8 @@ private:
 
 class THYME_API AppLogger {
 public:
-    static void init(spdlog::level::level_enum consoleLoglevel, spdlog::level::level_enum fileLoglevel) noexcept {
-        s_logger = std::make_unique<Logger>(consoleLoglevel, fileLoglevel, "App");
+    static void init(spdlog::level::level_enum level) noexcept {
+        s_logger = std::make_unique<Logger>(level, "App");
     }
 
     static Logger* getLogger() {

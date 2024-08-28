@@ -4,7 +4,7 @@
 #include <iostream>
 
 int main() {
-    Thyme::AppLogger::init(spdlog::level::info, spdlog::level::off);
+    Thyme::AppLogger::init(spdlog::level::info);
     TH_APP_LOG_INFO("Hello from app");
     Thyme::Application app;
     app.name = "AppThyme";

@@ -3,7 +3,7 @@
 #include "thyme/core/logger.hpp"
 
 Thyme::Application::Application() {
-    ThymeLogger::init(spdlog::level::info, spdlog::level::off);
+    ThymeLogger::init(spdlog::level::info);
 }
 
 void Thyme::Application::run() {

@@ -1,4 +1,4 @@
 #pragma once
 // precompiled header
 
-//#include "logger.hpp"
+#include "thyme/core/logger.hpp"
