@@ -7,7 +7,8 @@ namespace Thyme {
 class THYME_API Engine {
 public:
     void run();
+
 private:
 };
 
-}
+}// namespace Thyme

@@ -14,11 +14,10 @@ namespace Thyme {
 
 class THYME_API Logger {
 public:
-    Logger(spdlog::level::level_enum consoleLoglevel, spdlog::level::level_enum fileLoglevel, std::string_view loggerName);
+    Logger(spdlog::level::level_enum consoleLoglevel, spdlog::level::level_enum fileLoglevel,
+           std::string_view loggerName);
 
     std::unique_ptr<spdlog::logger> logger;
-private:
-
 };
 
 class ThymeLogger {
@@ -64,4 +63,4 @@ private:
 #define TH_APP_LOG_ERROR(...) SPDLOG_LOGGER_ERROR(::Thyme::AppLogger::getLogger()->logger, __VA_ARGS__);
 #define TH_APP_LOG_CRITICA(...) SPDLOG_LOGGER_CRITICAL(::Thyme::AppLogger::getLogger()->logger, __VA_ARGS__);
 
-}
+}// namespace Thyme
