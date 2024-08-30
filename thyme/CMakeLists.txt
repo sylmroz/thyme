@@ -43,7 +43,16 @@ target_precompile_headers(${PROJECT_NAME}
 )
 
 find_package(spdlog REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE spdlog::spdlog_header_only)
+find_package(glfw3 CONFIG REQUIRED)
+find_package(Vulkan REQUIRED)
+find_package(VulkanHeaders CONFIG REQUIRED)
+target_link_libraries(${PROJECT_NAME} 
+    PRIVATE
+        spdlog::spdlog_header_only
+        glfw
+        Vulkan::Vulkan
+        Vulkan::Headers
+)
 
 
 # copy dlls to the app

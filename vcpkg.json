@@ -1,5 +1,8 @@
 {
   "dependencies": [
-    "spdlog"
+    "spdlog",
+    "glfw3",
+    "vulkan-headers",
+    "vulkan-validationlayers"
   ]
 }
