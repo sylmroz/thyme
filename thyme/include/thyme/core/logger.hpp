@@ -1,6 +1,6 @@
 #pragma once
 
-#include <thyme/export_macros.hpp>
+#include "thyme/export_macros.hpp"
 
 #include <memory>
 #include <string_view>
@@ -17,6 +17,7 @@ public:
     Logger(spdlog::level::level_enum level, std::string_view loggerName) {
         logger = spdlog::stdout_color_mt(loggerName.data());
         logger->set_pattern("%^[%T:%e] [%n] [%l] [%@]: %v%$");
+        logger->set_level(level);
     }
 
     std::shared_ptr<spdlog::logger> logger;

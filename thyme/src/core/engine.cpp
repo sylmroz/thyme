@@ -1,6 +1,7 @@
 #include "thyme/core/engine.hpp"
 
 #include "thyme/core/logger.hpp"
+#include "thyme/platform/glfw_window.hpp"
 
 #include <vulkan/vulkan.hpp>
 
@@ -47,12 +48,10 @@ void Thyme::Engine::run() {
         TH_API_LOG_ERROR("Failed to create vulkan instance. Message: {}, Code: {}", err.what(), err.code().value());
         throw std::runtime_error("Failed to create vulkan instance.");
     }
+    
+    GlfwWindow window(WindowConfiguration{ .width = 1280, .height = 920, .name = "Thyme App" });
 
-    auto window = std::unique_ptr<GLFWwindow, std::function<void(GLFWwindow*)>>(
-            glfwCreateWindow(1280, 920, "Thyme App", nullptr, nullptr),
-            [](GLFWwindow* window) { glfwDestroyWindow(window); });
-
-    while (!glfwWindowShouldClose(window.get())) {
-        glfwPollEvents();
+    while (!window.shouldClose()) {
+        window.poolEvents();
     }
 }
