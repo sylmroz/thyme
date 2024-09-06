@@ -10,12 +10,12 @@
 
 namespace Thyme {
 
-class EmptyContext {
+class THYME_API EmptyContext {
 public:
     void init(){};
 };
 
-class GlfwVulkanContext {
+class THYME_API GlfwVulkanContext {
 public:
     void init() {
         if (glfwVulkanSupported() == GLFW_FALSE) {
@@ -39,7 +39,7 @@ public:
 };
 
 template<typename Context = EmptyContext>
-class GlfwWindow
+class THYME_API GlfwWindow
     : public Window
     , public Context {
     using WindowHWND = std::unique_ptr<GLFWwindow, std::function<void(GLFWwindow*)>>;

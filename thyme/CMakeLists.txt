@@ -16,6 +16,8 @@ add_library(${PROJECT_NAME}
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
 
+configure_file("${header_path}/version.hpp.in" "${header_path}/version.hpp")
+
 target_include_directories(
   ${PROJECT_NAME}
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

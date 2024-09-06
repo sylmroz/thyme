@@ -1,0 +1,10 @@
+#pragma once
+
+namespace Thyme::Version {
+
+constexpr static const int major{ @thyme_VERSION_MAJOR@ };
+constexpr static const int minor{ @thyme_VERSION_MINOR@ };
+constexpr static const int patch{ @thyme_VERSION_PATCH@ };
+constexpr static const int tweak{ @thyme_VERSION_TWEAK@ };
+
+} // namespace Thyme::Version

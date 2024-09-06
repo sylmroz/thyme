@@ -4,13 +4,13 @@
 
 namespace Thyme {
 
-struct WindowConfiguration {
+struct THYME_API WindowConfiguration {
     uint32_t width{ 0 };
     uint32_t height{ 0 };
     std::string name;
 };
 
-class Window {
+class THYME_API Window {
 public:
     Window(const WindowConfiguration& windowConfiguretion) : config{ windowConfiguretion } {}
     virtual void poolEvents() = 0;

@@ -2,6 +2,7 @@
 
 #include "thyme/core/logger.hpp"
 #include "thyme/platform/glfw_window.hpp"
+#include "thyme/version.hpp"
 
 #include <vulkan/vulkan.hpp>
 
@@ -26,9 +27,9 @@ void Thyme::Engine::run() {
     
 
     vk::ApplicationInfo applicationInfo("Thyme",
-                                        vk::makeApiVersion(0, 0, 1, 0),
+                                        vk::makeApiVersion(0, Version::major, Version::minor, Version::patch),
                                         "Thyme",
-                                        vk::makeApiVersion(0, 0, 1, 0),
+                                        vk::makeApiVersion(0, Version::major, Version::minor, Version::patch),
                                         vk::makeApiVersion(1, 3, 290, 0));
 
     vk::InstanceCreateInfo instanceCreateInfo(
