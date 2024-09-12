@@ -10,11 +10,9 @@ namespace Thyme {
 class THYME_API Application {
 public:
     Application();
-    std::string name{ "thyme" };
+    std::string name{ "Thyme" };
     void run();
-
 private:
-    Engine engine;
 };
 
 }// namespace Thyme

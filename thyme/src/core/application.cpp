@@ -8,5 +8,6 @@ Thyme::Application::Application() {
 
 void Thyme::Application::run() {
     TH_API_LOG_INFO("Start {} app", name);
+    auto engine = Engine(EngineConfig{ .appName = name });
     engine.run();
 }

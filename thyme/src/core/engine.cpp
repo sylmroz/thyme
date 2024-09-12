@@ -11,9 +11,11 @@
 #include <memory>
 #include <vector>
 
+Thyme::Engine::Engine(const EngineConfig& engineConfig) : m_engineConfig{ engineConfig } {}
+
 void Thyme::Engine::run() {
-    TH_API_LOG_INFO("Start Thyme engine");
-    VulkanGlfwWindow window(WindowConfiguration{ .width = 1280, .height = 920, .name = "Thyme App" });
+    TH_API_LOG_INFO("Start {} engine", m_engineConfig.engineName);
+    VulkanGlfwWindow window(WindowConfiguration{ .width = 1280, .height = 920, .name = m_engineConfig.appName });
 
     std::vector<const char*> instanceLayers;
     instanceLayers.emplace_back("VK_LAYER_KHRONOS_validation");
@@ -24,11 +26,10 @@ void Thyme::Engine::run() {
     std::vector<const char*> deviceExtension;
     deviceExtension.emplace_back(vk::KHRSwapchainExtensionName);
 
-    
 
-    vk::ApplicationInfo applicationInfo("Thyme",
+    vk::ApplicationInfo applicationInfo(m_engineConfig.appName.c_str(),
                                         vk::makeApiVersion(0, Version::major, Version::minor, Version::patch),
-                                        "Thyme",
+                                        m_engineConfig.engineName.c_str(),
                                         vk::makeApiVersion(0, Version::major, Version::minor, Version::patch),
                                         vk::makeApiVersion(1, 3, 290, 0));
 

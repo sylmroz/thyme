@@ -11,7 +11,8 @@
 
 namespace Thyme {
 
-template<typename Context = void> class GlfwWindow : public Window {
+template<typename Context = void>
+class GlfwWindow : public Window {
     using WindowHWND = std::unique_ptr<GLFWwindow, std::function<void(GLFWwindow*)>>;
 
 public:
@@ -33,6 +34,18 @@ private:
     friend Context;
 };
 
+class THYME_API VulkanGlfwWindow : public GlfwWindow<VulkanGlfwWindow> {
+public:
+    VulkanGlfwWindow(const WindowConfiguration& config);
+
+    [[nodiscard]] std::vector<std::string> getRequiredInstanceExtensions() const noexcept;
+
+    [[nodiscard]] inline auto getSurface(vk::Instance instance) const noexcept -> VkSurfaceKHR {
+        VkSurfaceKHR surface;
+        glfwCreateWindowSurface(instance, this->m_window.get(), nullptr, &surface);
+        return surface;
+    }
+};
 
 template<typename Context>
 GlfwWindow<Context>::GlfwWindow(const WindowConfiguration& config) : Thyme::Window{ config } {
@@ -56,38 +69,6 @@ GlfwWindow<Context>::GlfwWindow(const WindowConfiguration& config) : Thyme::Wind
                                   glfwDestroyWindow(window);
                               }
                           });
-};
-
-class THYME_API VulkanGlfwWindow : public GlfwWindow<VulkanGlfwWindow> {
-public:
-    VulkanGlfwWindow(const WindowConfiguration& config) : GlfwWindow<VulkanGlfwWindow>{ config } {
-        init();
-    }
-    void init() {
-        if (glfwVulkanSupported() == GLFW_FALSE) {
-            auto message = "GLFW3 does not support vulkan!";
-            TH_API_LOG_ERROR(message);
-            glfwTerminate();
-            throw std::runtime_error(message);
-        }
-    }
-
-    std::vector<std::string> getRequiredInstanceExtensions() {
-        uint32_t instanceExtensionCount{ 0 };
-        auto instanceExtensionBuffer = glfwGetRequiredInstanceExtensions(&instanceExtensionCount);
-        std::vector<std::string> instanceExtension;
-        instanceExtension.reserve(instanceExtensionCount);
-        for (uint32_t i{ 0 }; i < instanceExtensionCount; ++i) {
-            instanceExtension.emplace_back(instanceExtensionBuffer[i]);
-        }
-        return instanceExtension;
-    }
-
-     VkSurfaceKHR getSurface(vk::Instance instance) {
-         VkSurfaceKHR surface;
-         glfwCreateWindowSurface(instance, this->m_window.get(), nullptr, &surface);
-         return surface;
-     }
 };
 
 };// namespace Thyme
