@@ -54,12 +54,12 @@ GlfwWindow<Context>::GlfwWindow(const WindowConfiguration& config) : Thyme::Wind
                      config.height,
                      config.name);
     if (glfwInit() == GLFW_FALSE) {
-        auto message = "Failed to initialize GLFW!";
+        constexpr auto message = "Failed to initialize GLFW!";
         TH_API_LOG_ERROR(message);
         glfwTerminate();
         throw std::runtime_error(message);
     }
-    m_window = WindowHWND(glfwCreateWindow(config.width, config.height, config.name.c_str(), nullptr, nullptr),
+    m_window = WindowHWND(glfwCreateWindow(config.width, config.height, config.name.data(), nullptr, nullptr),
                           [config](GLFWwindow* window) {
                               TH_API_LOG_DEBUG("destroying window with parameters: width = {}, height = {}, name = {}",
                                                config.width,

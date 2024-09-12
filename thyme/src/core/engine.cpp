@@ -2,6 +2,7 @@
 
 #include "thyme/core/logger.hpp"
 #include "thyme/platform/glfw_window.hpp"
+#include "thyme/platform/vulkan_renderer.hpp"
 #include "thyme/version.hpp"
 
 #include <vulkan/vulkan.hpp>
@@ -22,25 +23,17 @@ void Thyme::Engine::run() {
     std::vector<const char*> instanceExtension;
     instanceExtension.emplace_back(vk::EXTDebugReportExtensionName);
 
-    auto glfwInstanceExtension = window.getRequiredInstanceExtensions();
+    auto glfwInstanceExtensions = window.getRequiredInstanceExtensions();
+    for (const auto& glfwInstanceExtension : glfwInstanceExtensions) {
+        instanceExtension.emplace_back(glfwInstanceExtension.c_str());
+    }
     std::vector<const char*> deviceExtension;
     deviceExtension.emplace_back(vk::KHRSwapchainExtensionName);
 
-
-    vk::ApplicationInfo applicationInfo(m_engineConfig.appName.c_str(),
-                                        vk::makeApiVersion(0, Version::major, Version::minor, Version::patch),
-                                        m_engineConfig.engineName.c_str(),
-                                        vk::makeApiVersion(0, Version::major, Version::minor, Version::patch),
-                                        vk::makeApiVersion(1, 3, 290, 0));
-
-    vk::InstanceCreateInfo instanceCreateInfo(
-            vk::InstanceCreateFlags(), &applicationInfo, instanceLayers, instanceExtension);
-    try {
-        auto instance = vk::createInstanceUnique(instanceCreateInfo);
-    } catch (vk::SystemError err) {
-        TH_API_LOG_ERROR("Failed to create vulkan instance. Message: {}, Code: {}", err.what(), err.code().value());
-        throw std::runtime_error("Failed to create vulkan instance.");
-    }
+    auto instance = Vulkan::UniqueInstance(Vulkan::UniqueInstanceConfig{ .engineName = m_engineConfig.engineName,
+                                                                         .appName = m_engineConfig.appName,
+                                                                         .instanceLayers = instanceLayers,
+                                                                         .instanceExtension = instanceExtension });
 
     while (!window.shouldClose()) {
         window.poolEvents();
