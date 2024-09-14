@@ -11,10 +11,17 @@ struct PlatformContextArgumenst {
 
 class PlatformContext {
 public:
-    explicit PlatformContext(const PlatformContextArgumenst& args) {
+    explicit PlatformContext(const PlatformContextArgumenst& args) noexcept {
         args.initializer();
         m_destroyer = args.destroyer;
     }
+
+    PlatformContext(PlatformContext&) = default;
+    PlatformContext(PlatformContext&&) = default;
+
+    PlatformContext& operator=(PlatformContext&) = default;
+    PlatformContext& operator=(PlatformContext&&) = default;
+
     ~PlatformContext() {
         m_destroyer();
     }
