@@ -18,7 +18,7 @@ public:
     Engine(Engine&&) = default;
 
     Engine& operator=(Engine&) = default;
-    Engine& operator(Engine&&) = default;
+    Engine& operator=(Engine&&) = default;
 
     void run();
     virtual ~Engine() = default;

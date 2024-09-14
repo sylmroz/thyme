@@ -6,6 +6,7 @@
 using namespace Thyme;
 
 template<typename Context>
+    requires(std::is_base_of<PlatformContext, Context>::value)
 std::unique_ptr<Engine> createEngine(const EngineConfig& config) {
     class ContextualizedEngine : public Engine {
     public:
