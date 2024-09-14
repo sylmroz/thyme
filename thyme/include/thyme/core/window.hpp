@@ -14,9 +14,7 @@ class THYME_API Window {
 public:
     Window(const WindowConfiguration& windowConfiguretion) : config{ windowConfiguretion } {}
     virtual void poolEvents() = 0;
-    virtual bool shouldClose() = 0;
-
-    virtual ~Window() = default;
+    [[nodiscard]] virtual bool shouldClose() = 0;
 
     WindowConfiguration config;
 };

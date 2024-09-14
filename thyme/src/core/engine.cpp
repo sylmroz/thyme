@@ -11,11 +11,14 @@
 
 #include <memory>
 #include <vector>
+#include <type_traits>
 
-Thyme::Engine::Engine(const EngineConfig& engineConfig) : m_engineConfig{ engineConfig } {}
+Thyme::Engine::Engine(const EngineConfig& engineConfig, const PlatformContext& context)
+    : m_engineConfig{ engineConfig }, m_context{ context } {}
 
 void Thyme::Engine::run() {
     TH_API_LOG_INFO("Start {} engine", m_engineConfig.engineName);
+
     VulkanGlfwWindow window(WindowConfiguration{ .width = 1280, .height = 920, .name = m_engineConfig.appName });
 
     std::vector<const char*> instanceLayers;
@@ -34,6 +37,14 @@ void Thyme::Engine::run() {
                                                                          .appName = m_engineConfig.appName,
                                                                          .instanceLayers = instanceLayers,
                                                                          .instanceExtension = instanceExtension });
+    const auto surface = window.getSurface(instance.instance);
+    const auto physicalDevices = instance.instance.get().enumeratePhysicalDevices();
+    std::vector<vk::PhysicalDevice> pickedDevices;
+    for (const auto& physicalDevice : physicalDevices) {
+        if (Vulkan::QueueFamilyIndices{ physicalDevice, *surface }.isCompleted()) {
+            pickedDevices.emplace_back(physicalDevice);
+        }
+    }
 
     while (!window.shouldClose()) {
         window.poolEvents();

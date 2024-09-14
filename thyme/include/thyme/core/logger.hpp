@@ -5,10 +5,13 @@
 #include <memory>
 #include <string_view>
 
+#define SPDLOG_ACTIVE_LEVEL 1;
+
 #include <spdlog/logger.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
+
 
 namespace Thyme {
 

@@ -11,7 +11,7 @@ option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 add_library(${PROJECT_NAME}
     "src/core/application.cpp"
     "src/core/engine.cpp"
-    "src/platform/glfw_window.cpp")
+    "src/platform/glfw_window.cpp" "src/platform/vulkan_renderer.cpp")
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
 
@@ -41,6 +41,7 @@ target_precompile_headers(${PROJECT_NAME}
         <string_view>
         <unordered_map>
         <vector>
+        <type_traits>
 )
 
 find_package(spdlog REQUIRED)

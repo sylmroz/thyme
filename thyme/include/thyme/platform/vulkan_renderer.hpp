@@ -19,22 +19,44 @@ struct UniqueInstanceConfig {
 
 class UniqueInstance {
 public:
-    UniqueInstance(const UniqueInstanceConfig& config) {
-        constexpr auto appVersion = vk::makeApiVersion(0, Version::major, Version::minor, Version::patch);
-        constexpr auto vulkanVersion = vk::makeApiVersion(0, 1, 3, 290);
-        vk::ApplicationInfo applicationInfo(
-                config.appName.data(), appVersion, config.engineName.data(), appVersion, vulkanVersion);
+    UniqueInstance(const UniqueInstanceConfig& config);
+    vk::UniqueInstance instance;
+};
 
-        vk::InstanceCreateInfo instanceCreateInfo(
-                vk::InstanceCreateFlags(), &applicationInfo, config.instanceLayers, config.instanceExtension);
-        try {
-            instance = vk::createInstanceUnique(instanceCreateInfo);
-        } catch (vk::SystemError err) {
-            TH_API_LOG_ERROR("Failed to create vulkan instance. Message: {}, Code: {}", err.what(), err.code().value());
-            throw std::runtime_error("Failed to create vulkan instance.");
+struct QueueFamilyIndices {
+    QueueFamilyIndices(const vk::PhysicalDevice& device, const vk::SurfaceKHR& surface) {
+        auto queueFamilies = device.getQueueFamilyProperties2();
+        uint32_t i{ 0 };
+
+        for (const auto& queueFamily : queueFamilies) {
+            const auto& queueFamilyProperties = queueFamily.queueFamilyProperties;
+            if (queueFamilyProperties.queueCount <= 0) {
+                ++i;
+                continue;
+            }
+            if (queueFamilyProperties.queueFlags & vk::QueueFlagBits::eGraphics) {
+                graphicFammily = i;
+            }
+            if (device.getSurfaceSupportKHR(i, surface)) {
+                presentFamily = i;
+            }
+            if (isCompleted()) {
+                break;
+            }
         }
     }
-    vk::UniqueInstance instance;
+    std::optional<uint32_t> graphicFammily;
+    std::optional<uint32_t> presentFamily;
+
+    [[nodiscard]] constexpr bool isCompleted() const noexcept {
+        return graphicFammily.has_value() && presentFamily.has_value();
+    }
+};
+
+class PhysicalDevice {
+public:
+private:
+
 };
 
 }// namespace Thyme::Vulkan
