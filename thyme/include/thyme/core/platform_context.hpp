@@ -23,4 +23,4 @@ private:
     std::function<void(void)> m_destroyer;
 };
 
-}
+}// namespace Thyme

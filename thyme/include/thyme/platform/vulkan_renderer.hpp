@@ -56,7 +56,6 @@ struct QueueFamilyIndices {
 class PhysicalDevice {
 public:
 private:
-
 };
 
 }// namespace Thyme::Vulkan

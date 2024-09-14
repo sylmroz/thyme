@@ -9,7 +9,7 @@
 
 namespace Thyme {
 
-class GlfwVulkanPlatformContext : public PlatformContext {
+class THYME_API GlfwVulkanPlatformContext : public PlatformContext {
 public:
     GlfwVulkanPlatformContext()
         : PlatformContext{ PlatformContextArgumenst{

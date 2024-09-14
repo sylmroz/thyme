@@ -1,7 +1,7 @@
 #pragma once
 
-#include <thyme/export_macros.hpp>
 #include <thyme/core/platform_context.hpp>
+#include <thyme/export_macros.hpp>
 
 namespace Thyme {
 
@@ -12,12 +12,19 @@ struct EngineConfig {
 
 class THYME_API Engine {
 public:
-    Engine(const EngineConfig& engineConfig, const PlatformContext& context);
+    Engine(const EngineConfig& engineConfig);
+
+    Engine(Engine&) = default;
+    Engine(Engine&&) = default;
+
+    Engine& operator=(Engine&) = default;
+    Engine& operator(Engine&&) = default;
+
     void run();
+    virtual ~Engine() = default;
 
 private:
     EngineConfig m_engineConfig;
-    const PlatformContext& m_context;
 };
 
 }// namespace Thyme

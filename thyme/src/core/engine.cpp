@@ -10,11 +10,10 @@
 #include <GLFW/glfw3.h>
 
 #include <memory>
-#include <vector>
 #include <type_traits>
+#include <vector>
 
-Thyme::Engine::Engine(const EngineConfig& engineConfig, const PlatformContext& context)
-    : m_engineConfig{ engineConfig }, m_context{ context } {}
+Thyme::Engine::Engine(const EngineConfig& engineConfig) : m_engineConfig{ engineConfig } {}
 
 void Thyme::Engine::run() {
     TH_API_LOG_INFO("Start {} engine", m_engineConfig.engineName);
