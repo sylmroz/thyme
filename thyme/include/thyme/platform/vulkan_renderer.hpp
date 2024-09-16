@@ -23,28 +23,10 @@ public:
     vk::UniqueInstance instance;
 };
 
+// TODO - the class should support more queue family flags like eSparseBinding
 struct QueueFamilyIndices {
-    QueueFamilyIndices(const vk::PhysicalDevice& device, const vk::SurfaceKHR& surface) {
-        auto queueFamilies = device.getQueueFamilyProperties2();
-        uint32_t i{ 0 };
+    explicit QueueFamilyIndices(const vk::PhysicalDevice& device, const vk::SurfaceKHR& surface);
 
-        for (const auto& queueFamily : queueFamilies) {
-            const auto& queueFamilyProperties = queueFamily.queueFamilyProperties;
-            if (queueFamilyProperties.queueCount <= 0) {
-                ++i;
-                continue;
-            }
-            if (queueFamilyProperties.queueFlags & vk::QueueFlagBits::eGraphics) {
-                graphicFammily = i;
-            }
-            if (device.getSurfaceSupportKHR(i, surface)) {
-                presentFamily = i;
-            }
-            if (isCompleted()) {
-                break;
-            }
-        }
-    }
     std::optional<uint32_t> graphicFammily;
     std::optional<uint32_t> presentFamily;
 
@@ -55,7 +37,34 @@ struct QueueFamilyIndices {
 
 class PhysicalDevice {
 public:
-private:
+    explicit PhysicalDevice(const vk::PhysicalDevice& physicalDevice,
+                            const QueueFamilyIndices& queueFamilyIndices) noexcept
+        : physicalDevice{ physicalDevice }, queueFamilyIndices{ queueFamilyIndices } {}
+
+    QueueFamilyIndices queueFamilyIndices;
+    vk::PhysicalDevice physicalDevice;
+};
+
+std::vector<PhysicalDevice> getPhysicalDevices(const vk::UniqueInstance& instance, const vk::UniqueSurfaceKHR& surface);
+
+class PhysicalDevicesManager {
+public:
+    PhysicalDevicesManager(const std::vector<PhysicalDevice>& devices) {
+        m_physicalDevices = devices;
+        m_selectetDevice = m_physicalDevices.begin();
+    }
+
+    [[nodiscard]] const auto& getSelectedDevice() const noexcept {
+        return *m_selectetDevice;
+    }
+
+    [[nodiscard]] const auto& getDevicesList() const noexcept {
+        return m_physicalDevices;
+    }
+
+private:    
+    std::vector<PhysicalDevice> m_physicalDevices;
+    std::vector<PhysicalDevice>::iterator m_selectetDevice;
 };
 
 }// namespace Thyme::Vulkan

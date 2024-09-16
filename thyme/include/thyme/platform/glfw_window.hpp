@@ -12,7 +12,7 @@
 namespace Thyme {
 
 template<typename Context = void>
-class GlfwWindow : public Window {
+class GlfwWindow: public Window {
     using WindowHWND = std::unique_ptr<GLFWwindow, std::function<void(GLFWwindow*)>>;
 
 public:
@@ -48,7 +48,7 @@ private:
     friend Context;
 };
 
-class THYME_API VulkanGlfwWindow : public GlfwWindow<VulkanGlfwWindow> {
+class THYME_API VulkanGlfwWindow: public GlfwWindow<VulkanGlfwWindow> {
 public:
     VulkanGlfwWindow(const WindowConfiguration& config) : GlfwWindow<VulkanGlfwWindow>(config) {}
 

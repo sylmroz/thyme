@@ -37,14 +37,11 @@ void Thyme::Engine::run() {
                                                                          .instanceLayers = instanceLayers,
                                                                          .instanceExtension = instanceExtension });
     const auto surface = window.getSurface(instance.instance);
-    const auto physicalDevices = instance.instance.get().enumeratePhysicalDevices();
-    std::vector<vk::PhysicalDevice> pickedDevices;
-    for (const auto& physicalDevice : physicalDevices) {
-        if (Vulkan::QueueFamilyIndices{ physicalDevice, *surface }.isCompleted()) {
-            pickedDevices.emplace_back(physicalDevice);
-        }
-    }
+    
+    Vulkan::PhysicalDevicesManager physicalDevicesManager(Vulkan::getPhysicalDevices(instance.instance, surface));
 
+    [[maybe_unused]] const auto device = physicalDevicesManager.getSelectedDevice();
+    [[maybe_unused]] const auto deviceType = device.physicalDevice.getProperties().deviceType;
     while (!window.shouldClose()) {
         window.poolEvents();
     }

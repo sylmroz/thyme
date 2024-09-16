@@ -1,12 +1,14 @@
 #include "thyme/platform/vulkan_renderer.hpp"
 
-Thyme::Vulkan::UniqueInstance::UniqueInstance(const UniqueInstanceConfig& config) {
+using namespace Thyme::Vulkan;
+
+UniqueInstance::UniqueInstance(const UniqueInstanceConfig& config) {
     constexpr auto appVersion = vk::makeApiVersion(0, Version::major, Version::minor, Version::patch);
     constexpr auto vulkanVersion = vk::makeApiVersion(0, 1, 3, 290);
-    vk::ApplicationInfo applicationInfo(
+    const vk::ApplicationInfo applicationInfo(
             config.appName.data(), appVersion, config.engineName.data(), appVersion, vulkanVersion);
 
-    vk::InstanceCreateInfo instanceCreateInfo(
+    const vk::InstanceCreateInfo instanceCreateInfo(
             vk::InstanceCreateFlags(), &applicationInfo, config.instanceLayers, config.instanceExtension);
     try {
         instance = vk::createInstanceUnique(instanceCreateInfo);
@@ -14,4 +16,52 @@ Thyme::Vulkan::UniqueInstance::UniqueInstance(const UniqueInstanceConfig& config
         TH_API_LOG_ERROR("Failed to create vulkan instance. Message: {}, Code: {}", err.what(), err.code().value());
         throw std::runtime_error("Failed to create vulkan instance.");
     }
+}
+
+QueueFamilyIndices::QueueFamilyIndices(const vk::PhysicalDevice& device, const vk::SurfaceKHR& surface) {
+    auto queueFamilies = device.getQueueFamilyProperties2();
+    uint32_t i{ 0 };
+
+    for (const auto& queueFamily : queueFamilies) {
+        const auto& queueFamilyProperties = queueFamily.queueFamilyProperties;
+        if (queueFamilyProperties.queueCount <= 0) {
+            ++i;
+            continue;
+        }
+        if (queueFamilyProperties.queueFlags & vk::QueueFlagBits::eGraphics) {
+            graphicFammily = i;
+        }
+        if (device.getSurfaceSupportKHR(i, surface)) {
+            presentFamily = i;
+        }
+        if (isCompleted()) {
+            break;
+        }
+    }
+}
+
+std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueInstance& instance,
+                                               const vk::UniqueSurfaceKHR& surface) {
+    static std::map<vk::PhysicalDeviceType, uint32_t> priorities = {
+        { vk::PhysicalDeviceType::eOther, 0 },         { vk::PhysicalDeviceType::eCpu, 1 },
+        { vk::PhysicalDeviceType::eVirtualGpu, 2 },    { vk::PhysicalDeviceType::eDiscreteGpu, 3 },
+        { vk::PhysicalDeviceType::eIntegratedGpu, 4 },
+    };
+
+    std::vector<PhysicalDevice> physicalDevices;
+
+    for (const auto& device : instance.get().enumeratePhysicalDevices()) {
+        const auto queueFamilyIndex = QueueFamilyIndices(device, *surface);
+        if (queueFamilyIndex.isCompleted()) {
+            physicalDevices.emplace_back(device, queueFamilyIndex);
+        }
+    }
+
+    std::sort(physicalDevices.begin(), physicalDevices.end(), [](const auto& device1, const auto& device2) {
+        const auto dt1 = device1.physicalDevice.getProperties().deviceType;
+        const auto dt2 = device2.physicalDevice.getProperties().deviceType;
+        return priorities[dt1] < priorities[dt2];
+    });
+
+    return physicalDevices;
 }
