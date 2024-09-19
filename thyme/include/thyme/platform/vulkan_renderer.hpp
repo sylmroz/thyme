@@ -47,24 +47,36 @@ public:
 
 std::vector<PhysicalDevice> getPhysicalDevices(const vk::UniqueInstance& instance, const vk::UniqueSurfaceKHR& surface);
 
+// TODO - read from config, last selected device
 class PhysicalDevicesManager {
 public:
     PhysicalDevicesManager(const std::vector<PhysicalDevice>& devices) {
         m_physicalDevices = devices;
-        m_selectetDevice = m_physicalDevices.begin();
+        m_selectedDevice = m_physicalDevices.begin();
     }
 
     [[nodiscard]] const auto& getSelectedDevice() const noexcept {
-        return *m_selectetDevice;
+        return *m_selectedDevice;
     }
 
     [[nodiscard]] const auto& getDevicesList() const noexcept {
         return m_physicalDevices;
     }
 
-private:    
+    void selectDevice(uint32_t index) {
+        if (index - 1 >= m_physicalDevices.size()) {
+            const auto message = fmt::format("Selecting physical device failed! Selected index is {}, but devices are {}",
+                                       index,
+                                       m_physicalDevices.size());
+            TH_API_LOG_ERROR(message);
+            throw std::runtime_error(message.c_str());
+        }
+        m_selectedDevice = m_physicalDevices.begin() + index - 1;
+    }
+
+private:
     std::vector<PhysicalDevice> m_physicalDevices;
-    std::vector<PhysicalDevice>::iterator m_selectetDevice;
+    std::vector<PhysicalDevice>::iterator m_selectedDevice;
 };
 
 }// namespace Thyme::Vulkan
