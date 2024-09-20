@@ -1,6 +1,12 @@
 #include "thyme/platform/vulkan_renderer.hpp"
+#include <set>
 
 using namespace Thyme::Vulkan;
+
+static auto getDevicesExtenstions() {
+    static std::vector<const char*> deviceExtension = { vk::KHRSwapchainExtensionName };
+    return deviceExtension;
+}
 
 UniqueInstance::UniqueInstance(const UniqueInstanceConfig& config) {
     constexpr auto appVersion = vk::makeApiVersion(0, Version::major, Version::minor, Version::patch);
@@ -41,7 +47,7 @@ QueueFamilyIndices::QueueFamilyIndices(const vk::PhysicalDevice& device, const v
 }
 
 std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueInstance& instance,
-                                               const vk::UniqueSurfaceKHR& surface) {
+                                                              const vk::UniqueSurfaceKHR& surface) {
     static std::map<vk::PhysicalDeviceType, uint32_t> priorities = {
         { vk::PhysicalDeviceType::eOther, 0 },         { vk::PhysicalDeviceType::eCpu, 1 },
         { vk::PhysicalDeviceType::eVirtualGpu, 2 },    { vk::PhysicalDeviceType::eDiscreteGpu, 3 },
@@ -64,4 +70,26 @@ std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueIn
     });
 
     return physicalDevices;
+}
+
+vk::Device Thyme::Vulkan::PhysicalDevice::createLogicalDevice() {
+    std::set<uint32_t> indices = { queueFamilyIndices.graphicFammily.value(),
+                                   queueFamilyIndices.presentFamily.value() };
+    std::vector<vk::DeviceQueueCreateInfo> deviceQueueCreateInfos;
+    for (const auto ind : indices) {
+        float queuePriority{ 1.0 };
+        deviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), ind, 1, &queuePriority);
+    }
+
+    const auto features = physicalDevice.getFeatures();
+    const auto deviceExtensions = getDevicesExtenstions();
+
+    return physicalDevice.createDevice(vk::DeviceCreateInfo(vk::DeviceCreateFlags(),
+                                                                  static_cast<uint32_t>(deviceQueueCreateInfos.size()),
+                                                                  deviceQueueCreateInfos.data(),
+                                                                  0,
+                                                                  nullptr,
+                                                                  static_cast<uint32_t>(deviceExtensions.size()),
+                                                                  deviceExtensions.data(),
+                                                                  &features));
 }

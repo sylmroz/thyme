@@ -29,8 +29,6 @@ void Thyme::Engine::run() {
     for (const auto& glfwInstanceExtension : glfwInstanceExtensions) {
         instanceExtension.emplace_back(glfwInstanceExtension.c_str());
     }
-    std::vector<const char*> deviceExtension;
-    deviceExtension.emplace_back(vk::KHRSwapchainExtensionName);
 
     auto instance = Vulkan::UniqueInstance(Vulkan::UniqueInstanceConfig{ .engineName = m_engineConfig.engineName,
                                                                          .appName = m_engineConfig.appName,
@@ -38,7 +36,8 @@ void Thyme::Engine::run() {
                                                                          .instanceExtension = instanceExtension });
     const auto surface = window.getSurface(instance.instance);
     
-    Vulkan::PhysicalDevicesManager physicalDevicesManager(Vulkan::getPhysicalDevices(instance.instance, surface));
+    const auto devices = Vulkan::getPhysicalDevices(instance.instance, surface);
+    Vulkan::PhysicalDevicesManager physicalDevicesManager(devices);
 
     [[maybe_unused]] const auto device = physicalDevicesManager.getSelectedDevice();
     [[maybe_unused]] const auto deviceType = device.physicalDevice.getProperties().deviceType;

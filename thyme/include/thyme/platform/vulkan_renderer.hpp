@@ -39,10 +39,16 @@ class PhysicalDevice {
 public:
     explicit PhysicalDevice(const vk::PhysicalDevice& physicalDevice,
                             const QueueFamilyIndices& queueFamilyIndices) noexcept
-        : physicalDevice{ physicalDevice }, queueFamilyIndices{ queueFamilyIndices } {}
+        : physicalDevice{ physicalDevice }, queueFamilyIndices{ queueFamilyIndices } {
+        logicalDevice = createLogicalDevice();
+    }
 
     QueueFamilyIndices queueFamilyIndices;
     vk::PhysicalDevice physicalDevice;
+    vk::Device logicalDevice;
+
+private:
+    vk::Device createLogicalDevice();
 };
 
 std::vector<PhysicalDevice> getPhysicalDevices(const vk::UniqueInstance& instance, const vk::UniqueSurfaceKHR& surface);
@@ -65,9 +71,10 @@ public:
 
     void selectDevice(uint32_t index) {
         if (index - 1 >= m_physicalDevices.size()) {
-            const auto message = fmt::format("Selecting physical device failed! Selected index is {}, but devices are {}",
-                                       index,
-                                       m_physicalDevices.size());
+            const auto message =
+                    fmt::format("Selecting physical device failed! Selected index is {}, but devices are {}",
+                                index,
+                                m_physicalDevices.size());
             TH_API_LOG_ERROR(message);
             throw std::runtime_error(message.c_str());
         }

@@ -37,6 +37,7 @@ target_precompile_headers(${PROJECT_NAME}
         <ranges>
         <map>
         <memory>
+        <set>
         <string>
         <string_view>
         <unordered_map>
