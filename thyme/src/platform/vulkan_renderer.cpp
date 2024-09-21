@@ -72,7 +72,7 @@ std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueIn
     return physicalDevices;
 }
 
-vk::Device Thyme::Vulkan::PhysicalDevice::createLogicalDevice() {
+[[nodiscard]] const vk::UniqueDevice Thyme::Vulkan::PhysicalDevice::createLogicalDevice() const {
     std::set<uint32_t> indices = { queueFamilyIndices.graphicFammily.value(),
                                    queueFamilyIndices.presentFamily.value() };
     std::vector<vk::DeviceQueueCreateInfo> deviceQueueCreateInfos;
@@ -84,7 +84,7 @@ vk::Device Thyme::Vulkan::PhysicalDevice::createLogicalDevice() {
     const auto features = physicalDevice.getFeatures();
     const auto deviceExtensions = getDevicesExtenstions();
 
-    return physicalDevice.createDevice(vk::DeviceCreateInfo(vk::DeviceCreateFlags(),
+    return physicalDevice.createDeviceUnique(vk::DeviceCreateInfo(vk::DeviceCreateFlags(),
                                                                   static_cast<uint32_t>(deviceQueueCreateInfos.size()),
                                                                   deviceQueueCreateInfos.data(),
                                                                   0,

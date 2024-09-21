@@ -41,6 +41,8 @@ void Thyme::Engine::run() {
 
     [[maybe_unused]] const auto device = physicalDevicesManager.getSelectedDevice();
     [[maybe_unused]] const auto deviceType = device.physicalDevice.getProperties().deviceType;
+    auto ld1 = device.createLogicalDevice();
+    auto ld2 = device.createLogicalDevice();
     while (!window.shouldClose()) {
         window.poolEvents();
     }

@@ -39,16 +39,13 @@ class PhysicalDevice {
 public:
     explicit PhysicalDevice(const vk::PhysicalDevice& physicalDevice,
                             const QueueFamilyIndices& queueFamilyIndices) noexcept
-        : physicalDevice{ physicalDevice }, queueFamilyIndices{ queueFamilyIndices } {
-        logicalDevice = createLogicalDevice();
-    }
+        : physicalDevice{ physicalDevice }, queueFamilyIndices{ queueFamilyIndices } {}
 
     QueueFamilyIndices queueFamilyIndices;
     vk::PhysicalDevice physicalDevice;
     vk::Device logicalDevice;
 
-private:
-    vk::Device createLogicalDevice();
+    [[nodiscard]] const vk::UniqueDevice createLogicalDevice() const;
 };
 
 std::vector<PhysicalDevice> getPhysicalDevices(const vk::UniqueInstance& instance, const vk::UniqueSurfaceKHR& surface);
