@@ -1,10 +1,61 @@
 #include "thyme/platform/vulkan_renderer.hpp"
+
 #include <set>
 
 using namespace Thyme::Vulkan;
 
-static auto getDevicesExtensions() {
-    static std::vector<const char*> const deviceExtension = { vk::KHRSwapchainExtensionName };
+#if !defined(NDEBUG)
+PFN_vkCreateDebugUtilsMessengerEXT pfnVkCreateDebugUtilsMessengerEXT;
+PFN_vkDestroyDebugUtilsMessengerEXT pfnVkDestroyDebugUtilsMessengerEXT;
+
+VKAPI_ATTR VkResult VKAPI_CALL vkCreateDebugUtilsMessengerEXT(VkInstance instance,
+                                                              const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+                                                              const VkAllocationCallbacks* pAllocator,
+                                                              VkDebugUtilsMessengerEXT* pMessenger) {
+    return pfnVkCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkDestroyDebugUtilsMessengerEXT(VkInstance instance,
+                                                           VkDebugUtilsMessengerEXT messenger,
+                                                           VkAllocationCallbacks const* pAllocator) {
+    return pfnVkDestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
+}
+static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(const vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                                    const vk::DebugUtilsMessageTypeFlagBitsEXT messageType,
+                                                    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                                                    void* pUserData) {
+    static std::map<vk::DebugUtilsMessageTypeFlagBitsEXT, std::string_view> messageTypeStringMap = {
+        { vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral, "General" },
+        { vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance, "Performance" },
+        { vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation, "Validation" },
+        { vk::DebugUtilsMessageTypeFlagBitsEXT::eDeviceAddressBinding, "Device Address Biding" },
+    };
+    const auto messageTypeStr = messageTypeStringMap[messageType];
+    switch (messageSeverity) {
+    case vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose:
+        TH_API_LOG_TRACE(
+                "[{}]: Name: {}, Message: {}", messageTypeStr, pCallbackData->pMessageIdName, pCallbackData->pMessage);
+        break;
+    case vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo:
+        TH_API_LOG_INFO(
+                "[{}]: Name: {}, Message: {}", messageTypeStr, pCallbackData->pMessageIdName, pCallbackData->pMessage);
+        break;
+    case vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning:
+        TH_API_LOG_WARN(
+                "[{}]: Name: {}, Message: {}", messageTypeStr, pCallbackData->pMessageIdName, pCallbackData->pMessage);
+        break;
+    case vk::DebugUtilsMessageSeverityFlagBitsEXT::eError:
+        TH_API_LOG_ERROR(
+                "[{}]: Name: {}, Message: {}", messageTypeStr, pCallbackData->pMessageIdName, pCallbackData->pMessage);
+        break;
+    default: break;
+    }
+    return VK_FALSE;
+}
+#endif
+
+static auto getDeviceExtensions() {
+    static const std::vector<const char*> deviceExtension = { vk::KHRSwapchainExtensionName };
     return deviceExtension;
 }
 
@@ -14,18 +65,75 @@ UniqueInstance::UniqueInstance(const UniqueInstanceConfig& config) {
     const vk::ApplicationInfo applicationInfo(
             config.appName.data(), appVersion, config.engineName.data(), appVersion, vulkanVersion);
 
+    auto enabledExtensions = config.instanceExtension;
+#if !defined(NDEBUG)
+    enabledExtensions.emplace_back(vk::EXTDebugUtilsExtensionName);
+#endif
+
     const vk::InstanceCreateInfo instanceCreateInfo(
-            vk::InstanceCreateFlags(), &applicationInfo, config.instanceLayers, config.instanceExtension);
+            vk::InstanceCreateFlags(), &applicationInfo, config.instanceLayers, enabledExtensions);
     try {
         instance = vk::createInstanceUnique(instanceCreateInfo);
+#if !defined(NDEBUG)
+        setupDebugMessenger();
+#endif
     } catch (const vk::SystemError& err) {
-        TH_API_LOG_ERROR("Failed to create vulkan instance. Message: {}, Code: {}", err.what(), err.code().value());
-        throw std::runtime_error("Failed to create vulkan instance.");
+        const auto message =
+                fmt::format("Failed to create vulkan instance. Message: {}, Code: {}", err.what(), err.code().value());
+        TH_API_LOG_ERROR(message);
+        throw std::runtime_error(message);
     }
 }
 
+#if !defined(NDEBUG)
+void UniqueInstance::validateExtensions() {
+    const auto extensionProperties = vk::enumerateInstanceExtensionProperties();
+    const auto it = std::ranges::find_if(extensionProperties, [](const vk::ExtensionProperties& extension) {
+        return std::string_view(extension.extensionName) == std::string_view(vk::EXTDebugUtilsExtensionName);
+    });
+    if (it == extensionProperties.end()) {
+        const auto message = fmt::format("No extension {} found", vk::EXTDebugUtilsExtensionName);
+        TH_API_LOG_ERROR(message);
+        throw std::runtime_error(message);
+    }
+}
+void UniqueInstance::setupDebugMessenger() {
+    validateExtensions();
+
+    pfnVkCreateDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
+            instance->getProcAddr("vkCreateDebugUtilsMessengerEXT"));
+    if (!pfnVkCreateDebugUtilsMessengerEXT) {
+        constexpr auto message = "Failed to get vkCreateDebugUtilsMessengerEXT function.";
+        TH_API_LOG_ERROR(message);
+        throw std::runtime_error(message);
+    }
+
+    pfnVkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+            instance->getProcAddr("vkDestroyDebugUtilsMessengerEXT"));
+    if (!pfnVkDestroyDebugUtilsMessengerEXT) {
+        constexpr auto message = "Failed to get vkDestroyDebugUtilsMessengerEXT function.";
+        TH_API_LOG_ERROR(message);
+        throw std::runtime_error(message);
+    }
+
+    const auto flags =
+            vk::DebugUtilsMessageSeverityFlagBitsEXT::eError | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning
+            | vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
+    const auto typeFlags = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral
+                           | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance
+                           | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation;
+    const vk::DebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo(
+            vk::DebugUtilsMessengerCreateFlagsEXT(),
+            flags,
+            typeFlags,
+            reinterpret_cast<PFN_vkDebugUtilsMessengerCallbackEXT>(debugCallback));
+
+    debugMessenger = instance->createDebugUtilsMessengerEXTUnique(debugMessengerCreateInfo);
+}
+#endif
+
 QueueFamilyIndices::QueueFamilyIndices(const vk::PhysicalDevice& device, const vk::SurfaceKHR& surface) {
-    auto queueFamilies = device.getQueueFamilyProperties2();
+    const auto queueFamilies = device.getQueueFamilyProperties2();
     uint32_t i{ 0 };
 
     for (const auto& queueFamily : queueFamilies) {
@@ -57,13 +165,12 @@ std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueIn
     std::vector<PhysicalDevice> physicalDevices;
 
     for (const auto& device : instance.get().enumeratePhysicalDevices()) {
-        const auto queueFamilyIndex = QueueFamilyIndices(device, *surface);
-        if (queueFamilyIndex.isCompleted()) {
+        if (const auto queueFamilyIndex = QueueFamilyIndices(device, *surface); queueFamilyIndex.isCompleted()) {
             physicalDevices.emplace_back(device, queueFamilyIndex);
         }
     }
 
-    std::sort(physicalDevices.begin(), physicalDevices.end(), [](const auto& device1, const auto& device2) {
+    std::ranges::sort(physicalDevices, [](const auto& device1, const auto& device2) {
         const auto dt1 = device1.physicalDevice.getProperties().deviceType;
         const auto dt2 = device2.physicalDevice.getProperties().deviceType;
         return priorities[dt1] < priorities[dt2];
@@ -82,7 +189,7 @@ std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueIn
     }
 
     const auto features = physicalDevice.getFeatures();
-    const auto deviceExtensions = getDevicesExtensions();
+    const auto deviceExtensions = getDeviceExtensions();
 
     return physicalDevice.createDeviceUnique(vk::DeviceCreateInfo(vk::DeviceCreateFlags(),
                                                                   static_cast<uint32_t>(deviceQueueCreateInfos.size()),

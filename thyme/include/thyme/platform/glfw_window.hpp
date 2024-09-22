@@ -58,8 +58,7 @@ public:
         VkSurfaceKHR surface{ nullptr };
         if (const auto result = glfwCreateWindowSurface(*instance, this->m_window.get(), nullptr, &surface);
             result != VK_SUCCESS) {
-            TH_API_LOG_CRITICAL("GLFW cannot create VkSurface! Error: {}", static_cast<uint32_t>(result));
-            throw std::runtime_error("GLFW cannot create VkSurface!");
+            throw std::runtime_error(fmt::format("GLFW cannot create VkSurface! Error: {}", static_cast<uint32_t>(result)));
         }
         return vk::UniqueSurfaceKHR{ surface, *instance };
     }

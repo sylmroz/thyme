@@ -20,7 +20,14 @@ struct UniqueInstanceConfig {
 class UniqueInstance {
 public:
     explicit UniqueInstance(const UniqueInstanceConfig& config);
+    static void validateExtensions();
     vk::UniqueInstance instance;
+
+private:
+#if !defined(NDEBUG)
+    void setupDebugMessenger();
+    vk::UniqueDebugUtilsMessengerEXT debugMessenger;
+#endif
 };
 
 // TODO - the class should support more queue family flags like eSparseBinding
@@ -41,8 +48,8 @@ public:
                             const QueueFamilyIndices& queueFamilyIndices) noexcept
         : physicalDevice{ physicalDevice }, queueFamilyIndices{ queueFamilyIndices } {}
 
-    QueueFamilyIndices queueFamilyIndices;
     vk::PhysicalDevice physicalDevice;
+    QueueFamilyIndices queueFamilyIndices;
     vk::Device logicalDevice;
 
     [[nodiscard]] vk::UniqueDevice createLogicalDevice() const;
@@ -71,8 +78,7 @@ public:
                     fmt::format("Selecting physical device failed! Selected index is {}, but devices are {}",
                                 index,
                                 m_physicalDevices.size());
-            TH_API_LOG_ERROR(message);
-            throw std::runtime_error(message.c_str());
+            throw std::runtime_error(message);
         }
         m_selectedDevice = m_physicalDevices.begin() + index - 1;
     }

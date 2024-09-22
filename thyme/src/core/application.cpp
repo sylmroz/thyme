@@ -22,6 +22,14 @@ Thyme::Application::Application() {
 
 void Thyme::Application::run() {
     TH_API_LOG_INFO("Start {} app", name);
-    const auto engine = createEngine<GlfwVulkanPlatformContext>(EngineConfig{ .appName = name });
-    engine->run();
+    try {
+        const auto engine = createEngine<GlfwVulkanPlatformContext>(EngineConfig{ .appName = name });
+        engine->run();
+    }
+    catch (const std::exception& e) {
+        TH_API_LOG_ERROR(e.what());
+    }
+    catch (...) {
+        TH_API_LOG_ERROR("Unknown exception thrown");
+    }
 }
