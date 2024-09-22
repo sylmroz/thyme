@@ -12,12 +12,12 @@ struct EngineConfig {
 
 class THYME_API Engine {
 public:
-    explicit Engine(const EngineConfig& engineConfig);
+    explicit Engine(EngineConfig engineConfig);
 
-    explicit Engine(Engine&) = default;
+    explicit Engine(const Engine&) = default;
     explicit Engine(Engine&&) = default;
 
-    Engine& operator=(Engine&) = default;
+    Engine& operator=(const Engine&) = default;
     Engine& operator=(Engine&&) = default;
 
     void run();

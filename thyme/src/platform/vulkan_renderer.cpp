@@ -3,8 +3,8 @@
 
 using namespace Thyme::Vulkan;
 
-static auto getDevicesExtenstions() {
-    static std::vector<const char*> deviceExtension = { vk::KHRSwapchainExtensionName };
+static auto getDevicesExtensions() {
+    static std::vector<const char*> const deviceExtension = { vk::KHRSwapchainExtensionName };
     return deviceExtension;
 }
 
@@ -18,7 +18,7 @@ UniqueInstance::UniqueInstance(const UniqueInstanceConfig& config) {
             vk::InstanceCreateFlags(), &applicationInfo, config.instanceLayers, config.instanceExtension);
     try {
         instance = vk::createInstanceUnique(instanceCreateInfo);
-    } catch (vk::SystemError err) {
+    } catch (const vk::SystemError& err) {
         TH_API_LOG_ERROR("Failed to create vulkan instance. Message: {}, Code: {}", err.what(), err.code().value());
         throw std::runtime_error("Failed to create vulkan instance.");
     }
@@ -35,9 +35,9 @@ QueueFamilyIndices::QueueFamilyIndices(const vk::PhysicalDevice& device, const v
             continue;
         }
         if (queueFamilyProperties.queueFlags & vk::QueueFlagBits::eGraphics) {
-            graphicFammily = i;
+            graphicFamily = i;
         }
-        if (device.getSurfaceSupportKHR(i, surface)) {
+        if (device.getSurfaceSupportKHR(i, surface) != 0u) {
             presentFamily = i;
         }
         if (isCompleted()) {
@@ -72,9 +72,9 @@ std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueIn
     return physicalDevices;
 }
 
-[[nodiscard]] const vk::UniqueDevice Thyme::Vulkan::PhysicalDevice::createLogicalDevice() const {
-    std::set<uint32_t> indices = { queueFamilyIndices.graphicFammily.value(),
-                                   queueFamilyIndices.presentFamily.value() };
+[[nodiscard]] vk::UniqueDevice Thyme::Vulkan::PhysicalDevice::createLogicalDevice() const {
+    std::set<uint32_t> const indices = { queueFamilyIndices.graphicFamily.value(),
+                                         queueFamilyIndices.presentFamily.value() };
     std::vector<vk::DeviceQueueCreateInfo> deviceQueueCreateInfos;
     for (const auto ind : indices) {
         float queuePriority{ 1.0 };
@@ -82,7 +82,7 @@ std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueIn
     }
 
     const auto features = physicalDevice.getFeatures();
-    const auto deviceExtensions = getDevicesExtenstions();
+    const auto deviceExtensions = getDevicesExtensions();
 
     return physicalDevice.createDeviceUnique(vk::DeviceCreateInfo(vk::DeviceCreateFlags(),
                                                                   static_cast<uint32_t>(deviceQueueCreateInfos.size()),

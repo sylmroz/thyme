@@ -12,8 +12,6 @@ public:
     Application();
     std::string name{ "Thyme" };
     void run();
-
-private:
 };
 
 }// namespace Thyme

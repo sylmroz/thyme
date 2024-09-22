@@ -17,8 +17,8 @@ namespace Thyme {
 
 class THYME_API Logger {
 public:
-    Logger(spdlog::level::level_enum level, std::string_view loggerName) {
-        logger = spdlog::stdout_color_mt(loggerName.data());
+    Logger(const spdlog::level::level_enum level, const std::string_view loggerName) {
+        logger = spdlog::stdout_color_mt(std::string(loggerName));
         logger->set_pattern("%^[%T:%e] [%n] [%l] [%@]: %v%$");
         logger->set_level(level);
     }
@@ -46,7 +46,7 @@ private:
 #define TH_API_LOG_INFO(...) SPDLOG_LOGGER_INFO(::Thyme::ThymeLogger::getLogger()->logger, __VA_ARGS__);
 #define TH_API_LOG_WARN(...) SPDLOG_LOGGER_WARN(::Thyme::ThymeLogger::getLogger()->logger, __VA_ARGS__);
 #define TH_API_LOG_ERROR(...) SPDLOG_LOGGER_ERROR(::Thyme::ThymeLogger::getLogger()->logger, __VA_ARGS__);
-#define TH_API_LOG_CRITICA(...) SPDLOG_LOGGER_CRITICAL(::Thyme::ThymeLogger::getLogger()->logger, __VA_ARGS__);
+#define TH_API_LOG_CRITICAL(...) SPDLOG_LOGGER_CRITICAL(::Thyme::ThymeLogger::getLogger()->logger, __VA_ARGS__);
 
 class THYME_API AppLogger {
 public:
@@ -67,6 +67,6 @@ private:
 #define TH_APP_LOG_INFO(...) SPDLOG_LOGGER_INFO(::Thyme::AppLogger::getLogger()->logger, __VA_ARGS__);
 #define TH_APP_LOG_WARN(...) SPDLOG_LOGGER_WARN(::Thyme::AppLogger::getLogger()->logger, __VA_ARGS__);
 #define TH_APP_LOG_ERROR(...) SPDLOG_LOGGER_ERROR(::Thyme::AppLogger::getLogger()->logger, __VA_ARGS__);
-#define TH_APP_LOG_CRITICA(...) SPDLOG_LOGGER_CRITICAL(::Thyme::AppLogger::getLogger()->logger, __VA_ARGS__);
+#define TH_APP_LOG_CRITICAL(...) SPDLOG_LOGGER_CRITICAL(::Thyme::AppLogger::getLogger()->logger, __VA_ARGS__);
 
 }// namespace Thyme

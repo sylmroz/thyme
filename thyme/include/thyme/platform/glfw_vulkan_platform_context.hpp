@@ -12,7 +12,7 @@ namespace Thyme {
 class THYME_API GlfwVulkanPlatformContext: public PlatformContext {
 public:
     GlfwVulkanPlatformContext()
-        : PlatformContext{ PlatformContextArgumenst{
+        : PlatformContext{ PlatformContextArguments{
                 .initializer =
                         [] {
                             if (glfwInit() == GLFW_FALSE) {
@@ -23,7 +23,7 @@ public:
                             }
 
                             if (glfwVulkanSupported() == GLFW_FALSE) {
-                                auto message = "GLFW3 does not support vulkan!";
+                                constexpr auto message = "GLFW3 does not support vulkan!";
                                 TH_API_LOG_ERROR(message);
                                 glfwTerminate();
                                 throw std::runtime_error(message);

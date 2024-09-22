@@ -19,7 +19,7 @@ struct UniqueInstanceConfig {
 
 class UniqueInstance {
 public:
-    UniqueInstance(const UniqueInstanceConfig& config);
+    explicit UniqueInstance(const UniqueInstanceConfig& config);
     vk::UniqueInstance instance;
 };
 
@@ -27,11 +27,11 @@ public:
 struct QueueFamilyIndices {
     explicit QueueFamilyIndices(const vk::PhysicalDevice& device, const vk::SurfaceKHR& surface);
 
-    std::optional<uint32_t> graphicFammily;
+    std::optional<uint32_t> graphicFamily;
     std::optional<uint32_t> presentFamily;
 
     [[nodiscard]] constexpr bool isCompleted() const noexcept {
-        return graphicFammily.has_value() && presentFamily.has_value();
+        return graphicFamily.has_value() && presentFamily.has_value();
     }
 };
 
@@ -45,7 +45,7 @@ public:
     vk::PhysicalDevice physicalDevice;
     vk::Device logicalDevice;
 
-    [[nodiscard]] const vk::UniqueDevice createLogicalDevice() const;
+    [[nodiscard]] vk::UniqueDevice createLogicalDevice() const;
 };
 
 std::vector<PhysicalDevice> getPhysicalDevices(const vk::UniqueInstance& instance, const vk::UniqueSurfaceKHR& surface);
@@ -53,8 +53,7 @@ std::vector<PhysicalDevice> getPhysicalDevices(const vk::UniqueInstance& instanc
 // TODO - read from config, last selected device
 class PhysicalDevicesManager {
 public:
-    PhysicalDevicesManager(const std::vector<PhysicalDevice>& devices) {
-        m_physicalDevices = devices;
+    explicit PhysicalDevicesManager(const std::vector<PhysicalDevice>& devices) : m_physicalDevices(devices) {
         m_selectedDevice = m_physicalDevices.begin();
     }
 

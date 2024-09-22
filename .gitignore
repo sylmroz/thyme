@@ -14,3 +14,5 @@ CMakeUserPresets.json
 .vs
 out
 thirdparty
+.idea
+cmake-build-*

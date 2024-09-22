@@ -3,14 +3,12 @@
 #include "thyme/core/logger.hpp"
 #include "thyme/platform/glfw_vulkan_platform_context.hpp"
 
-using namespace Thyme;
-
 template<typename Context>
-    requires(std::is_base_of<PlatformContext, Context>::value)
-std::unique_ptr<Engine> createEngine(const EngineConfig& config) {
-    class ContextualizedEngine: public Engine {
+    requires(std::is_base_of_v<Thyme::PlatformContext, Context>)
+std::unique_ptr<Thyme::Engine> createEngine(const Thyme::EngineConfig& config) {
+    class ContextualizedEngine: public Thyme::Engine {
     public:
-        ContextualizedEngine(const EngineConfig& config) : Engine{ config } {}
+        explicit ContextualizedEngine(const Thyme::EngineConfig& config) : Thyme::Engine{ config } {}
 
     private:
         Context context{};
@@ -24,6 +22,6 @@ Thyme::Application::Application() {
 
 void Thyme::Application::run() {
     TH_API_LOG_INFO("Start {} app", name);
-    auto engine = createEngine<GlfwVulkanPlatformContext>(EngineConfig{ .appName = name });
+    const auto engine = createEngine<GlfwVulkanPlatformContext>(EngineConfig{ .appName = name });
     engine->run();
 }
