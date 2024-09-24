@@ -64,11 +64,19 @@ public:
         m_selectedDevice = m_physicalDevices.begin();
     }
 
-    [[nodiscard]] const auto& getSelectedDevice() const noexcept {
+    [[nodiscard]] auto& getSelectedDevice() const noexcept {
         return *m_selectedDevice;
     }
 
-    [[nodiscard]] const auto& getDevicesList() const noexcept {
+    [[nodiscard]] auto& getSelectedDevice() noexcept {
+        return *m_selectedDevice;
+    }
+
+    [[nodiscard]] auto& getDevicesList() const noexcept {
+        return m_physicalDevices;
+    }
+
+    [[nodiscard]] auto& getDevicesList() noexcept {
         return m_physicalDevices;
     }
 
