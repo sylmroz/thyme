@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine.hpp"
 #include "thyme/export_macros.hpp"
 
 #include <string>
@@ -8,6 +9,9 @@
 namespace Thyme {
 
 struct THYME_API WindowConfiguration {
+    WindowConfiguration() = default;
+    explicit WindowConfiguration(const EngineConfig& config)
+        : width{ config.width }, height{ config.height }, name{ config.appName } {}
     uint32_t width{ 0 };
     uint32_t height{ 0 };
     std::string name;
@@ -15,7 +19,7 @@ struct THYME_API WindowConfiguration {
 
 class THYME_API Window {
 public:
-    explicit Window(WindowConfiguration windowConfiguration) : config{std::move( windowConfiguration )} {}
+    explicit Window(WindowConfiguration windowConfiguration) : config{ std::move(windowConfiguration) } {}
 
     explicit Window(const Window& window) = default;
     explicit Window(Window&& window) = default;

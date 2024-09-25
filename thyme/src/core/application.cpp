@@ -1,5 +1,6 @@
 #include "thyme/core/application.hpp"
 
+#include "thyme/core/engine.hpp"
 #include "thyme/core/logger.hpp"
 #include "thyme/platform/glfw_vulkan_platform_context.hpp"
 
@@ -25,11 +26,9 @@ void Thyme::Application::run() {
     try {
         const auto engine = createEngine<GlfwVulkanPlatformContext>(EngineConfig{ .appName = name });
         engine->run();
-    }
-    catch (const std::exception& e) {
+    } catch (const std::exception& e) {
         TH_API_LOG_ERROR(e.what());
-    }
-    catch (...) {
+    } catch (...) {
         TH_API_LOG_ERROR("Unknown exception thrown");
     }
 }

@@ -8,11 +8,13 @@ namespace Thyme {
 struct EngineConfig {
     std::string engineName{ "Thyme" };
     std::string appName;
+    uint32_t width{ 1920 };
+    uint32_t height{ 1080 };
 };
 
 class THYME_API Engine {
 public:
-    explicit Engine(EngineConfig engineConfig);
+    explicit Engine(const EngineConfig& engineConfig);
 
     explicit Engine(const Engine&) = default;
     explicit Engine(Engine&&) = default;

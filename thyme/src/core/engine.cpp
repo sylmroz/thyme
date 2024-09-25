@@ -14,12 +14,12 @@
 #include <type_traits>
 #include <vector>
 
-Thyme::Engine::Engine(EngineConfig engineConfig) : m_engineConfig{ std::move(engineConfig) } {}
+Thyme::Engine::Engine(const EngineConfig& engineConfig) : m_engineConfig{ engineConfig } {}
 
 void Thyme::Engine::run() {
     TH_API_LOG_INFO("Start {} engine", m_engineConfig.engineName);
 
-    VulkanGlfwWindow window(WindowConfiguration{ .width = 1280, .height = 920, .name = m_engineConfig.appName });
+    VulkanGlfwWindow window(WindowConfiguration{ m_engineConfig });
 
     std::vector<const char*> instanceLayers = { "VK_LAYER_KHRONOS_validation" };
 

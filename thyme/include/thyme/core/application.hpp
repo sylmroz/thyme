@@ -2,8 +2,6 @@
 
 #include <thyme/export_macros.hpp>
 
-#include "engine.hpp"
-
 #include <string>
 
 namespace Thyme {
