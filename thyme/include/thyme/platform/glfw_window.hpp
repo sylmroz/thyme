@@ -9,6 +9,8 @@
 
 #include <memory>
 
+import event;
+
 namespace Thyme {
 
 template<typename Context = void>
@@ -46,6 +48,13 @@ GlfwWindow<Context>::GlfwWindow(const WindowConfiguration& config) : Window{ con
                                   glfwDestroyWindow(window);
                               }
                           });
+    glfwSetWindowSizeCallback(m_window.get(),[](GLFWwindow* window, int width, int height) {
+        auto windowResize = WindowResize{
+            .width = width,
+            .height = height
+        };
+        TH_API_LOG_INFO(windowResize.toString());
+    });
 }
 
 class THYME_API VulkanGlfwWindow final: public GlfwWindow<VulkanGlfwWindow> {

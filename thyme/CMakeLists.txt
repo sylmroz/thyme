@@ -8,11 +8,19 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 
-add_library(${PROJECT_NAME}
-    "src/core/application.cpp"
-    "src/core/engine.cpp"
-    "src/platform/glfw_window.cpp" "src/platform/vulkan_renderer.cpp")
+add_library(${PROJECT_NAME} SHARED)
 
+target_sources(${PROJECT_NAME}
+	PRIVATE
+		"src/core/application.cpp"
+		"src/core/engine.cpp"
+		"src/platform/glfw_window.cpp"
+		"src/platform/vulkan_renderer.cpp"
+	PUBLIC
+		FILE_SET CXX_MODULES
+		FILES
+		include/thyme/core/event.cppm
+)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
 
 configure_file("${header_path}/version.hpp.in" "${header_path}/version.hpp")
