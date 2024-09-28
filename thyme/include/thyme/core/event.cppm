@@ -1,15 +1,15 @@
 module;
 
-#include <ostream>
-#include <thyme/export_macros.hpp>
+#include "thyme/export_macros.hpp"
 
+#include <ostream>
 #include <variant>
 
-export module event;
+export module thyme.core.event;
 
-namespace Thyme {
+export namespace Thyme {
 
-export struct THYME_API WindowResize {
+struct THYME_API WindowResize {
     int width;
     int height;
 
@@ -18,30 +18,30 @@ export struct THYME_API WindowResize {
     }
 };
 
-export struct THYME_API WindowClose {};
+struct THYME_API WindowClose {};
 
-export struct THYME_API MouseMove {
+struct THYME_API MouseMove {
     int x;
     int y;
 };
 
-export struct THYME_API MouseButtonDown {};
+struct THYME_API MouseButtonDown {};
 
-export struct THYME_API MouseButtonUp {};
+struct THYME_API MouseButtonUp {};
 
-export struct THYME_API MouseWheel {};
+struct THYME_API MouseWheel {};
 
-export struct THYME_API KeyPressed {};
+struct THYME_API KeyPressed {};
 
-export struct THYME_API KeyPressedRepeated {};
+struct THYME_API KeyPressedRepeated {};
 
-export struct THYME_API KeyReleased {};
+struct THYME_API KeyReleased {};
 
-export using WindowEvent = std::variant<WindowResize, WindowClose>;
+using WindowEvent = std::variant<WindowResize, WindowClose>;
 
-export using MouseEvent = std::variant<MouseMove, MouseButtonDown, MouseButtonUp>;
+using MouseEvent = std::variant<MouseMove, MouseButtonDown, MouseButtonUp>;
 
-export using KeyEvent = std::variant<KeyPressed, KeyReleased>;
+using KeyEvent = std::variant<KeyPressed, KeyReleased>;
 
 
 }// namespace Thyme

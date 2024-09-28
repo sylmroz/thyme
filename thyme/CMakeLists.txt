@@ -1,14 +1,15 @@
 project(thyme VERSION 0.0.1)
 
 set(header_path "${${PROJECT_NAME}_SOURCE_DIR}/include/thyme")
-set(souce_path "${${PROJECT_NAME}_SOURCE_DIR}/src")
+set(source_path "${${PROJECT_NAME}_SOURCE_DIR}/src")
 
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
+set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 
-add_library(${PROJECT_NAME} SHARED)
+add_library(${PROJECT_NAME})
 
 target_sources(${PROJECT_NAME}
 	PRIVATE
@@ -20,7 +21,16 @@ target_sources(${PROJECT_NAME}
 		FILE_SET CXX_MODULES
 		FILES
 		include/thyme/core/event.cppm
+		include/thyme/core/application.cppm
+		include/thyme/core/engine.cppm
+		include/thyme/core/platform_context.cppm
+		include/thyme/core/window.cppm
+
+		include/thyme/platform/glfw_vulkan_platform_context.cppm
+		include/thyme/platform/glfw_window.cppm
+		include/thyme/platform/vulkan_renderer.cppm
 )
+
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
 
 configure_file("${header_path}/version.hpp.in" "${header_path}/version.hpp")

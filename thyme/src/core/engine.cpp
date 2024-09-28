@@ -1,22 +1,21 @@
-#include "thyme/core/engine.hpp"
+module;
 
 #include "thyme/core/logger.hpp"
-#include "thyme/platform/glfw_window.hpp"
-#include "thyme/platform/vulkan_renderer.hpp"
-#include "thyme/version.hpp"
 
-#include <utility>
 #include <vulkan/vulkan.hpp>
 
-#include <GLFW/glfw3.h>
-
-#include <memory>
-#include <type_traits>
+#include <ranges>
 #include <vector>
+
+module thyme.core.engine;
+
+import thyme.platform.glfw_window;
+import  thyme.platform.vulkan_renderer;
 
 Thyme::Engine::Engine(const EngineConfig& engineConfig) : m_engineConfig{ engineConfig } {}
 
 void Thyme::Engine::run() {
+
     TH_API_LOG_INFO("Start {} engine", m_engineConfig.engineName);
 
     VulkanGlfwWindow window(WindowConfiguration{ m_engineConfig });

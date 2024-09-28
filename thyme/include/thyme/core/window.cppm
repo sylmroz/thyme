@@ -1,12 +1,15 @@
-#pragma once
+module;
 
-#include "engine.hpp"
 #include "thyme/export_macros.hpp"
 
 #include <string>
 #include <utility>
 
-namespace Thyme {
+export module thyme.core.window;
+
+import thyme.core.engine;
+
+export namespace Thyme {
 
 struct THYME_API WindowConfiguration {
     WindowConfiguration() = default;

@@ -1,11 +1,14 @@
-#pragma once
+module;
 
-#include <thyme/export_macros.hpp>
+#include "thyme/export_macros.hpp"
 
 #include <string>
 
+export module thyme.core.application;
+
 namespace Thyme {
-class THYME_API Application {
+
+export class THYME_API Application {
 public:
     Application();
     std::string name{ "Thyme" };

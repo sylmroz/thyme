@@ -1,8 +1,13 @@
-#include "thyme/core/application.hpp"
+module;
 
-#include "thyme/core/engine.hpp"
+#include <spdlog/spdlog.h>
 #include "thyme/core/logger.hpp"
-#include "thyme/platform/glfw_vulkan_platform_context.hpp"
+
+module thyme.core.application;
+
+import thyme.core.engine;
+import thyme.core.platform_context;
+import thyme.platform.gflw_vulkan_platform_context;
 
 template<typename Context>
     requires(std::is_base_of_v<Thyme::PlatformContext, Context>)

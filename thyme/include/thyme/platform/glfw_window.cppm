@@ -1,17 +1,21 @@
-#pragma once
+module;
 
 #include "thyme/core/logger.hpp"
-#include "thyme/core/window.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.hpp>
+#include <fmt/format.h>
 
+#include <functional>
 #include <memory>
 
-import event;
+export module thyme.platform.glfw_window;
 
-namespace Thyme {
+import thyme.core.event;
+import thyme.core.window;
+
+export namespace Thyme {
 
 template<typename Context = void>
 class GlfwWindow: public Window {
@@ -48,11 +52,8 @@ GlfwWindow<Context>::GlfwWindow(const WindowConfiguration& config) : Window{ con
                                   glfwDestroyWindow(window);
                               }
                           });
-    glfwSetWindowSizeCallback(m_window.get(),[](GLFWwindow* window, int width, int height) {
-        auto windowResize = WindowResize{
-            .width = width,
-            .height = height
-        };
+    glfwSetWindowSizeCallback(m_window.get(), [](GLFWwindow* window, int width, int height) {
+        auto windowResize = WindowResize{ .width = width, .height = height };
         TH_API_LOG_INFO(windowResize.toString());
     });
 }
@@ -67,7 +68,8 @@ public:
         VkSurfaceKHR surface{ nullptr };
         if (const auto result = glfwCreateWindowSurface(*instance, this->m_window.get(), nullptr, &surface);
             result != VK_SUCCESS) {
-            throw std::runtime_error(fmt::format("GLFW cannot create VkSurface! Error: {}", static_cast<uint32_t>(result)));
+            throw std::runtime_error(
+                    fmt::format("GLFW cannot create VkSurface! Error: {}", static_cast<uint32_t>(result)));
         }
         return vk::UniqueSurfaceKHR{ surface, *instance };
     }

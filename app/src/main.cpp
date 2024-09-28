@@ -1,7 +1,8 @@
-#include <thyme/core/application.hpp>
+import thyme.core.application;
+
 #include <thyme/core/logger.hpp>
 
-#include <iostream>
+#include <spdlog/spdlog.h>
 
 int main() {
     Thyme::AppLogger::init(spdlog::level::info);

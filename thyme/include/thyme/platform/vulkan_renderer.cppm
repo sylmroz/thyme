@@ -1,14 +1,13 @@
-#pragma once
+module;
 
-#include "thyme/core/logger.hpp"
-#include "thyme/version.hpp"
-
-#include <string_view>
 #include <vector>
 
+#include <fmt/format.h>
 #include <vulkan/vulkan.hpp>
 
-namespace Thyme::Vulkan {
+export module thyme.platform.vulkan_renderer;
+
+export namespace Thyme::Vulkan {
 
 struct UniqueInstanceConfig {
     std::string_view engineName;

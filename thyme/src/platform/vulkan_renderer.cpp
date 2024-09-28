@@ -1,6 +1,13 @@
-#include "thyme/platform/vulkan_renderer.hpp"
+module;
 
+#include "thyme/core/logger.hpp"
+#include "thyme/version.hpp"
+
+#include <map>
 #include <set>
+#include <vulkan/vulkan.hpp>
+
+module thyme.platform.vulkan_renderer;
 
 using namespace Thyme::Vulkan;
 

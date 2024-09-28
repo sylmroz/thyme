@@ -1,13 +1,19 @@
-#pragma once
+module;
+
+#include "thyme/export_macros.hpp"
 
 #include "thyme/core/logger.hpp"
-#include "thyme/core/platform_context.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include <spdlog/spdlog.h>
 #include <vulkan/vulkan.hpp>
 
-namespace Thyme {
+export module thyme.platform.gflw_vulkan_platform_context;
+
+import thyme.core.platform_context;
+
+export namespace Thyme {
 
 class THYME_API GlfwVulkanPlatformContext: public PlatformContext {
 public:
