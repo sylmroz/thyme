@@ -20,7 +20,7 @@ export namespace Thyme {
 template<typename Context = void>
 class GlfwWindow: public Window {
     using WindowHWND = std::unique_ptr<GLFWwindow, std::function<void(GLFWwindow*)>>;
-    explicit GlfwWindow(const WindowConfiguration& config);
+    explicit GlfwWindow(const WindowConfig& config);
 
 public:
     void poolEvents() override {
@@ -37,7 +37,7 @@ private:
     friend Context;
 };
 template<typename Context>
-GlfwWindow<Context>::GlfwWindow(const WindowConfiguration& config) : Window{ config } {
+GlfwWindow<Context>::GlfwWindow(const WindowConfig& config) : Window{ config } {
     TH_API_LOG_DEBUG("Create window with parameters: width = {}, height = {}, name = {}",
                      config.width,
                      config.height,
@@ -60,7 +60,7 @@ GlfwWindow<Context>::GlfwWindow(const WindowConfiguration& config) : Window{ con
 
 class THYME_API VulkanGlfwWindow final: public GlfwWindow<VulkanGlfwWindow> {
 public:
-    explicit VulkanGlfwWindow(const WindowConfiguration& config) : GlfwWindow(config) {}
+    explicit VulkanGlfwWindow(const WindowConfig& config) : GlfwWindow(config) {}
 
     [[nodiscard]] static std::vector<std::string> getRequiredInstanceExtensions() noexcept;
 

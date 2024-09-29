@@ -16,3 +16,4 @@ out
 thirdparty
 .idea
 cmake-build-*
+.vscode

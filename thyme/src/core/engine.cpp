@@ -9,8 +9,9 @@ module;
 
 module thyme.core.engine;
 
+import thyme.core.window;
 import thyme.platform.glfw_window;
-import  thyme.platform.vulkan_renderer;
+import thyme.platform.vulkan_renderer;
 
 Thyme::Engine::Engine(const EngineConfig& engineConfig) : m_engineConfig{ engineConfig } {}
 
@@ -18,7 +19,7 @@ void Thyme::Engine::run() {
 
     TH_API_LOG_INFO("Start {} engine", m_engineConfig.engineName);
 
-    VulkanGlfwWindow window(WindowConfiguration{ m_engineConfig });
+    VulkanGlfwWindow window(WindowConfig{ m_engineConfig });
 
     std::vector<const char*> instanceLayers = { "VK_LAYER_KHRONOS_validation" };
 

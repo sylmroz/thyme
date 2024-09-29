@@ -11,9 +11,9 @@ import thyme.core.engine;
 
 export namespace Thyme {
 
-struct THYME_API WindowConfiguration {
-    WindowConfiguration() = default;
-    explicit WindowConfiguration(const EngineConfig& config)
+struct THYME_API WindowConfig {
+    WindowConfig() = default;
+    explicit WindowConfig(const EngineConfig& config)
         : width{ config.width }, height{ config.height }, name{ config.appName } {}
     uint32_t width{ 0 };
     uint32_t height{ 0 };
@@ -22,7 +22,7 @@ struct THYME_API WindowConfiguration {
 
 class THYME_API Window {
 public:
-    explicit Window(WindowConfiguration windowConfiguration) : config{ std::move(windowConfiguration) } {}
+    explicit Window(WindowConfig windowConfiguration) : config{ std::move(windowConfiguration) } {}
 
     explicit Window(const Window& window) = default;
     explicit Window(Window&& window) = default;
@@ -33,7 +33,7 @@ public:
     virtual void poolEvents() = 0;
     [[nodiscard]] virtual bool shouldClose() = 0;
 
-    WindowConfiguration config;
+    WindowConfig config;
 
     virtual ~Window() = default;
 };
