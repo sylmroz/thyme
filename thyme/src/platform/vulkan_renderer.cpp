@@ -76,12 +76,15 @@ UniqueInstance::UniqueInstance(const UniqueInstanceConfig& config) {
     enabledExtensions.emplace_back(vk::EXTDebugUtilsExtensionName);
 #endif
 
-    const vk::InstanceCreateInfo instanceCreateInfo(
-            vk::InstanceCreateFlags(), &applicationInfo, config.instanceLayers, enabledExtensions);
+    enabledExtensions.emplace_back(vk::KHRPortabilityEnumerationExtensionName);
+    const vk::InstanceCreateInfo instanceCreateInfo(vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR,
+                                                    &applicationInfo,
+                                                    config.instanceLayers,
+                                                    enabledExtensions);
     try {
         instance = vk::createInstanceUnique(instanceCreateInfo);
 #if !defined(NDEBUG)
-        setupDebugMessenger();
+        setupDebugMessenger(enabledExtensions);
 #endif
     } catch (const vk::SystemError& err) {
         const auto message =
@@ -92,19 +95,21 @@ UniqueInstance::UniqueInstance(const UniqueInstanceConfig& config) {
 }
 
 #if !defined(NDEBUG)
-void UniqueInstance::validateExtensions() {
+void UniqueInstance::validateExtensions(const std::vector<const char*>& extensions) {
     const auto extensionProperties = vk::enumerateInstanceExtensionProperties();
-    const auto it = std::ranges::find_if(extensionProperties, [](const vk::ExtensionProperties& extension) {
-        return std::string_view(extension.extensionName) == std::string_view(vk::EXTDebugUtilsExtensionName);
+    const auto allExtensionSupported = std::ranges::all_of(extensions, [&](const auto& extension) {
+        return std::ranges::any_of(extensionProperties, [&](const auto& instanceExtension) {
+            return std::string_view(extension) == std::string_view(instanceExtension.extensionName);
+        });
     });
-    if (it == extensionProperties.end()) {
-        const auto message = fmt::format("No extension {} found", vk::EXTDebugUtilsExtensionName);
+    if (!allExtensionSupported) {
+        constexpr auto message = "All required extensions are not supported by device";
         TH_API_LOG_ERROR(message);
         throw std::runtime_error(message);
     }
 }
-void UniqueInstance::setupDebugMessenger() {
-    validateExtensions();
+void UniqueInstance::setupDebugMessenger(const std::vector<const char*>& extensions) {
+    validateExtensions(extensions);
 
     pfnVkCreateDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
             instance->getProcAddr("vkCreateDebugUtilsMessengerEXT"));

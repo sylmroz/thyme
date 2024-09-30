@@ -19,12 +19,12 @@ struct UniqueInstanceConfig {
 class UniqueInstance {
 public:
     explicit UniqueInstance(const UniqueInstanceConfig& config);
-    static void validateExtensions();
+    static void validateExtensions(const std::vector<const char*>& extensions);
     vk::UniqueInstance instance;
 
 private:
 #if !defined(NDEBUG)
-    void setupDebugMessenger();
+    void setupDebugMessenger(const std::vector<const char*>& extensions);
     vk::UniqueDebugUtilsMessengerEXT debugMessenger;
 #endif
 };
