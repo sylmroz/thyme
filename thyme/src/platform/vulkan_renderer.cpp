@@ -68,9 +68,8 @@ static auto getDeviceExtensions() {
 
 UniqueInstance::UniqueInstance(const UniqueInstanceConfig& config) {
     constexpr auto appVersion = vk::makeApiVersion(0, Version::major, Version::minor, Version::patch);
-    constexpr auto vulkanVersion = vk::makeApiVersion(0, 1, 3, 290);
     const vk::ApplicationInfo applicationInfo(
-            config.appName.data(), appVersion, config.engineName.data(), appVersion, vulkanVersion);
+            config.appName.data(), appVersion, config.engineName.data(), appVersion, vk::HeaderVersionComplete);
 
     auto enabledExtensions = config.instanceExtension;
 #if !defined(NDEBUG)
