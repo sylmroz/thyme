@@ -9,14 +9,15 @@ set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 
-add_library(${PROJECT_NAME})
+add_library(${PROJECT_NAME}
+		include/thyme/platform/vulkan_device_manager.hpp)
 
 target_sources(${PROJECT_NAME}
 	PRIVATE
-		"src/core/application.cpp"
-		"src/core/engine.cpp"
-		"src/platform/glfw_window.cpp"
-		"src/platform/vulkan_renderer.cpp"
+		src/core/application.cpp
+		src/core/engine.cpp
+		src/platform/glfw_window.cpp
+		src/platform/vulkan_renderer.cpp
 	PUBLIC
 		FILE_SET CXX_MODULES
 		FILES

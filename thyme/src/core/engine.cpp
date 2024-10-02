@@ -1,8 +1,8 @@
 module;
 
 #include "thyme/core/logger.hpp"
+#include "thyme/platform/vulkan_device_manager.hpp"
 
-#include <vulkan/vulkan.hpp>
 
 #include <ranges>
 #include <vector>

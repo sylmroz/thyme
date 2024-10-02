@@ -49,50 +49,10 @@ public:
 
     vk::PhysicalDevice physicalDevice;
     QueueFamilyIndices queueFamilyIndices;
-    vk::Device logicalDevice;
 
     [[nodiscard]] vk::UniqueDevice createLogicalDevice() const;
 };
 
 std::vector<PhysicalDevice> getPhysicalDevices(const vk::UniqueInstance& instance, const vk::UniqueSurfaceKHR& surface);
-
-// TODO - read from config, last selected device
-class PhysicalDevicesManager {
-public:
-    explicit PhysicalDevicesManager(const std::vector<PhysicalDevice>& devices) : m_physicalDevices(devices) {
-        m_selectedDevice = m_physicalDevices.begin();
-    }
-
-    [[nodiscard]] auto& getSelectedDevice() const noexcept {
-        return *m_selectedDevice;
-    }
-
-    [[nodiscard]] auto& getSelectedDevice() noexcept {
-        return *m_selectedDevice;
-    }
-
-    [[nodiscard]] auto& getDevicesList() const noexcept {
-        return m_physicalDevices;
-    }
-
-    [[nodiscard]] auto& getDevicesList() noexcept {
-        return m_physicalDevices;
-    }
-
-    void selectDevice(uint32_t index) {
-        if (index - 1 >= m_physicalDevices.size()) {
-            const auto message =
-                    fmt::format("Selecting physical device failed! Selected index is {}, but devices are {}",
-                                index,
-                                m_physicalDevices.size());
-            throw std::runtime_error(message);
-        }
-        m_selectedDevice = m_physicalDevices.begin() + index - 1;
-    }
-
-private:
-    std::vector<PhysicalDevice> m_physicalDevices;
-    std::vector<PhysicalDevice>::iterator m_selectedDevice;
-};
 
 }// namespace Thyme::Vulkan

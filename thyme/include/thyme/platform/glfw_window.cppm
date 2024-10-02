@@ -17,12 +17,11 @@ import thyme.core.window;
 
 export namespace Thyme {
 
-template<typename Context = void>
 class GlfwWindow: public Window {
     using WindowHWND = std::unique_ptr<GLFWwindow, std::function<void(GLFWwindow*)>>;
+public:
     explicit GlfwWindow(const WindowConfig& config);
 
-public:
     void poolEvents() override {
         glfwPollEvents();
     }
@@ -31,34 +30,15 @@ public:
         return glfwWindowShouldClose(m_window.get()) != 0;
     }
 
+    [[nodiscard]] auto& getHandler() const {
+        return m_window;
+    }
+
 private:
     WindowHWND m_window;
-
-    friend Context;
 };
-template<typename Context>
-GlfwWindow<Context>::GlfwWindow(const WindowConfig& config) : Window{ config } {
-    TH_API_LOG_DEBUG("Create window with parameters: width = {}, height = {}, name = {}",
-                     config.width,
-                     config.height,
-                     config.name);
-    m_window = WindowHWND(glfwCreateWindow(config.width, config.height, config.name.data(), nullptr, nullptr),
-                          [config](GLFWwindow* window) {
-                              TH_API_LOG_DEBUG("Destroying window with parameters: width = {}, height = {}, name = {}",
-                                               config.width,
-                                               config.height,
-                                               config.name)
-                              if (window != nullptr) {
-                                  glfwDestroyWindow(window);
-                              }
-                          });
-    glfwSetWindowSizeCallback(m_window.get(), [](GLFWwindow* window, int width, int height) {
-        auto windowResize = WindowResize{ .width = width, .height = height };
-        TH_API_LOG_INFO(windowResize.toString());
-    });
-}
 
-class THYME_API VulkanGlfwWindow final: public GlfwWindow<VulkanGlfwWindow> {
+class THYME_API VulkanGlfwWindow final: public GlfwWindow {
 public:
     explicit VulkanGlfwWindow(const WindowConfig& config) : GlfwWindow(config) {}
 
@@ -66,7 +46,7 @@ public:
 
     [[nodiscard]] auto getSurface(const vk::UniqueInstance& instance) const {
         VkSurfaceKHR surface{ nullptr };
-        if (const auto result = glfwCreateWindowSurface(*instance, this->m_window.get(), nullptr, &surface);
+        if (const auto result = glfwCreateWindowSurface(*instance, this->getHandler().get(), nullptr, &surface);
             result != VK_SUCCESS) {
             throw std::runtime_error(
                     fmt::format("GLFW cannot create VkSurface! Error: {}", static_cast<uint32_t>(result)));
