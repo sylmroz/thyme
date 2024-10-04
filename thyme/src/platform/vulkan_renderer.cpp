@@ -38,27 +38,31 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(const vk::DebugUtilsMessageS
         { vk::DebugUtilsMessageTypeFlagBitsEXT::eDeviceAddressBinding, "Device Address Biding" },
     };
     const auto messageTypeStr = messageTypeStringMap[messageType];
+    const auto message = fmt::format(
+            "[{}]: Name: {}, Message: {}", messageTypeStr, pCallbackData->pMessageIdName, pCallbackData->pMessage);
     switch (messageSeverity) {
-    case vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose:
-        TH_API_LOG_TRACE(
-                "[{}]: Name: {}, Message: {}", messageTypeStr, pCallbackData->pMessageIdName, pCallbackData->pMessage);
-        break;
-    case vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo:
-        TH_API_LOG_INFO(
-                "[{}]: Name: {}, Message: {}", messageTypeStr, pCallbackData->pMessageIdName, pCallbackData->pMessage);
-        break;
-    case vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning:
-        TH_API_LOG_WARN(
-                "[{}]: Name: {}, Message: {}", messageTypeStr, pCallbackData->pMessageIdName, pCallbackData->pMessage);
-        break;
-    case vk::DebugUtilsMessageSeverityFlagBitsEXT::eError:
-        TH_API_LOG_ERROR(
-                "[{}]: Name: {}, Message: {}", messageTypeStr, pCallbackData->pMessageIdName, pCallbackData->pMessage);
-        break;
-    default: break;
+        case vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose: TH_API_LOG_TRACE(message); break;
+        case vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo: TH_API_LOG_INFO(message); break;
+        case vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning: TH_API_LOG_WARN(message); break;
+        case vk::DebugUtilsMessageSeverityFlagBitsEXT::eError: TH_API_LOG_ERROR(message); break;
+        default: break;
     }
     return VK_FALSE;
 }
+
+vk::DebugUtilsMessengerCreateInfoEXT createDebugUtilsMessengerCreateInfo() {
+    const auto flags =
+            vk::DebugUtilsMessageSeverityFlagBitsEXT::eError | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning
+            | vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
+    const auto typeFlags = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral
+                           | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance
+                           | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation;
+    return vk::DebugUtilsMessengerCreateInfoEXT(vk::DebugUtilsMessengerCreateFlagsEXT(),
+                                                flags,
+                                                typeFlags,
+                                                reinterpret_cast<PFN_vkDebugUtilsMessengerCallbackEXT>(debugCallback));
+}
+
 #endif
 
 static auto getDeviceExtensions() {
@@ -72,17 +76,24 @@ UniqueInstance::UniqueInstance(const UniqueInstanceConfig& config) {
             config.appName.data(), appVersion, config.engineName.data(), appVersion, vk::HeaderVersionComplete);
 
     auto enabledExtensions = config.instanceExtension;
+    enabledExtensions.emplace_back(vk::KHRPortabilityEnumerationExtensionName);
 #if !defined(NDEBUG)
     enabledExtensions.emplace_back(vk::EXTDebugUtilsExtensionName);
+    constexpr auto validationLayers = { "VK_LAYER_KHRONOS_validation" };
+
+    const vk::StructureChain instanceCreateInfo(
+            vk::InstanceCreateInfo{ vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR,
+                                    &applicationInfo,
+                                    validationLayers,
+                                    enabledExtensions },
+            createDebugUtilsMessengerCreateInfo());
+#else
+    const vk::InstanceCreateInfo instanceCreateInfo(
+            vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR, &applicationInfo, nullptr, enabledExtensions);
 #endif
 
-    enabledExtensions.emplace_back(vk::KHRPortabilityEnumerationExtensionName);
-    const vk::InstanceCreateInfo instanceCreateInfo(vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR,
-                                                    &applicationInfo,
-                                                    config.instanceLayers,
-                                                    enabledExtensions);
     try {
-        instance = vk::createInstanceUnique(instanceCreateInfo);
+        instance = vk::createInstanceUnique(instanceCreateInfo.get<vk::InstanceCreateInfo>());
 #if !defined(NDEBUG)
         setupDebugMessenger(enabledExtensions);
 #endif
@@ -127,19 +138,7 @@ void UniqueInstance::setupDebugMessenger(const std::vector<const char*>& extensi
         throw std::runtime_error(message);
     }
 
-    const auto flags =
-            vk::DebugUtilsMessageSeverityFlagBitsEXT::eError | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning
-            | vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
-    const auto typeFlags = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral
-                           | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance
-                           | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation;
-    const vk::DebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo(
-            vk::DebugUtilsMessengerCreateFlagsEXT(),
-            flags,
-            typeFlags,
-            reinterpret_cast<PFN_vkDebugUtilsMessengerCallbackEXT>(debugCallback));
-
-    debugMessenger = instance->createDebugUtilsMessengerEXTUnique(debugMessengerCreateInfo);
+    debugMessenger = instance->createDebugUtilsMessengerEXTUnique(createDebugUtilsMessengerCreateInfo());
 }
 #endif
 

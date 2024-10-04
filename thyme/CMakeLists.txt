@@ -9,8 +9,7 @@ set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 
-add_library(${PROJECT_NAME}
-		include/thyme/platform/vulkan_device_manager.hpp)
+add_library(${PROJECT_NAME})
 
 target_sources(${PROJECT_NAME}
 	PRIVATE
@@ -21,15 +20,16 @@ target_sources(${PROJECT_NAME}
 	PUBLIC
 		FILE_SET CXX_MODULES
 		FILES
-		include/thyme/core/event.cppm
-		include/thyme/core/application.cppm
-		include/thyme/core/engine.cppm
-		include/thyme/core/platform_context.cppm
-		include/thyme/core/window.cppm
+			include/thyme/core/event.cppm
+			include/thyme/core/application.cppm
+			include/thyme/core/engine.cppm
+			include/thyme/core/platform_context.cppm
+			include/thyme/core/window.cppm
 
-		include/thyme/platform/glfw_vulkan_platform_context.cppm
-		include/thyme/platform/glfw_window.cppm
-		include/thyme/platform/vulkan_renderer.cppm
+			include/thyme/platform/glfw_vulkan_platform_context.cppm
+			include/thyme/platform/glfw_window.cppm
+			include/thyme/platform/vulkan_engine.cppm
+			include/thyme/platform/vulkan_renderer.cppm
 )
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)

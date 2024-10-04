@@ -12,7 +12,6 @@ export namespace Thyme::Vulkan {
 struct UniqueInstanceConfig {
     std::string_view engineName;
     std::string_view appName;
-    std::vector<const char*> instanceLayers;
     std::vector<const char*> instanceExtension;
 };
 

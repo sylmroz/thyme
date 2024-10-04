@@ -21,8 +21,6 @@ void Thyme::Engine::run() {
 
     VulkanGlfwWindow window(WindowConfig{ m_engineConfig });
 
-    std::vector<const char*> instanceLayers = { "VK_LAYER_KHRONOS_validation" };
-
     const auto glfwExtensions = VulkanGlfwWindow::getRequiredInstanceExtensions();
     // clang-format off
     const std::vector<const char*> enabledExtensions = glfwExtensions
@@ -33,7 +31,6 @@ void Thyme::Engine::run() {
     const auto instance =
             Vulkan::UniqueInstance(Vulkan::UniqueInstanceConfig{ .engineName = m_engineConfig.engineName,
                                                                  .appName = m_engineConfig.appName,
-                                                                 .instanceLayers = instanceLayers,
                                                                  .instanceExtension = enabledExtensions });
     const auto surface = window.getSurface(instance.instance);
 
