@@ -28,7 +28,6 @@ target_sources(${PROJECT_NAME}
 
 			include/thyme/platform/glfw_vulkan_platform_context.cppm
 			include/thyme/platform/glfw_window.cppm
-			include/thyme/platform/vulkan_engine.cppm
 			include/thyme/platform/vulkan_renderer.cppm
 )
 

@@ -65,10 +65,7 @@ vk::DebugUtilsMessengerCreateInfoEXT createDebugUtilsMessengerCreateInfo() {
 
 #endif
 
-static auto getDeviceExtensions() {
-    static const std::vector<const char*> deviceExtension = { vk::KHRSwapchainExtensionName };
-    return deviceExtension;
-}
+static constexpr auto deviceExtensions = { vk::KHRSwapchainExtensionName };
 
 UniqueInstance::UniqueInstance(const UniqueInstanceConfig& config) {
     constexpr auto appVersion = vk::makeApiVersion(0, Version::major, Version::minor, Version::patch);
@@ -167,9 +164,9 @@ QueueFamilyIndices::QueueFamilyIndices(const vk::PhysicalDevice& device, const v
 std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueInstance& instance,
                                                               const vk::UniqueSurfaceKHR& surface) {
     static std::map<vk::PhysicalDeviceType, uint32_t> priorities = {
-        { vk::PhysicalDeviceType::eOther, 0 },         { vk::PhysicalDeviceType::eCpu, 1 },
-        { vk::PhysicalDeviceType::eVirtualGpu, 2 },    { vk::PhysicalDeviceType::eDiscreteGpu, 3 },
-        { vk::PhysicalDeviceType::eIntegratedGpu, 4 },
+        { vk::PhysicalDeviceType::eOther, 0 },       { vk::PhysicalDeviceType::eCpu, 1 },
+        { vk::PhysicalDeviceType::eVirtualGpu, 2 },  { vk::PhysicalDeviceType::eIntegratedGpu, 3 },
+        { vk::PhysicalDeviceType::eDiscreteGpu, 4 },
     };
 
     std::vector<PhysicalDevice> physicalDevices;
@@ -183,7 +180,7 @@ std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueIn
     std::ranges::sort(physicalDevices, [](const auto& device1, const auto& device2) {
         const auto dt1 = device1.physicalDevice.getProperties().deviceType;
         const auto dt2 = device2.physicalDevice.getProperties().deviceType;
-        return priorities[dt1] < priorities[dt2];
+        return priorities[dt1] > priorities[dt2];
     });
 
     return physicalDevices;
@@ -199,14 +196,8 @@ std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueIn
     }
 
     const auto features = physicalDevice.getFeatures();
-    const auto deviceExtensions = getDeviceExtensions();
 
-    return physicalDevice.createDeviceUnique(vk::DeviceCreateInfo(vk::DeviceCreateFlags(),
-                                                                  static_cast<uint32_t>(deviceQueueCreateInfos.size()),
-                                                                  deviceQueueCreateInfos.data(),
-                                                                  0,
-                                                                  nullptr,
-                                                                  static_cast<uint32_t>(deviceExtensions.size()),
-                                                                  deviceExtensions.data(),
-                                                                  &features));
+
+    return physicalDevice.createDeviceUnique(vk::DeviceCreateInfo(
+            vk::DeviceCreateFlags(), deviceQueueCreateInfos, nullptr, deviceExtensions, &features));
 }

@@ -40,6 +40,9 @@ void Thyme::Engine::run() {
     const auto device = physicalDevicesManager.getSelectedDevice();
     const auto logicalDevice = device.createLogicalDevice();
 
+    [[maybe_unused]] const auto graphicQueue = logicalDevice->getQueue(device.queueFamilyIndices.graphicFamily.value(), 0);
+    [[maybe_unused]] const auto presentationQueue = logicalDevice->getQueue(device.queueFamilyIndices.presentFamily.value(), 0);
+
     while (!window.shouldClose()) {
         window.poolEvents();
     }
