@@ -67,6 +67,15 @@ vk::DebugUtilsMessengerCreateInfoEXT createDebugUtilsMessengerCreateInfo() {
 
 static constexpr auto deviceExtensions = { vk::KHRSwapchainExtensionName };
 
+bool deviceHasAllRequiredExtensions(const vk::PhysicalDevice& physicalDevice) {
+    const auto& availableDeviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
+    return std::ranges::all_of(deviceExtensions, [&availableDeviceExtensions](const auto& extension) {
+    return std::ranges::any_of(availableDeviceExtensions, [&extension](const auto& instanceExtension) {
+        return std::string_view(extension) == std::string_view(instanceExtension.extensionName);
+    });
+});
+}
+
 UniqueInstance::UniqueInstance(const UniqueInstanceConfig& config) {
     constexpr auto appVersion = vk::makeApiVersion(0, Version::major, Version::minor, Version::patch);
     const vk::ApplicationInfo applicationInfo(
@@ -160,6 +169,11 @@ QueueFamilyIndices::QueueFamilyIndices(const vk::PhysicalDevice& device, const v
         }
     }
 }
+SwapChainSupportDetails::SwapChainSupportDetails(const vk::PhysicalDevice& device, const vk::SurfaceKHR& surface) {
+    capabilities = device.getSurfaceCapabilitiesKHR(surface);
+    formats = device.getSurfaceFormatsKHR(surface);
+    presentModes = device.getSurfacePresentModesKHR(surface);
+}
 
 std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueInstance& instance,
                                                               const vk::UniqueSurfaceKHR& surface) {
@@ -170,11 +184,20 @@ std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueIn
     };
 
     std::vector<PhysicalDevice> physicalDevices;
-
     for (const auto& device : instance.get().enumeratePhysicalDevices()) {
-        if (const auto queueFamilyIndex = QueueFamilyIndices(device, *surface); queueFamilyIndex.isCompleted()) {
-            physicalDevices.emplace_back(device, queueFamilyIndex);
+        const auto queueFamilyIndex = QueueFamilyIndices(device, *surface);
+        const auto deviceSupportExtensions = deviceHasAllRequiredExtensions(device);
+        const auto swapChainSupportDetails = SwapChainSupportDetails(device, *surface);
+
+        if (queueFamilyIndex.isCompleted() && deviceSupportExtensions && swapChainSupportDetails.isValid()) {
+            physicalDevices.emplace_back(device, queueFamilyIndex, swapChainSupportDetails);
         }
+    }
+
+    if (physicalDevices.empty()) {
+        constexpr auto message = "No physical device exist which meet all requirements!";
+        TH_API_LOG_ERROR(message);
+        throw std::runtime_error(message);
     }
 
     std::ranges::sort(physicalDevices, [](const auto& device1, const auto& device2) {
@@ -187,8 +210,7 @@ std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueIn
 }
 
 [[nodiscard]] vk::UniqueDevice Thyme::Vulkan::PhysicalDevice::createLogicalDevice() const {
-    std::set<uint32_t> const indices = { queueFamilyIndices.graphicFamily.value(),
-                                         queueFamilyIndices.presentFamily.value() };
+    const std::set indices = { queueFamilyIndices.graphicFamily.value(), queueFamilyIndices.presentFamily.value() };
     std::vector<vk::DeviceQueueCreateInfo> deviceQueueCreateInfos;
     for (const auto ind : indices) {
         float queuePriority{ 1.0 };
@@ -196,8 +218,6 @@ std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueIn
     }
 
     const auto features = physicalDevice.getFeatures();
-
-
     return physicalDevice.createDeviceUnique(vk::DeviceCreateInfo(
             vk::DeviceCreateFlags(), deviceQueueCreateInfos, nullptr, deviceExtensions, &features));
 }

@@ -40,14 +40,28 @@ struct QueueFamilyIndices {
     }
 };
 
+struct SwapChainSupportDetails {
+    explicit SwapChainSupportDetails(const vk::PhysicalDevice& device, const vk::SurfaceKHR& surface);
+
+    vk::SurfaceCapabilitiesKHR capabilities;
+    std::vector<vk::SurfaceFormatKHR> formats;
+    std::vector<vk::PresentModeKHR> presentModes;
+
+    [[nodiscard]] inline bool isValid() const noexcept {
+        return !formats.empty() && !presentModes.empty();
+    }
+};
+
 class PhysicalDevice {
 public:
-    explicit PhysicalDevice(const vk::PhysicalDevice& physicalDevice,
-                            const QueueFamilyIndices& queueFamilyIndices) noexcept
-        : physicalDevice{ physicalDevice }, queueFamilyIndices{ queueFamilyIndices } {}
+    explicit PhysicalDevice(const vk::PhysicalDevice& physicalDevice, const QueueFamilyIndices& queueFamilyIndices,
+                            const SwapChainSupportDetails& swapChainSupportDetails) noexcept
+        : physicalDevice{ physicalDevice }, queueFamilyIndices{ queueFamilyIndices },
+          swapChainSupportDetails{ swapChainSupportDetails } {}
 
     vk::PhysicalDevice physicalDevice;
     QueueFamilyIndices queueFamilyIndices;
+    SwapChainSupportDetails swapChainSupportDetails;
 
     [[nodiscard]] vk::UniqueDevice createLogicalDevice() const;
 };
