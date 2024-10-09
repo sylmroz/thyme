@@ -40,7 +40,9 @@ struct QueueFamilyIndices {
     }
 };
 
-struct SwapChainSupportDetails {
+
+class SwapChainSupportDetails {
+public:
     explicit SwapChainSupportDetails(const vk::PhysicalDevice& device, const vk::SurfaceKHR& surface);
 
     vk::SurfaceCapabilitiesKHR capabilities;
@@ -49,6 +51,16 @@ struct SwapChainSupportDetails {
 
     [[nodiscard]] inline bool isValid() const noexcept {
         return !formats.empty() && !presentModes.empty();
+    }
+
+    [[nodiscard]] inline auto getBestSurfaceFormat() const noexcept {
+        const auto suitableFormat = std::ranges::find_if(formats, [](const vk::SurfaceFormatKHR& format) {
+            return format.format == vk::Format::eB8G8R8A8Srgb && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear;
+        });
+        if (suitableFormat != formats.end()) {
+            return *suitableFormat;
+        }
+        return formats[0];
     }
 };
 
