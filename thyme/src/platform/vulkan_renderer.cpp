@@ -169,10 +169,10 @@ QueueFamilyIndices::QueueFamilyIndices(const vk::PhysicalDevice& device, const v
         }
     }
 }
-SwapChainSupportDetails::SwapChainSupportDetails(const vk::PhysicalDevice& device, const vk::SurfaceKHR& surface) {
-    capabilities = device.getSurfaceCapabilitiesKHR(surface);
-    formats = device.getSurfaceFormatsKHR(surface);
-    presentModes = device.getSurfacePresentModesKHR(surface);
+SwapChainSupportDetails::SwapChainSupportDetails(const vk::PhysicalDevice& device, const vk::UniqueSurfaceKHR& surface) {
+    capabilities = device.getSurfaceCapabilitiesKHR(*surface);
+    formats = device.getSurfaceFormatsKHR(*surface);
+    presentModes = device.getSurfacePresentModesKHR(*surface);
 }
 
 std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueInstance& instance,
@@ -187,7 +187,7 @@ std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueIn
     for (const auto& device : instance.get().enumeratePhysicalDevices()) {
         const auto queueFamilyIndex = QueueFamilyIndices(device, *surface);
         const auto deviceSupportExtensions = deviceHasAllRequiredExtensions(device);
-        const auto swapChainSupportDetails = SwapChainSupportDetails(device, *surface);
+        const auto swapChainSupportDetails = SwapChainSupportDetails(device, surface);
 
         if (queueFamilyIndex.isCompleted() && deviceSupportExtensions && swapChainSupportDetails.isValid()) {
             physicalDevices.emplace_back(device, queueFamilyIndex, swapChainSupportDetails);

@@ -20,9 +20,10 @@ target_sources(${PROJECT_NAME}
 	PUBLIC
 		FILE_SET CXX_MODULES
 		FILES
-			include/thyme/core/event.cppm
 			include/thyme/core/application.cppm
+			include/thyme/core/common_structs.cppm
 			include/thyme/core/engine.cppm
+			include/thyme/core/event.cppm
 			include/thyme/core/platform_context.cppm
 			include/thyme/core/window.cppm
 

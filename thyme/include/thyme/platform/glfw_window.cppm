@@ -4,14 +4,15 @@ module;
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include <vulkan/vulkan.hpp>
 #include <fmt/format.h>
+#include <vulkan/vulkan.hpp>
 
 #include <functional>
 #include <memory>
 
 export module thyme.platform.glfw_window;
 
+import thyme.core.common_structs;
 import thyme.core.event;
 import thyme.core.window;
 
@@ -19,6 +20,7 @@ export namespace Thyme {
 
 class GlfwWindow: public Window {
     using WindowHWND = std::unique_ptr<GLFWwindow, std::function<void(GLFWwindow*)>>;
+
 public:
     explicit GlfwWindow(const WindowConfig& config);
 
@@ -26,12 +28,22 @@ public:
         glfwPollEvents();
     }
 
-    [[nodiscard]] bool shouldClose() override {
+    [[nodiscard]] inline bool shouldClose() noexcept override {
         return glfwWindowShouldClose(m_window.get()) != 0;
     }
 
-    [[nodiscard]] auto& getHandler() const {
+    [[nodiscard]] inline auto& getHandler() const noexcept {
         return m_window;
+    }
+
+    [[nodiscard]] inline auto getFrameBufferSize() const noexcept {
+        int width{};
+        int height{};
+        glfwGetFramebufferSize(m_window.get(), &width, &height);
+        return Resolution{
+            .width = static_cast<uint32_t>(width),
+            .height = static_cast<uint32_t>(height)
+        };
     }
 
 private:

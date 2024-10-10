@@ -1,11 +1,13 @@
 module;
 
+#include <functional>
 #include <vector>
 
 #include <fmt/format.h>
 #include <vulkan/vulkan.hpp>
 
 export module thyme.platform.vulkan_renderer;
+import thyme.core.common_structs;
 
 export namespace Thyme::Vulkan {
 
@@ -43,7 +45,7 @@ struct QueueFamilyIndices {
 
 class SwapChainSupportDetails {
 public:
-    explicit SwapChainSupportDetails(const vk::PhysicalDevice& device, const vk::SurfaceKHR& surface);
+    explicit SwapChainSupportDetails(const vk::PhysicalDevice& device, const vk::UniqueSurfaceKHR& surface);
 
     vk::SurfaceCapabilitiesKHR capabilities;
     std::vector<vk::SurfaceFormatKHR> formats;
@@ -62,6 +64,29 @@ public:
         }
         return formats[0];
     }
+
+    [[nodiscard]] inline auto getBestPresetMode() const noexcept {
+        const auto suitablePreset = std::ranges::find_if(presentModes, [](const vk::PresentModeKHR& presentMode) {
+            return presentMode == vk::PresentModeKHR::eMailbox;
+        });
+
+        if (suitablePreset != presentModes.end()) {
+            return *suitablePreset;
+        }
+        return vk::PresentModeKHR::eFifo;
+    }
+
+    [[nodiscard]] inline auto getSwapExtent(const Resolution& fallbackResolution) const noexcept {
+        if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
+            return capabilities.currentExtent;
+        }
+        const auto [width, height] = fallbackResolution;
+        const auto actualExtent = vk::Extent2D{
+            std::clamp(width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
+            std::clamp(height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
+        };
+        return actualExtent;
+    }
 };
 
 class PhysicalDevice {
@@ -79,5 +104,14 @@ public:
 };
 
 std::vector<PhysicalDevice> getPhysicalDevices(const vk::UniqueInstance& instance, const vk::UniqueSurfaceKHR& surface);
+
+struct SwapChainDetails {
+
+};
+
+class SwapChain {
+public:
+    SwapChainDetails swapChainDetails;
+};
 
 }// namespace Thyme::Vulkan

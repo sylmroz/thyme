@@ -41,7 +41,13 @@ void Thyme::Engine::run() {
     const auto logicalDevice = device.createLogicalDevice();
 
     [[maybe_unused]] const auto graphicQueue = logicalDevice->getQueue(device.queueFamilyIndices.graphicFamily.value(), 0);
-    [[maybe_unused]] const auto presentationQueue = logicalDevice->getQueue(device.queueFamilyIndices.presentFamily.value(), 0);
+    [[maybe_unused]] const auto presentationQueue =
+            logicalDevice->getQueue(device.queueFamilyIndices.presentFamily.value(), 0);
+
+    const auto& swapChainSupportDetails = device.swapChainSupportDetails;
+    const auto surfaceFormat = swapChainSupportDetails.getBestSurfaceFormat();
+    const auto presetMode = swapChainSupportDetails.getBestPresetMode();
+    const auto extent = swapChainSupportDetails.getSwapExtent(window.getFrameBufferSize());
 
     while (!window.shouldClose()) {
         window.poolEvents();
