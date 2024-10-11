@@ -70,10 +70,10 @@ static constexpr auto deviceExtensions = { vk::KHRSwapchainExtensionName };
 bool deviceHasAllRequiredExtensions(const vk::PhysicalDevice& physicalDevice) {
     const auto& availableDeviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
     return std::ranges::all_of(deviceExtensions, [&availableDeviceExtensions](const auto& extension) {
-    return std::ranges::any_of(availableDeviceExtensions, [&extension](const auto& instanceExtension) {
-        return std::string_view(extension) == std::string_view(instanceExtension.extensionName);
+        return std::ranges::any_of(availableDeviceExtensions, [&extension](const auto& instanceExtension) {
+            return std::string_view(extension) == std::string_view(instanceExtension.extensionName);
+        });
     });
-});
 }
 
 UniqueInstance::UniqueInstance(const UniqueInstanceConfig& config) {
@@ -169,7 +169,9 @@ QueueFamilyIndices::QueueFamilyIndices(const vk::PhysicalDevice& device, const v
         }
     }
 }
-SwapChainSupportDetails::SwapChainSupportDetails(const vk::PhysicalDevice& device, const vk::UniqueSurfaceKHR& surface) {
+
+SwapChainSupportDetails::SwapChainSupportDetails(const vk::PhysicalDevice& device,
+                                                 const vk::UniqueSurfaceKHR& surface) {
     capabilities = device.getSurfaceCapabilitiesKHR(*surface);
     formats = device.getSurfaceFormatsKHR(*surface);
     presentModes = device.getSurfacePresentModesKHR(*surface);
@@ -184,7 +186,7 @@ std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueIn
     };
 
     std::vector<PhysicalDevice> physicalDevices;
-    for (const auto& device : instance.get().enumeratePhysicalDevices()) {
+    for (const auto& device : instance->enumeratePhysicalDevices()) {
         const auto queueFamilyIndex = QueueFamilyIndices(device, *surface);
         const auto deviceSupportExtensions = deviceHasAllRequiredExtensions(device);
         const auto swapChainSupportDetails = SwapChainSupportDetails(device, surface);
@@ -220,4 +222,56 @@ std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueIn
     const auto features = physicalDevice.getFeatures();
     return physicalDevice.createDeviceUnique(vk::DeviceCreateInfo(
             vk::DeviceCreateFlags(), deviceQueueCreateInfos, nullptr, deviceExtensions, &features));
+}
+
+SwapChain::SwapChain(const SwapChainDetails& swapChainDetails,
+                     const PhysicalDevice& device,
+                     const vk::UniqueSurfaceKHR& surface)
+    : m_swapChainDetails{ swapChainDetails } {
+    const auto& [surfaceFormat, presetMode, extent] = swapChainDetails;
+    const auto& [physicalDevice, queueFamilyIndices, swapChainSupportDetails] = device;
+    const auto imageCount = [&capabilities = swapChainSupportDetails.capabilities] {
+        uint32_t swapChainImageCount = capabilities.minImageCount + 1;
+        if (capabilities.maxImageCount > 0 && swapChainImageCount > capabilities.maxImageCount) {
+            swapChainImageCount = capabilities.maxImageCount;
+        }
+        return swapChainImageCount;
+    }();
+    const auto swapChainCreateInfo = [&] {
+        auto info = vk::SwapchainCreateInfoKHR(vk::SwapchainCreateFlagsKHR(),
+                              *surface,
+                              imageCount,
+                              surfaceFormat.format,
+                              surfaceFormat.colorSpace,
+                              extent,
+                              1,
+                              vk::ImageUsageFlagBits::eColorAttachment);
+        info.preTransform = swapChainSupportDetails.capabilities.currentTransform;
+        info.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
+        info.presentMode = presetMode;
+        info.clipped = vk::True;
+        const auto indices = { queueFamilyIndices.graphicFamily.value(), queueFamilyIndices.presentFamily.value() };
+        if (queueFamilyIndices.graphicFamily.value() != queueFamilyIndices.presentFamily.value()) {
+            info.imageSharingMode = vk::SharingMode::eConcurrent;
+            info.setQueueFamilyIndices(indices);
+        } else {
+            info.imageSharingMode = vk::SharingMode::eExclusive;
+        }
+        return info;
+    }();
+
+    const auto logicalDevice = device.createLogicalDevice();
+    swapChain = logicalDevice->createSwapchainKHRUnique(swapChainCreateInfo);
+    images = logicalDevice->getSwapchainImagesKHR(*swapChain);
+    imageViews.reserve(images.size());
+    for (const auto& swapChainImage : images) {
+        const auto imageViewCreateInfo =
+                vk::ImageViewCreateInfo(vk::ImageViewCreateFlags(),
+                                        swapChainImage,
+                                        vk::ImageViewType::e2D,
+                                        surfaceFormat.format,
+                                        vk::ComponentMapping(),
+                                        vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
+        imageViews.emplace_back(logicalDevice->createImageViewUnique(imageViewCreateInfo));
+    }
 }

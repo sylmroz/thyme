@@ -1,8 +1,8 @@
 module;
 
 #include "thyme/core/logger.hpp"
+#include "thyme/pch.hpp"
 #include "thyme/platform/vulkan_device_manager.hpp"
-
 
 #include <ranges>
 #include <vector>
@@ -11,7 +11,6 @@ module thyme.core.engine;
 
 import thyme.core.window;
 import thyme.platform.glfw_window;
-import thyme.platform.vulkan_renderer;
 
 Thyme::Engine::Engine(const EngineConfig& engineConfig) : m_engineConfig{ engineConfig } {}
 
@@ -37,14 +36,16 @@ void Thyme::Engine::run() {
     const auto devices = Vulkan::getPhysicalDevices(instance.instance, surface);
     const Vulkan::PhysicalDevicesManager physicalDevicesManager(devices);
 
-    const auto device = physicalDevicesManager.getSelectedDevice();
-    const auto logicalDevice = device.createLogicalDevice();
+    const auto physicalDevice = physicalDevicesManager.getSelectedDevice();
+    const auto logicalDevice = physicalDevice.createLogicalDevice();
 
-    [[maybe_unused]] const auto graphicQueue = logicalDevice->getQueue(device.queueFamilyIndices.graphicFamily.value(), 0);
+    [[maybe_unused]] const auto graphicQueue =
+            logicalDevice->getQueue(physicalDevice.queueFamilyIndices.graphicFamily.value(), 0);
     [[maybe_unused]] const auto presentationQueue =
-            logicalDevice->getQueue(device.queueFamilyIndices.presentFamily.value(), 0);
+            logicalDevice->getQueue(physicalDevice.queueFamilyIndices.presentFamily.value(), 0);
 
-    const auto& swapChainSupportDetails = device.swapChainSupportDetails;
+
+    const auto& swapChainSupportDetails = physicalDevice.swapChainSupportDetails;
     const auto surfaceFormat = swapChainSupportDetails.getBestSurfaceFormat();
     const auto presetMode = swapChainSupportDetails.getBestPresetMode();
     const auto extent = swapChainSupportDetails.getSwapExtent(window.getFrameBufferSize());

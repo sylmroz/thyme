@@ -10,7 +10,6 @@ export module thyme.platform.vulkan_renderer;
 import thyme.core.common_structs;
 
 export namespace Thyme::Vulkan {
-
 struct UniqueInstanceConfig {
     std::string_view engineName;
     std::string_view appName;
@@ -106,12 +105,23 @@ public:
 std::vector<PhysicalDevice> getPhysicalDevices(const vk::UniqueInstance& instance, const vk::UniqueSurfaceKHR& surface);
 
 struct SwapChainDetails {
-
+    vk::SurfaceFormatKHR surfaceFormat;
+    vk::PresentModeKHR presetMode;
+    vk::Extent2D extent;
 };
 
 class SwapChain {
 public:
-    SwapChainDetails swapChainDetails;
+    explicit SwapChain(const SwapChainDetails& swapChainDetails,
+                       const PhysicalDevice& device,
+                       const vk::UniqueSurfaceKHR& surface);
+
+    vk::UniqueSwapchainKHR swapChain;
+    std::vector<vk::Image> images;
+    std::vector<vk::UniqueImageView> imageViews;
+
+private:
+    SwapChainDetails m_swapChainDetails;
 };
 
 }// namespace Thyme::Vulkan
