@@ -25,6 +25,7 @@ target_sources(${PROJECT_NAME}
 			include/thyme/core/engine.cppm
 			include/thyme/core/event.cppm
 			include/thyme/core/platform_context.cppm
+			include/thyme/core/utils.cppm
 			include/thyme/core/window.cppm
 
 			include/thyme/platform/glfw_vulkan_platform_context.cppm

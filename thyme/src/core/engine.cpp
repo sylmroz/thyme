@@ -4,11 +4,13 @@ module;
 #include "thyme/pch.hpp"
 #include "thyme/platform/vulkan_device_manager.hpp"
 
+#include <filesystem>
 #include <ranges>
 #include <vector>
 
 module thyme.core.engine;
 
+import thyme.core.utils;
 import thyme.core.window;
 import thyme.platform.glfw_window;
 
@@ -49,6 +51,14 @@ void Thyme::Engine::run() {
     const auto surfaceFormat = swapChainSupportDetails.getBestSurfaceFormat();
     const auto presetMode = swapChainSupportDetails.getBestPresetMode();
     const auto extent = swapChainSupportDetails.getSwapExtent(window.getFrameBufferSize());
+
+    TH_API_LOG_INFO("Current directory {}", std::filesystem::current_path().string());
+
+    const auto currentDir = std::filesystem::current_path();
+    const auto shaderPath = currentDir / "../../../../thyme/include/thyme/platform/shaders/spv";
+    const auto shaderAbsolutePath = std::filesystem::absolute(shaderPath);
+    const auto vertShader = readFile(shaderAbsolutePath / "triangle.vert.spv");
+    const auto fragShader = readFile(shaderAbsolutePath / "triangle.frag.spv");
 
     while (!window.shouldClose()) {
         window.poolEvents();
