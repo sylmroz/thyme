@@ -114,6 +114,7 @@ class SwapChain {
 public:
     explicit SwapChain(const SwapChainDetails& swapChainDetails,
                        const PhysicalDevice& device,
+                       const vk::UniqueDevice& logicalDevice,
                        const vk::UniqueSurfaceKHR& surface);
 
     vk::UniqueSwapchainKHR swapChain;

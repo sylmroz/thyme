@@ -52,13 +52,27 @@ void Thyme::Engine::run() {
     const auto presetMode = swapChainSupportDetails.getBestPresetMode();
     const auto extent = swapChainSupportDetails.getSwapExtent(window.getFrameBufferSize());
 
-    TH_API_LOG_INFO("Current directory {}", std::filesystem::current_path().string());
+    const auto swapChain = Vulkan::SwapChain(
+            Vulkan::SwapChainDetails{ .surfaceFormat = surfaceFormat, .presetMode = presetMode, .extent = extent },
+            physicalDevice,
+            logicalDevice,
+            surface);
 
+    // graphic pipeline
     const auto currentDir = std::filesystem::current_path();
     const auto shaderPath = currentDir / "../../../../thyme/include/thyme/platform/shaders/spv";
     const auto shaderAbsolutePath = std::filesystem::absolute(shaderPath);
     const auto vertShader = readFile(shaderAbsolutePath / "triangle.vert.spv");
     const auto fragShader = readFile(shaderAbsolutePath / "triangle.frag.spv");
+    const auto vertexShaderModule = logicalDevice->createShaderModule(vk::ShaderModuleCreateInfo(
+            vk::ShaderModuleCreateFlagBits(), vertShader.size(), reinterpret_cast<const uint32_t*>(vertShader.data())));
+    const auto fragmentShaderModule = logicalDevice->createShaderModule(vk::ShaderModuleCreateInfo(
+            vk::ShaderModuleCreateFlagBits(), fragShader.size(), reinterpret_cast<const uint32_t*>(fragShader.data())));
+    const auto vertexShaderStageInfo = vk::PipelineShaderStageCreateInfo(
+            vk::PipelineShaderStageCreateFlagBits(), vk::ShaderStageFlagBits::eVertex, vertexShaderModule, "main");
+    const auto fragmentShaderStageInfo = vk::PipelineShaderStageCreateInfo(
+            vk::PipelineShaderStageCreateFlagBits(), vk::ShaderStageFlagBits::eFragment, fragmentShaderModule, "main");
+    const auto shaderStages = { vertexShaderStageInfo, fragmentShaderStageInfo };
 
     while (!window.shouldClose()) {
         window.poolEvents();
