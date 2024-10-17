@@ -74,6 +74,64 @@ void Thyme::Engine::run() {
             vk::PipelineShaderStageCreateFlagBits(), vk::ShaderStageFlagBits::eFragment, fragmentShaderModule, "main");
     const auto shaderStages = { vertexShaderStageInfo, fragmentShaderStageInfo };
 
+    constexpr auto dynamicStates = { vk::DynamicState::eViewport, vk::DynamicState::eScissor };
+    const auto dynamicStateCreateInfo =
+            vk::PipelineDynamicStateCreateInfo(vk::PipelineDynamicStateCreateFlagBits(), dynamicStates);
+    constexpr auto vertexInputStateCreateInfo =
+            vk::PipelineVertexInputStateCreateInfo(vk::PipelineVertexInputStateCreateFlagBits());
+    constexpr auto inputAssemblyStateCreateInfo = vk::PipelineInputAssemblyStateCreateInfo(
+            vk::PipelineInputAssemblyStateCreateFlagBits(), vk::PrimitiveTopology::eTriangleList, vk::True);
+    const auto viewport = vk::Viewport(0, 0, extent.width, extent.height, 0, 1);
+    const auto scissor = vk::Rect2D(vk::Offset2D(), extent);
+    const auto viewportState =
+            vk::PipelineViewportStateCreateInfo(vk::PipelineViewportStateCreateFlagBits(), { viewport }, { scissor });
+    constexpr auto rasterizer = vk::PipelineRasterizationStateCreateInfo(vk::PipelineRasterizationStateCreateFlagBits(),
+                                                                         vk::False,
+                                                                         vk::False,
+                                                                         vk::PolygonMode::eFill,
+                                                                         vk::CullModeFlagBits::eBack,
+                                                                         vk::FrontFace::eClockwise,
+                                                                         vk::False,
+                                                                         0.0f,
+                                                                         0.0f,
+                                                                         0.0f,
+                                                                         1.0f);
+    constexpr auto multisampling = vk::PipelineMultisampleStateCreateInfo(vk::PipelineMultisampleStateCreateFlagBits(),
+                                                                          vk::SampleCountFlagBits::e1,
+                                                                          vk::False,
+                                                                          1.0f,
+                                                                          nullptr,
+                                                                          vk::False,
+                                                                          vk::False);
+    constexpr auto colorBlendAttachments = vk::PipelineColorBlendAttachmentState(
+            vk::False,
+            vk::BlendFactor::eOne,
+            vk::BlendFactor::eZero,
+            vk::BlendOp::eAdd,
+            vk::BlendFactor::eOne,
+            vk::BlendFactor::eZero,
+            vk::BlendOp::eAdd,
+            vk::ColorComponentFlagBits::eA | vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG
+                    | vk::ColorComponentFlagBits::eB);
+    const auto colorBlendStateCreateInfo =
+            vk::PipelineColorBlendStateCreateInfo(vk::PipelineColorBlendStateCreateFlagBits(),
+                                                  vk::False,
+                                                  vk::LogicOp::eClear,
+                                                  1,
+                                                  &colorBlendAttachments,
+                                                  std::array{ 0.0f, 0.0f, 0.0f, 0.0f });
+    const auto pipelineLayout = logicalDevice->createPipelineLayout(vk::PipelineLayoutCreateInfo());
+
+    const auto colorAttachment = vk::AttachmentDescription(vk::AttachmentDescriptionFlagBits(),
+                                                               surfaceFormat.format,
+                                                               vk::SampleCountFlagBits::e1,
+                                                               vk::AttachmentLoadOp::eClear,
+                                                               vk::AttachmentStoreOp::eStore,
+                                                               vk::AttachmentLoadOp::eDontCare,
+                                                               vk::AttachmentStoreOp::eDontCare,
+                                                               vk::ImageLayout::eUndefined,
+                                                               vk::ImageLayout::ePresentSrcKHR);
+
     while (!window.shouldClose()) {
         window.poolEvents();
     }
