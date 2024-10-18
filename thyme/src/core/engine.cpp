@@ -137,6 +137,25 @@ void Thyme::Engine::run() {
     const auto renderPass = logicalDevice->createRenderPass(
             vk::RenderPassCreateInfo(vk::RenderPassCreateFlagBits(), { colorAttachment }, { subpassDescription }));
 
+    const auto graphicsPipeline =
+            logicalDevice->createGraphicsPipelineUnique({},
+                                                        vk::GraphicsPipelineCreateInfo(vk::PipelineCreateFlagBits(),
+                                                                                       shaderStages,
+                                                                                       &vertexInputStateCreateInfo,
+                                                                                       &inputAssemblyStateCreateInfo,
+                                                                                       nullptr,
+                                                                                       &viewportState,
+                                                                                       &rasterizer,
+                                                                                       &multisampling,
+                                                                                       nullptr,
+                                                                                       &colorBlendStateCreateInfo,
+                                                                                       &dynamicStateCreateInfo,
+                                                                                       pipelineLayout,
+                                                                                       renderPass,
+                                                                                       0));
+
+
+
     while (!window.shouldClose()) {
         window.poolEvents();
     }
