@@ -123,14 +123,19 @@ void Thyme::Engine::run() {
     const auto pipelineLayout = logicalDevice->createPipelineLayout(vk::PipelineLayoutCreateInfo());
 
     const auto colorAttachment = vk::AttachmentDescription(vk::AttachmentDescriptionFlagBits(),
-                                                               surfaceFormat.format,
-                                                               vk::SampleCountFlagBits::e1,
-                                                               vk::AttachmentLoadOp::eClear,
-                                                               vk::AttachmentStoreOp::eStore,
-                                                               vk::AttachmentLoadOp::eDontCare,
-                                                               vk::AttachmentStoreOp::eDontCare,
-                                                               vk::ImageLayout::eUndefined,
-                                                               vk::ImageLayout::ePresentSrcKHR);
+                                                           surfaceFormat.format,
+                                                           vk::SampleCountFlagBits::e1,
+                                                           vk::AttachmentLoadOp::eClear,
+                                                           vk::AttachmentStoreOp::eStore,
+                                                           vk::AttachmentLoadOp::eDontCare,
+                                                           vk::AttachmentStoreOp::eDontCare,
+                                                           vk::ImageLayout::eUndefined,
+                                                           vk::ImageLayout::ePresentSrcKHR);
+    constexpr auto colorAttachmentRef = vk::AttachmentReference(0, vk::ImageLayout::eColorAttachmentOptimal);
+    const auto subpassDescription = vk::SubpassDescription(
+            vk::SubpassDescriptionFlagBits(), vk::PipelineBindPoint::eGraphics, { colorAttachmentRef });
+    const auto renderPass = logicalDevice->createRenderPass(
+            vk::RenderPassCreateInfo(vk::RenderPassCreateFlagBits(), { colorAttachment }, { subpassDescription }));
 
     while (!window.shouldClose()) {
         window.poolEvents();
