@@ -134,9 +134,15 @@ void Thyme::Engine::run() {
     const auto subpassDescription = vk::SubpassDescription(
             vk::SubpassDescriptionFlagBits(), vk::PipelineBindPoint::eGraphics, {}, { colorAttachmentRef });
 
+    constexpr auto subpassDependency = vk::SubpassDependency(vk::SubpassExternal,
+                                                             0,
+                                                             vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                                                             vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                                                             vk::AccessFlagBits::eNone,
+                                                             vk::AccessFlagBits::eColorAttachmentWrite);
 
-    const auto renderPass = logicalDevice->createRenderPassUnique(
-            vk::RenderPassCreateInfo(vk::RenderPassCreateFlagBits(), { colorAttachment }, { subpassDescription }));
+    const auto renderPass = logicalDevice->createRenderPassUnique(vk::RenderPassCreateInfo(
+            vk::RenderPassCreateFlagBits(), { colorAttachment }, { subpassDescription }, { subpassDependency }));
 
     const auto graphicsPipeline =
             logicalDevice->createGraphicsPipelineUnique({},
@@ -184,26 +190,53 @@ void Thyme::Engine::run() {
         frameIndex = (frameIndex + 1) % images;
         return currentFrameIndex;
     };
+
+    const auto imageAvailableSemaphore = logicalDevice->createSemaphoreUnique(vk::SemaphoreCreateInfo());
+    const auto renderFinishedSemaphore = logicalDevice->createSemaphoreUnique(vk::SemaphoreCreateInfo());
+    const auto fence = logicalDevice->createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
+
     const auto drawFrame = [&] {
+        if (logicalDevice->waitForFences({ *fence }, vk::True, std::numeric_limits<uint64_t>::max())
+            != vk::Result::eSuccess) {
+            TH_API_LOG_ERROR("Failed to wait for a complete fence")
+            throw std::runtime_error("Failed to wait for a complete fence");
+        }
+        logicalDevice->resetFences({ *fence });
+        const auto imageIndex = logicalDevice
+                                        ->acquireNextImageKHR(*swapChain.swapChain,
+                                                              std::numeric_limits<uint64_t>::max(),
+                                                              *imageAvailableSemaphore)
+                                        .value;
+        commandBuffer->reset();
+
         commandBuffer->begin(vk::CommandBufferBeginInfo());
-        const auto frameIndex = getNextFrameIndex();
-        constexpr auto clearColorValues = vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f);
+        constexpr auto clearColorValues = vk::ClearColorValue(1.0f, 0.0f, 1.0f, 1.0f);
         constexpr auto clearValues = vk::ClearValue(clearColorValues);
         const auto renderPassBeginInfo = vk::RenderPassBeginInfo(
-                *renderPass, *frameBuffers[frameIndex], vk::Rect2D(vk::Offset2D(0, 0), extent), { clearValues });
+                *renderPass, *frameBuffers[imageIndex], vk::Rect2D(vk::Offset2D(0, 0), extent), { clearValues });
         commandBuffer->beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 
         commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, *graphicsPipeline.value);
         commandBuffer->setViewport(0, { vk::Viewport(0, 0, extent.width, extent.height, 0.0f, 1.0f) });
         commandBuffer->setScissor(0, { vk::Rect2D(vk::Offset2D(0, 0), extent) });
-
         commandBuffer->draw(3, 1, 0, 0);
-
         commandBuffer->endRenderPass();
         commandBuffer->end();
+
+        const vk::PipelineStageFlags f = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+        const auto submitInfo = vk::SubmitInfo(
+                vk::SubmitInfo({ *imageAvailableSemaphore }, { f }, { *commandBuffer }, { *renderFinishedSemaphore }));
+        graphicQueue.submit(submitInfo, *fence);
+        if (presentationQueue.presentKHR(
+                    vk::PresentInfoKHR({ *renderFinishedSemaphore }, { *swapChain.swapChain }, { imageIndex }))
+            != vk::Result::eSuccess) {
+            TH_API_LOG_ERROR("Failed to present rendered result!");
+        }
     };
     while (!window.shouldClose()) {
         window.poolEvents();
         drawFrame();
     }
+
+    logicalDevice->waitIdle();
 }
