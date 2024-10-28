@@ -23,6 +23,7 @@ class GlfwWindow: public Window {
 
 public:
     explicit GlfwWindow(const WindowConfig& config);
+    bool frameBufferResized{ false };
 
     void poolEvents() override {
         glfwPollEvents();
@@ -40,10 +41,7 @@ public:
         int width{};
         int height{};
         glfwGetFramebufferSize(m_window.get(), &width, &height);
-        return Resolution{
-            .width = static_cast<uint32_t>(width),
-            .height = static_cast<uint32_t>(height)
-        };
+        return Resolution{ .width = static_cast<uint32_t>(width), .height = static_cast<uint32_t>(height) };
     }
 
 private:

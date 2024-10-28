@@ -23,9 +23,15 @@ GlfwWindow::GlfwWindow(const WindowConfig& config) : Window{ config } {
                                   glfwDestroyWindow(window);
                               }
                           });
+    glfwSetWindowUserPointer(m_window.get(), this);
     glfwSetWindowSizeCallback(m_window.get(), [](GLFWwindow* window, int width, int height) {
         auto windowResize = WindowResize{ .width = width, .height = height };
         TH_API_LOG_INFO(windowResize.toString());
+    });
+
+    glfwSetFramebufferSizeCallback(m_window.get(), [](GLFWwindow* window, int width, int height) {
+        const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
+        app->frameBufferResized = true;
     });
 }
 

@@ -115,7 +115,8 @@ public:
     explicit SwapChain(const SwapChainDetails& swapChainDetails,
                        const PhysicalDevice& device,
                        const vk::UniqueDevice& logicalDevice,
-                       const vk::UniqueSurfaceKHR& surface);
+                       const vk::UniqueSurfaceKHR& surface,
+                       const vk::SwapchainKHR oldSwapChain = {});
 
     vk::UniqueSwapchainKHR swapChain;
     std::vector<vk::Image> images;

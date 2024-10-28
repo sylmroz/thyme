@@ -41,18 +41,12 @@ void Thyme::Engine::run() {
     const auto physicalDevice = physicalDevicesManager.getSelectedDevice();
     const auto logicalDevice = physicalDevice.createLogicalDevice();
 
-    [[maybe_unused]] const auto graphicQueue =
-            logicalDevice->getQueue(physicalDevice.queueFamilyIndices.graphicFamily.value(), 0);
-    [[maybe_unused]] const auto presentationQueue =
-            logicalDevice->getQueue(physicalDevice.queueFamilyIndices.presentFamily.value(), 0);
-
-
     const auto& swapChainSupportDetails = physicalDevice.swapChainSupportDetails;
     const auto surfaceFormat = swapChainSupportDetails.getBestSurfaceFormat();
     const auto presetMode = swapChainSupportDetails.getBestPresetMode();
-    const auto extent = swapChainSupportDetails.getSwapExtent(window.getFrameBufferSize());
+    auto extent = swapChainSupportDetails.getSwapExtent(window.getFrameBufferSize());
 
-    const auto swapChain = Vulkan::SwapChain(
+    auto swapChain = Vulkan::SwapChain(
             Vulkan::SwapChainDetails{ .surfaceFormat = surfaceFormat, .presetMode = presetMode, .extent = extent },
             physicalDevice,
             logicalDevice,
@@ -161,7 +155,7 @@ void Thyme::Engine::run() {
                                                                                        *renderPass,
                                                                                        0));
 
-    const auto frameBuffers = [&] {
+    const auto createFrameBuffers = [&] {
         std::vector<vk::UniqueFramebuffer> buffers;
         buffers.reserve(swapChain.imageViews.size());
         for (const auto& swapChainImage : swapChain.imageViews) {
@@ -174,39 +168,77 @@ void Thyme::Engine::run() {
                                                                                      1)));
         }
         return buffers;
-    }();
+    };
+
+    auto frameBuffers = createFrameBuffers();
 
     const auto commandPool = logicalDevice->createCommandPoolUnique(
             vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
                                       physicalDevice.queueFamilyIndices.graphicFamily.value()));
 
-    const auto commandBuffer = std::move(logicalDevice
-                                                 ->allocateCommandBuffersUnique(vk::CommandBufferAllocateInfo(
-                                                         *commandPool, vk::CommandBufferLevel::ePrimary, 1))
-                                                 .front());
+    constexpr uint32_t maxFrames{ 2 };
+    const auto commandBuffers = logicalDevice->allocateCommandBuffersUnique(
+            vk::CommandBufferAllocateInfo(*commandPool, vk::CommandBufferLevel::ePrimary, maxFrames));
 
-    auto getNextFrameIndex = [frameIndex = 0, images = swapChain.imageViews.size()]() mutable {
+    auto getNextFrameIndex = [frameIndex = 0, maxFrames]() mutable {
         const auto currentFrameIndex = frameIndex;
-        frameIndex = (frameIndex + 1) % images;
+        frameIndex = (frameIndex + 1) % maxFrames;
         return currentFrameIndex;
     };
 
-    const auto imageAvailableSemaphore = logicalDevice->createSemaphoreUnique(vk::SemaphoreCreateInfo());
-    const auto renderFinishedSemaphore = logicalDevice->createSemaphoreUnique(vk::SemaphoreCreateInfo());
-    const auto fence = logicalDevice->createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
+    struct SyncObjects {
+        vk::UniqueSemaphore imageAvailableSemaphore;
+        vk::UniqueSemaphore renderFinishedSemaphore;
+        vk::UniqueFence fence;
+    };
+    std::vector<SyncObjects> syncObjects;
+    syncObjects.reserve(maxFrames);
+    for (int i = 0; i < maxFrames; i++) {
+        syncObjects.emplace_back(SyncObjects{
+                .imageAvailableSemaphore = logicalDevice->createSemaphoreUnique(vk::SemaphoreCreateInfo()),
+                .renderFinishedSemaphore = logicalDevice->createSemaphoreUnique(vk::SemaphoreCreateInfo()),
+                .fence = logicalDevice->createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled)) });
+    }
+
+    auto recreateSwapChain = [&] {
+        logicalDevice->waitIdle();
+
+        extent = swapChainSupportDetails.getSwapExtent(window.getFrameBufferSize());
+        swapChain = Vulkan::SwapChain(
+                Vulkan::SwapChainDetails{ .surfaceFormat = surfaceFormat, .presetMode = presetMode, .extent = extent },
+                physicalDevice,
+                logicalDevice,
+                surface,
+                *swapChain.swapChain);
+        frameBuffers = createFrameBuffers();
+    };
 
     const auto drawFrame = [&] {
+        const auto frameIndex = getNextFrameIndex();
+        const auto& [imageAvailableSemaphore, renderFinishedSemaphore, fence] = syncObjects[frameIndex];
+        const auto& commandBuffer = commandBuffers[frameIndex];
+
         if (logicalDevice->waitForFences({ *fence }, vk::True, std::numeric_limits<uint64_t>::max())
             != vk::Result::eSuccess) {
             TH_API_LOG_ERROR("Failed to wait for a complete fence")
             throw std::runtime_error("Failed to wait for a complete fence");
         }
+        const auto imageIndexResult = [&] {
+            try {
+                return logicalDevice->acquireNextImageKHR(
+                *swapChain.swapChain, std::numeric_limits<uint64_t>::max(), *imageAvailableSemaphore);
+            } catch (const vk::OutOfDateKHRError& err) {
+                recreateSwapChain();
+            }
+            return vk::ResultValue<uint32_t>(vk::Result::eErrorOutOfDateKHR, 0);
+        }();
+
+        if (imageIndexResult.result != vk::Result::eSuccess) {
+            return;
+        }
+        const auto imageIndex = imageIndexResult.value;
+
         logicalDevice->resetFences({ *fence });
-        const auto imageIndex = logicalDevice
-                                        ->acquireNextImageKHR(*swapChain.swapChain,
-                                                              std::numeric_limits<uint64_t>::max(),
-                                                              *imageAvailableSemaphore)
-                                        .value;
         commandBuffer->reset();
 
         commandBuffer->begin(vk::CommandBufferBeginInfo());
@@ -226,13 +258,27 @@ void Thyme::Engine::run() {
         const vk::PipelineStageFlags f = vk::PipelineStageFlagBits::eColorAttachmentOutput;
         const auto submitInfo = vk::SubmitInfo(
                 vk::SubmitInfo({ *imageAvailableSemaphore }, { f }, { *commandBuffer }, { *renderFinishedSemaphore }));
+        const auto graphicQueue = logicalDevice->getQueue(physicalDevice.queueFamilyIndices.graphicFamily.value(), 0);
         graphicQueue.submit(submitInfo, *fence);
-        if (presentationQueue.presentKHR(
-                    vk::PresentInfoKHR({ *renderFinishedSemaphore }, { *swapChain.swapChain }, { imageIndex }))
-            != vk::Result::eSuccess) {
-            TH_API_LOG_ERROR("Failed to present rendered result!");
+        const auto presentationQueue =
+                logicalDevice->getQueue(physicalDevice.queueFamilyIndices.presentFamily.value(), 0);
+
+        try {
+            const auto queuePresentResult = presentationQueue.presentKHR(
+                vk::PresentInfoKHR({ *renderFinishedSemaphore }, { *swapChain.swapChain }, { imageIndex }));
+            if (queuePresentResult == vk::Result::eErrorOutOfDateKHR || queuePresentResult == vk::Result::eSuboptimalKHR || window.frameBufferResized) {
+                window.frameBufferResized = false;
+                recreateSwapChain();
+            }
+            if (queuePresentResult != vk::Result::eSuccess) {
+                TH_API_LOG_ERROR("Failed to present rendered result!");
+                throw std::runtime_error("Failed to present rendered result!");
+            }
+        } catch(const vk::OutOfDateKHRError& error) {
+            recreateSwapChain();
         }
     };
+
     while (!window.shouldClose()) {
         window.poolEvents();
         drawFrame();

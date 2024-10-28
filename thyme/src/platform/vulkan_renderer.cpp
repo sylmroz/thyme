@@ -227,7 +227,8 @@ std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueIn
 SwapChain::SwapChain(const SwapChainDetails& swapChainDetails,
                      const PhysicalDevice& device,
                      const vk::UniqueDevice& logicalDevice,
-                     const vk::UniqueSurfaceKHR& surface)
+                     const vk::UniqueSurfaceKHR& surface,
+                     const vk::SwapchainKHR oldSwapChain)
     : m_swapChainDetails{ swapChainDetails } {
     const auto& [surfaceFormat, presetMode, extent] = swapChainDetails;
     const auto& [physicalDevice, queueFamilyIndices, swapChainSupportDetails] = device;
@@ -258,6 +259,7 @@ SwapChain::SwapChain(const SwapChainDetails& swapChainDetails,
         } else {
             info.imageSharingMode = vk::SharingMode::eExclusive;
         }
+        info.oldSwapchain = oldSwapChain;
         return info;
     }();
 
