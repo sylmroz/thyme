@@ -6,18 +6,19 @@
 import thyme.platform.vulkan_renderer;
 
 namespace Thyme::Vulkan {
-// TODO - read from config, last selected device
+
+// TODO - read from config the last selected device
 class PhysicalDevicesManager {
 public:
     explicit PhysicalDevicesManager(const std::vector<PhysicalDevice>& devices) : m_physicalDevices(devices) {
         m_selectedDevice = m_physicalDevices.begin();
     }
 
-    [[nodiscard]] auto getSelectedDevice(this const PhysicalDevicesManager& self) noexcept {
-        return *self.m_selectedDevice;
+    [[nodiscard]] auto getSelectedDevice(this const PhysicalDevicesManager& self) noexcept -> Device {
+        return Device(*self.m_selectedDevice);
     }
 
-    [[nodiscard]] auto getDevicesList(this const PhysicalDevicesManager& self) noexcept {
+    [[nodiscard]] auto getDevicesList(this const PhysicalDevicesManager& self) noexcept -> std::vector<PhysicalDevice> {
         return self.m_physicalDevices;
     }
 

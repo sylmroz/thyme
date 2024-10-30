@@ -25,7 +25,7 @@ public:
     Engine& operator=(const Engine&) = default;
     Engine& operator=(Engine&&) = default;
 
-    void run();
+    void run() const;
     virtual ~Engine() = default;
 
 private:

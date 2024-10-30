@@ -148,14 +148,12 @@ void UniqueInstance::setupDebugMessenger(const std::vector<const char*>& extensi
 }
 #endif
 
-QueueFamilyIndices::QueueFamilyIndices(const vk::PhysicalDevice& device, const vk::SurfaceKHR& surface) {
-    const auto queueFamilies = device.getQueueFamilyProperties2();
-    uint32_t i{ 0 };
-
-    for (const auto& queueFamily : queueFamilies) {
+QueueFamilyIndices::QueueFamilyIndices(const vk::PhysicalDevice& device, const vk::SurfaceKHR& surface) noexcept {
+    const auto& queueFamilies = device.getQueueFamilyProperties2();
+    for (uint32_t i{ 0 }; i < queueFamilies.size(); i++) {
+        const auto& queueFamily = queueFamilies[i];
         const auto& queueFamilyProperties = queueFamily.queueFamilyProperties;
         if (queueFamilyProperties.queueCount <= 0) {
-            ++i;
             continue;
         }
         if (queueFamilyProperties.queueFlags & vk::QueueFlagBits::eGraphics) {
@@ -224,14 +222,14 @@ std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueIn
             vk::DeviceCreateFlags(), deviceQueueCreateInfos, nullptr, deviceExtensions, &features));
 }
 
-SwapChain::SwapChain(const SwapChainDetails& swapChainDetails,
-                     const PhysicalDevice& device,
-                     const vk::UniqueDevice& logicalDevice,
+SwapChainData::SwapChainData(const SwapChainSettings& swapChainDetails,
+                     const Device& device,
+                     const vk::UniqueRenderPass& renderPass,
                      const vk::UniqueSurfaceKHR& surface,
-                     const vk::SwapchainKHR oldSwapChain)
+                     const vk::SwapchainKHR& oldSwapChain)
     : m_swapChainDetails{ swapChainDetails } {
     const auto& [surfaceFormat, presetMode, extent] = swapChainDetails;
-    const auto& [physicalDevice, queueFamilyIndices, swapChainSupportDetails] = device;
+    const auto& [physicalDevice, logicalDevice, queueFamilyIndices, swapChainSupportDetails] = device;
     const auto imageCount = [&capabilities = swapChainSupportDetails.capabilities] {
         uint32_t swapChainImageCount = capabilities.minImageCount + 1;
         if (capabilities.maxImageCount > 0 && swapChainImageCount > capabilities.maxImageCount) {
@@ -241,13 +239,13 @@ SwapChain::SwapChain(const SwapChainDetails& swapChainDetails,
     }();
     const auto swapChainCreateInfo = [&] {
         auto info = vk::SwapchainCreateInfoKHR(vk::SwapchainCreateFlagsKHR(),
-                              *surface,
-                              imageCount,
-                              surfaceFormat.format,
-                              surfaceFormat.colorSpace,
-                              extent,
-                              1,
-                              vk::ImageUsageFlagBits::eColorAttachment);
+                                               *surface,
+                                               imageCount,
+                                               surfaceFormat.format,
+                                               surfaceFormat.colorSpace,
+                                               extent,
+                                               1,
+                                               vk::ImageUsageFlagBits::eColorAttachment);
         info.preTransform = swapChainSupportDetails.capabilities.currentTransform;
         info.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
         info.presentMode = presetMode;
@@ -266,6 +264,7 @@ SwapChain::SwapChain(const SwapChainDetails& swapChainDetails,
     swapChain = logicalDevice->createSwapchainKHRUnique(swapChainCreateInfo);
     images = logicalDevice->getSwapchainImagesKHR(*swapChain);
     imageViews.reserve(images.size());
+    frameBuffers.reserve(images.size());
     for (const auto& swapChainImage : images) {
         const auto imageViewCreateInfo =
                 vk::ImageViewCreateInfo(vk::ImageViewCreateFlags(),
@@ -274,6 +273,13 @@ SwapChain::SwapChain(const SwapChainDetails& swapChainDetails,
                                         surfaceFormat.format,
                                         vk::ComponentMapping(),
                                         vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
-        imageViews.emplace_back(logicalDevice->createImageViewUnique(imageViewCreateInfo));
+        const auto& imageView = imageViews.emplace_back(logicalDevice->createImageViewUnique(imageViewCreateInfo));
+        frameBuffers.emplace_back(
+                    logicalDevice->createFramebufferUnique(vk::FramebufferCreateInfo(vk::FramebufferCreateFlagBits(),
+                                                                                     *renderPass,
+                                                                                     { *imageView },
+                                                                                     extent.width,
+                                                                                     extent.height,
+                                                                                     1)));
     }
 }

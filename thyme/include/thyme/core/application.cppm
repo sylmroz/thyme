@@ -12,7 +12,7 @@ export class THYME_API Application {
 public:
     Application();
     std::string name{ "Thyme" };
-    void run();
+    void run() const;
 };
 
 }// namespace Thyme

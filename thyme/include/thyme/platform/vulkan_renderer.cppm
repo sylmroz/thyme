@@ -31,7 +31,7 @@ private:
 
 // TODO - the class should support more queue family flags like eSparseBinding
 struct QueueFamilyIndices {
-    explicit QueueFamilyIndices(const vk::PhysicalDevice& device, const vk::SurfaceKHR& surface);
+    explicit QueueFamilyIndices(const vk::PhysicalDevice& device, const vk::SurfaceKHR& surface) noexcept;
 
     std::optional<uint32_t> graphicFamily;
     std::optional<uint32_t> presentFamily;
@@ -41,6 +41,11 @@ struct QueueFamilyIndices {
     }
 };
 
+struct SwapChainSettings {
+    vk::SurfaceFormatKHR surfaceFormat;
+    vk::PresentModeKHR presetMode;
+    vk::Extent2D extent;
+};
 
 class SwapChainSupportDetails {
 public:
@@ -54,7 +59,7 @@ public:
         return !formats.empty() && !presentModes.empty();
     }
 
-    [[nodiscard]] inline auto getBestSurfaceFormat() const noexcept {
+    [[nodiscard]] inline auto getBestSurfaceFormat() const noexcept -> vk::SurfaceFormatKHR {
         const auto suitableFormat = std::ranges::find_if(formats, [](const vk::SurfaceFormatKHR& format) {
             return format.format == vk::Format::eB8G8R8A8Srgb && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear;
         });
@@ -64,8 +69,8 @@ public:
         return formats[0];
     }
 
-    [[nodiscard]] inline auto getBestPresetMode() const noexcept {
-        const auto suitablePreset = std::ranges::find_if(presentModes, [](const vk::PresentModeKHR& presentMode) {
+    [[nodiscard]] inline auto getBestPresetMode() const noexcept -> vk::PresentModeKHR {
+        const auto suitablePreset = std::ranges::find_if(presentModes, [](const vk::PresentModeKHR presentMode) {
             return presentMode == vk::PresentModeKHR::eMailbox;
         });
 
@@ -75,16 +80,22 @@ public:
         return vk::PresentModeKHR::eFifo;
     }
 
-    [[nodiscard]] inline auto getSwapExtent(const Resolution& fallbackResolution) const noexcept {
+    [[nodiscard]] inline auto getSwapExtent(const Resolution& fallbackResolution) const noexcept -> vk::Extent2D {
         if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
             return capabilities.currentExtent;
         }
         const auto [width, height] = fallbackResolution;
-        const auto actualExtent = vk::Extent2D{
-            std::clamp(width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
-            std::clamp(height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
-        };
-        return actualExtent;
+        const auto minImageExtent = capabilities.minImageExtent;
+        const auto maxImageExtent = capabilities.maxImageExtent;
+        return vk::Extent2D{ std::clamp(width, minImageExtent.width, maxImageExtent.width),
+                             std::clamp(height, minImageExtent.height, maxImageExtent.height) };
+    }
+
+    [[nodiscard]] inline auto getBestSwapChainSettings(const Resolution& fallbackResolution) const noexcept
+            -> SwapChainSettings {
+        return SwapChainSettings{ .surfaceFormat = getBestSurfaceFormat(),
+                                  .presetMode = getBestPresetMode(),
+                                  .extent = getSwapExtent(fallbackResolution) };
     }
 };
 
@@ -102,28 +113,59 @@ public:
     [[nodiscard]] vk::UniqueDevice createLogicalDevice() const;
 };
 
-std::vector<PhysicalDevice> getPhysicalDevices(const vk::UniqueInstance& instance, const vk::UniqueSurfaceKHR& surface);
-
-struct SwapChainDetails {
-    vk::SurfaceFormatKHR surfaceFormat;
-    vk::PresentModeKHR presetMode;
-    vk::Extent2D extent;
+struct Device {
+    explicit Device(PhysicalDevice physicalDevice)
+        : physicalDevice(physicalDevice.physicalDevice), logicalDevice(physicalDevice.createLogicalDevice()),
+          queueFamilyIndices(physicalDevice.queueFamilyIndices),
+          swapChainSupportDetails(physicalDevice.swapChainSupportDetails) {}
+    vk::PhysicalDevice physicalDevice;
+    vk::UniqueDevice logicalDevice;
+    QueueFamilyIndices queueFamilyIndices;
+    SwapChainSupportDetails swapChainSupportDetails;
 };
 
-class SwapChain {
+std::vector<PhysicalDevice> getPhysicalDevices(const vk::UniqueInstance& instance, const vk::UniqueSurfaceKHR& surface);
+
+class SwapChainData {
 public:
-    explicit SwapChain(const SwapChainDetails& swapChainDetails,
-                       const PhysicalDevice& device,
-                       const vk::UniqueDevice& logicalDevice,
-                       const vk::UniqueSurfaceKHR& surface,
-                       const vk::SwapchainKHR oldSwapChain = {});
+    explicit SwapChainData(const SwapChainSettings& swapChainDetails,
+                           const Device& device,
+                           const vk::UniqueRenderPass& renderPass,
+                           const vk::UniqueSurfaceKHR& surface,
+                           const vk::SwapchainKHR& oldSwapChain = {});
 
     vk::UniqueSwapchainKHR swapChain;
     std::vector<vk::Image> images;
     std::vector<vk::UniqueImageView> imageViews;
+    std::vector<vk::UniqueFramebuffer> frameBuffers;
 
 private:
-    SwapChainDetails m_swapChainDetails;
+    SwapChainSettings m_swapChainDetails;
 };
+
+struct FrameData {
+    vk::UniqueCommandBuffer commandBuffer;
+    vk::UniqueSemaphore imageAvailableSemaphore;
+    vk::UniqueSemaphore renderFinishedSemaphore;
+    vk::UniqueFence fence;
+};
+
+[[nodiscard]] inline auto createFrameDatas(const vk::UniqueDevice& logicalDevice,
+                                           const vk::UniqueCommandPool& commandPool, const uint32_t maxFrames)
+        -> std::vector<FrameData> {
+    std::vector<FrameData> frameDatas;
+    frameDatas.reserve(maxFrames);
+    for (int i = 0; i < maxFrames; i++) {
+        frameDatas.emplace_back(FrameData{
+                .commandBuffer = std::move(logicalDevice
+                                                   ->allocateCommandBuffersUnique(vk::CommandBufferAllocateInfo(
+                                                           *commandPool, vk::CommandBufferLevel::ePrimary, 1))
+                                                   .front()),
+                .imageAvailableSemaphore = logicalDevice->createSemaphoreUnique(vk::SemaphoreCreateInfo()),
+                .renderFinishedSemaphore = logicalDevice->createSemaphoreUnique(vk::SemaphoreCreateInfo()),
+                .fence = logicalDevice->createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled)) });
+    }
+    return frameDatas;
+}
 
 }// namespace Thyme::Vulkan
