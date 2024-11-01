@@ -15,8 +15,10 @@ target_sources(${PROJECT_NAME}
 	PRIVATE
 		src/core/application.cpp
 		src/core/engine.cpp
+
 		src/platform/glfw_window.cpp
-		src/platform/vulkan_renderer.cpp
+		src/platform/vulkan/renderer.cpp
+		src/platform/vulkan/utils.cpp
 	PUBLIC
 		FILE_SET CXX_MODULES
 		FILES
@@ -30,7 +32,10 @@ target_sources(${PROJECT_NAME}
 
 			include/thyme/platform/glfw_vulkan_platform_context.cppm
 			include/thyme/platform/glfw_window.cppm
-			include/thyme/platform/vulkan_renderer.cppm
+
+			include/thyme/platform/vulkan/renderer.cppm
+			include/thyme/platform/vulkan/utils.cppm
+			include/thyme/platform/vulkan/vulkan.cppm
 )
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)

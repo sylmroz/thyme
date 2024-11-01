@@ -1,15 +1,15 @@
 module;
 
-#include <functional>
 #include <vector>
 
 #include <fmt/format.h>
 #include <vulkan/vulkan.hpp>
 
-export module thyme.platform.vulkan_renderer;
+export module thyme.platform.vulkan:utils;
 import thyme.core.common_structs;
 
 export namespace Thyme::Vulkan {
+
 struct UniqueInstanceConfig {
     std::string_view engineName;
     std::string_view appName;
@@ -168,4 +168,4 @@ struct FrameData {
     return frameDatas;
 }
 
-}// namespace Thyme::Vulkan
+}

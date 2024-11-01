@@ -7,8 +7,10 @@ module;
 #include <set>
 #include <vulkan/vulkan.hpp>
 
-module thyme.platform.vulkan_renderer;
+module thyme.platform.vulkan;
+import :utils;
 
+using namespace Thyme;
 using namespace Thyme::Vulkan;
 
 #if !defined(NDEBUG)

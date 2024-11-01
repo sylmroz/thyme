@@ -43,8 +43,8 @@ void Thyme::Engine::run() const {
 
     const auto& swapChainSupportDetails = device.swapChainSupportDetails;
     const auto swapChainSettings = swapChainSupportDetails.getBestSwapChainSettings(window.getFrameBufferSize());
-    const auto surfaceFormat = swapChainSupportDetails.getBestSurfaceFormat();
-    auto extent = swapChainSupportDetails.getSwapExtent(window.getFrameBufferSize());
+    const auto surfaceFormat = swapChainSettings.surfaceFormat;
+    auto extent = swapChainSettings.extent;
 
     // graphic pipeline
     const auto currentDir = std::filesystem::current_path();

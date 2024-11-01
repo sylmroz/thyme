@@ -3,7 +3,7 @@
 #include <fmt/core.h>
 #include <vector>
 
-import thyme.platform.vulkan_renderer;
+import thyme.platform.vulkan;
 
 namespace Thyme::Vulkan {
 
