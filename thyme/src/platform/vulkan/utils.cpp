@@ -225,10 +225,10 @@ std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueIn
 }
 
 SwapChainData::SwapChainData(const SwapChainSettings& swapChainDetails,
-                     const Device& device,
-                     const vk::UniqueRenderPass& renderPass,
-                     const vk::UniqueSurfaceKHR& surface,
-                     const vk::SwapchainKHR& oldSwapChain)
+                             const Device& device,
+                             const vk::UniqueRenderPass& renderPass,
+                             const vk::UniqueSurfaceKHR& surface,
+                             const vk::SwapchainKHR& oldSwapChain)
     : m_swapChainDetails{ swapChainDetails } {
     const auto& [surfaceFormat, presetMode, extent] = swapChainDetails;
     const auto& [physicalDevice, logicalDevice, queueFamilyIndices, swapChainSupportDetails] = device;
@@ -276,12 +276,32 @@ SwapChainData::SwapChainData(const SwapChainSettings& swapChainDetails,
                                         vk::ComponentMapping(),
                                         vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
         const auto& imageView = imageViews.emplace_back(logicalDevice->createImageViewUnique(imageViewCreateInfo));
-        frameBuffers.emplace_back(
-                    logicalDevice->createFramebufferUnique(vk::FramebufferCreateInfo(vk::FramebufferCreateFlagBits(),
-                                                                                     *renderPass,
-                                                                                     { *imageView },
-                                                                                     extent.width,
-                                                                                     extent.height,
-                                                                                     1)));
+        frameBuffers.emplace_back(logicalDevice->createFramebufferUnique(vk::FramebufferCreateInfo(
+                vk::FramebufferCreateFlagBits(), *renderPass, { *imageView }, extent.width, extent.height, 1)));
     }
+}
+
+auto Vulkan::createRenderPass(const vk::UniqueDevice& logicalDevice, const vk::Format format) -> vk::UniqueRenderPass {
+    const auto colorAttachment = vk::AttachmentDescription(vk::AttachmentDescriptionFlagBits(),
+                                                           format,
+                                                           vk::SampleCountFlagBits::e1,
+                                                           vk::AttachmentLoadOp::eClear,
+                                                           vk::AttachmentStoreOp::eStore,
+                                                           vk::AttachmentLoadOp::eDontCare,
+                                                           vk::AttachmentStoreOp::eDontCare,
+                                                           vk::ImageLayout::eUndefined,
+                                                           vk::ImageLayout::ePresentSrcKHR);
+    constexpr auto colorAttachmentRef = vk::AttachmentReference(0, vk::ImageLayout::eColorAttachmentOptimal);
+    const auto subpassDescription = vk::SubpassDescription(
+            vk::SubpassDescriptionFlagBits(), vk::PipelineBindPoint::eGraphics, {}, { colorAttachmentRef });
+
+    constexpr auto subpassDependency = vk::SubpassDependency(vk::SubpassExternal,
+                                                             0,
+                                                             vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                                                             vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                                                             vk::AccessFlagBits::eNone,
+                                                             vk::AccessFlagBits::eColorAttachmentWrite);
+
+    return logicalDevice->createRenderPassUnique(vk::RenderPassCreateInfo(
+            vk::RenderPassCreateFlagBits(), { colorAttachment }, { subpassDescription }, { subpassDependency }));
 }

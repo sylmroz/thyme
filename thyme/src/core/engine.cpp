@@ -4,6 +4,8 @@ module;
 #include "thyme/pch.hpp"
 #include "thyme/platform/vulkan_device_manager.hpp"
 
+#include <thyme/platform/vulkan/graphic_pipeline.hpp>
+
 #include <filesystem>
 #include <ranges>
 #include <vector>
@@ -46,116 +48,10 @@ void Thyme::Engine::run() const {
     const auto surfaceFormat = swapChainSettings.surfaceFormat;
     auto extent = swapChainSettings.extent;
 
-    // graphic pipeline
-    const auto currentDir = std::filesystem::current_path();
-    const auto shaderPath = currentDir / "../../../../thyme/include/thyme/platform/shaders/spv";
-    const auto shaderAbsolutePath = std::filesystem::absolute(shaderPath);
-    const auto vertShader = readFile(shaderAbsolutePath / "triangle.vert.spv");
-    const auto fragShader = readFile(shaderAbsolutePath / "triangle.frag.spv");
-    const auto vertexShaderModule = logicalDevice->createShaderModuleUnique(vk::ShaderModuleCreateInfo(
-            vk::ShaderModuleCreateFlagBits(), vertShader.size(), reinterpret_cast<const uint32_t*>(vertShader.data())));
-    const auto fragmentShaderModule = logicalDevice->createShaderModuleUnique(vk::ShaderModuleCreateInfo(
-            vk::ShaderModuleCreateFlagBits(), fragShader.size(), reinterpret_cast<const uint32_t*>(fragShader.data())));
-    const auto vertexShaderStageInfo = vk::PipelineShaderStageCreateInfo(
-            vk::PipelineShaderStageCreateFlagBits(), vk::ShaderStageFlagBits::eVertex, *vertexShaderModule, "main");
-    const auto fragmentShaderStageInfo = vk::PipelineShaderStageCreateInfo(
-            vk::PipelineShaderStageCreateFlagBits(), vk::ShaderStageFlagBits::eFragment, *fragmentShaderModule, "main");
-    const auto shaderStages = { vertexShaderStageInfo, fragmentShaderStageInfo };
+    const auto renderPass = Vulkan::createRenderPass(logicalDevice, surfaceFormat.format);
 
+    auto renderTriangle = Vulkan::TriangleGraphicPipeline(device.logicalDevice, renderPass);
 
-    auto crateRenderPass = [&] {
-        const auto colorAttachment = vk::AttachmentDescription(vk::AttachmentDescriptionFlagBits(),
-                                                               surfaceFormat.format,
-                                                               vk::SampleCountFlagBits::e1,
-                                                               vk::AttachmentLoadOp::eClear,
-                                                               vk::AttachmentStoreOp::eStore,
-                                                               vk::AttachmentLoadOp::eDontCare,
-                                                               vk::AttachmentStoreOp::eDontCare,
-                                                               vk::ImageLayout::eUndefined,
-                                                               vk::ImageLayout::ePresentSrcKHR);
-        constexpr auto colorAttachmentRef = vk::AttachmentReference(0, vk::ImageLayout::eColorAttachmentOptimal);
-        const auto subpassDescription = vk::SubpassDescription(
-                vk::SubpassDescriptionFlagBits(), vk::PipelineBindPoint::eGraphics, {}, { colorAttachmentRef });
-
-        constexpr auto subpassDependency = vk::SubpassDependency(vk::SubpassExternal,
-                                                                 0,
-                                                                 vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                                                                 vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                                                                 vk::AccessFlagBits::eNone,
-                                                                 vk::AccessFlagBits::eColorAttachmentWrite);
-
-        return logicalDevice->createRenderPassUnique(vk::RenderPassCreateInfo(
-                vk::RenderPassCreateFlagBits(), { colorAttachment }, { subpassDescription }, { subpassDependency }));
-    };
-
-    const auto renderPass = crateRenderPass();
-
-    const auto pipelineLayout = logicalDevice->createPipelineLayoutUnique(vk::PipelineLayoutCreateInfo());
-
-    auto createGraphicPipeline = [&] {
-        constexpr auto dynamicStates = { vk::DynamicState::eViewport, vk::DynamicState::eScissor };
-        const auto dynamicStateCreateInfo =
-                vk::PipelineDynamicStateCreateInfo(vk::PipelineDynamicStateCreateFlagBits(), dynamicStates);
-        constexpr auto vertexInputStateCreateInfo =
-                vk::PipelineVertexInputStateCreateInfo(vk::PipelineVertexInputStateCreateFlagBits());
-        constexpr auto inputAssemblyStateCreateInfo = vk::PipelineInputAssemblyStateCreateInfo(
-                vk::PipelineInputAssemblyStateCreateFlagBits(), vk::PrimitiveTopology::eTriangleList, vk::False);
-        constexpr auto viewportState =
-                vk::PipelineViewportStateCreateInfo(vk::PipelineViewportStateCreateFlagBits(), 1, nullptr, 1, nullptr);
-        constexpr auto rasterizer =
-                vk::PipelineRasterizationStateCreateInfo(vk::PipelineRasterizationStateCreateFlagBits(),
-                                                         vk::False,
-                                                         vk::False,
-                                                         vk::PolygonMode::eFill,
-                                                         vk::CullModeFlagBits::eBack,
-                                                         vk::FrontFace::eClockwise,
-                                                         vk::False,
-                                                         0.0f,
-                                                         0.0f,
-                                                         0.0f,
-                                                         1.0f);
-        constexpr auto multisampling =
-                vk::PipelineMultisampleStateCreateInfo(vk::PipelineMultisampleStateCreateFlagBits(),
-                                                       vk::SampleCountFlagBits::e1,
-                                                       vk::False,
-                                                       1.0f,
-                                                       nullptr,
-                                                       vk::False,
-                                                       vk::False);
-        constexpr auto colorBlendAttachments = vk::PipelineColorBlendAttachmentState(
-                vk::False,
-                vk::BlendFactor::eOne,
-                vk::BlendFactor::eZero,
-                vk::BlendOp::eAdd,
-                vk::BlendFactor::eOne,
-                vk::BlendFactor::eZero,
-                vk::BlendOp::eAdd,
-                vk::ColorComponentFlagBits::eA | vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG
-                        | vk::ColorComponentFlagBits::eB);
-        const auto colorBlendStateCreateInfo =
-                vk::PipelineColorBlendStateCreateInfo(vk::PipelineColorBlendStateCreateFlagBits(),
-                                                      vk::False,
-                                                      vk::LogicOp::eClear,
-                                                      { colorBlendAttachments },
-                                                      std::array{ 0.0f, 0.0f, 0.0f, 0.0f });
-
-        return logicalDevice->createGraphicsPipelineUnique({},
-                                                           vk::GraphicsPipelineCreateInfo(vk::PipelineCreateFlagBits(),
-                                                                                          shaderStages,
-                                                                                          &vertexInputStateCreateInfo,
-                                                                                          &inputAssemblyStateCreateInfo,
-                                                                                          nullptr,
-                                                                                          &viewportState,
-                                                                                          &rasterizer,
-                                                                                          &multisampling,
-                                                                                          nullptr,
-                                                                                          &colorBlendStateCreateInfo,
-                                                                                          &dynamicStateCreateInfo,
-                                                                                          *pipelineLayout,
-                                                                                          *renderPass,
-                                                                                          0));
-    };
-    const auto graphicsPipeline = createGraphicPipeline();
     auto swapChain = Vulkan::SwapChainData(swapChainSettings, device, renderPass, surface);
 
     const auto commandPool = logicalDevice->createCommandPoolUnique(vk::CommandPoolCreateInfo(
@@ -213,19 +109,20 @@ void Thyme::Engine::run() const {
                                                                  { clearValues });
         commandBuffer->beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 
-        commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, *graphicsPipeline.value);
         commandBuffer->setViewport(0, { vk::Viewport(0, 0, extent.width, extent.height, 0.0f, 1.0f) });
         commandBuffer->setScissor(0, { vk::Rect2D(vk::Offset2D(0, 0), extent) });
-        commandBuffer->draw(3, 1, 0, 0);
+
+        renderTriangle.draw(commandBuffer);
+
         commandBuffer->endRenderPass();
         commandBuffer->end();
 
         const vk::PipelineStageFlags f = vk::PipelineStageFlagBits::eColorAttachmentOutput;
         const auto submitInfo = vk::SubmitInfo(
                 vk::SubmitInfo({ *imageAvailableSemaphore }, { f }, { *commandBuffer }, { *renderFinishedSemaphore }));
-        const auto graphicQueue = logicalDevice->getQueue(device.queueFamilyIndices.graphicFamily.value(), 0);
+        const auto& graphicQueue = logicalDevice->getQueue(device.queueFamilyIndices.graphicFamily.value(), 0);
         graphicQueue.submit(submitInfo, *fence);
-        const auto presentationQueue = logicalDevice->getQueue(device.queueFamilyIndices.presentFamily.value(), 0);
+        const auto& presentationQueue = logicalDevice->getQueue(device.queueFamilyIndices.presentFamily.value(), 0);
 
         try {
             const auto queuePresentResult = presentationQueue.presentKHR(

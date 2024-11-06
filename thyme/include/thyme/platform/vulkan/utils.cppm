@@ -168,4 +168,6 @@ struct FrameData {
     return frameDatas;
 }
 
-}
+[[nodiscard]] auto createRenderPass(const vk::UniqueDevice& logicalDevice, const vk::Format format) -> vk::UniqueRenderPass;;
+
+}// namespace Thyme::Vulkan
