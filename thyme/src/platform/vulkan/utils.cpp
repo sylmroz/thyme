@@ -305,3 +305,61 @@ auto Vulkan::createRenderPass(const vk::UniqueDevice& logicalDevice, const vk::F
     return logicalDevice->createRenderPassUnique(vk::RenderPassCreateInfo(
             vk::RenderPassCreateFlagBits(), { colorAttachment }, { subpassDescription }, { subpassDependency }));
 }
+auto Vulkan::createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipelineCreateInfo) -> vk::UniquePipeline {
+    const auto& [logicalDevice, renderPass, pipelineLayout, samples, shaderStages] = graphicPipelineCreateInfo;
+    constexpr auto dynamicStates = { vk::DynamicState::eViewport, vk::DynamicState::eScissor };
+    const auto dynamicStateCreateInfo =
+            vk::PipelineDynamicStateCreateInfo(vk::PipelineDynamicStateCreateFlagBits(), dynamicStates);
+    constexpr auto vertexInputStateCreateInfo =
+            vk::PipelineVertexInputStateCreateInfo(vk::PipelineVertexInputStateCreateFlagBits());
+    constexpr auto inputAssemblyStateCreateInfo = vk::PipelineInputAssemblyStateCreateInfo(
+            vk::PipelineInputAssemblyStateCreateFlagBits(), vk::PrimitiveTopology::eTriangleList, vk::False);
+    constexpr auto viewportState =
+            vk::PipelineViewportStateCreateInfo(vk::PipelineViewportStateCreateFlagBits(), 1, nullptr, 1, nullptr);
+    constexpr auto rasterizer = vk::PipelineRasterizationStateCreateInfo(vk::PipelineRasterizationStateCreateFlagBits(),
+                                                                         vk::False,
+                                                                         vk::False,
+                                                                         vk::PolygonMode::eFill,
+                                                                         vk::CullModeFlagBits::eBack,
+                                                                         vk::FrontFace::eClockwise,
+                                                                         vk::False,
+                                                                         0.0f,
+                                                                         0.0f,
+                                                                         0.0f,
+                                                                         1.0f);
+    const auto multisampling = vk::PipelineMultisampleStateCreateInfo(
+            vk::PipelineMultisampleStateCreateFlagBits(), samples, vk::False, 1.0f, nullptr, vk::False, vk::False);
+    constexpr auto colorBlendAttachments = vk::PipelineColorBlendAttachmentState(
+            vk::False,
+            vk::BlendFactor::eOne,
+            vk::BlendFactor::eZero,
+            vk::BlendOp::eAdd,
+            vk::BlendFactor::eOne,
+            vk::BlendFactor::eZero,
+            vk::BlendOp::eAdd,
+            vk::ColorComponentFlagBits::eA | vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG
+                    | vk::ColorComponentFlagBits::eB);
+    const auto colorBlendStateCreateInfo =
+            vk::PipelineColorBlendStateCreateInfo(vk::PipelineColorBlendStateCreateFlagBits(),
+                                                  vk::False,
+                                                  vk::LogicOp::eClear,
+                                                  { colorBlendAttachments },
+                                                  std::array{ 0.0f, 0.0f, 0.0f, 0.0f });
+    return logicalDevice
+            ->createGraphicsPipelineUnique({},
+                                           vk::GraphicsPipelineCreateInfo(vk::PipelineCreateFlagBits(),
+                                                                          shaderStages,
+                                                                          &vertexInputStateCreateInfo,
+                                                                          &inputAssemblyStateCreateInfo,
+                                                                          nullptr,
+                                                                          &viewportState,
+                                                                          &rasterizer,
+                                                                          &multisampling,
+                                                                          nullptr,
+                                                                          &colorBlendStateCreateInfo,
+                                                                          &dynamicStateCreateInfo,
+                                                                          *pipelineLayout,
+                                                                          *renderPass,
+                                                                          0))
+            .value;
+}

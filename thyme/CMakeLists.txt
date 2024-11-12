@@ -27,13 +27,14 @@ target_sources(${PROJECT_NAME}
 			include/thyme/core/engine.cppm
 			include/thyme/core/event.cppm
 			include/thyme/core/platform_context.cppm
+			include/thyme/core/renderer.cppm
 			include/thyme/core/utils.cppm
 			include/thyme/core/window.cppm
 
 			include/thyme/platform/glfw_vulkan_platform_context.cppm
 			include/thyme/platform/glfw_window.cppm
 
-
+			include/thyme/platform/vulkan/graphic_pipeline.cppm
 			include/thyme/platform/vulkan/renderer.cppm
 			include/thyme/platform/vulkan/utils.cppm
 			include/thyme/platform/vulkan/vulkan.cppm
@@ -56,7 +57,7 @@ generate_export_header(
 
 target_precompile_headers(${PROJECT_NAME} 
     PUBLIC
-        "${header_path}/pch.hpp"
+        #"${header_path}/pch.hpp"
     PRIVATE 
         <array>
         <iostream>

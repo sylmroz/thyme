@@ -1,5 +1,6 @@
 module;
 
+#include <functional>
 #include <vector>
 
 #include <fmt/format.h>
@@ -150,13 +151,13 @@ struct FrameData {
     vk::UniqueFence fence;
 };
 
-[[nodiscard]] inline auto createFrameDatas(const vk::UniqueDevice& logicalDevice,
-                                           const vk::UniqueCommandPool& commandPool, const uint32_t maxFrames)
-        -> std::vector<FrameData> {
-    std::vector<FrameData> frameDatas;
-    frameDatas.reserve(maxFrames);
+[[nodiscard]] inline auto createFrameDataList(const vk::UniqueDevice& logicalDevice,
+                                              const vk::UniqueCommandPool& commandPool,
+                                              const uint32_t maxFrames) noexcept -> std::vector<FrameData> {
+    std::vector<FrameData> frameDataList;
+    frameDataList.reserve(maxFrames);
     for (int i = 0; i < maxFrames; i++) {
-        frameDatas.emplace_back(FrameData{
+        frameDataList.emplace_back(FrameData{
                 .commandBuffer = std::move(logicalDevice
                                                    ->allocateCommandBuffersUnique(vk::CommandBufferAllocateInfo(
                                                            *commandPool, vk::CommandBufferLevel::ePrimary, 1))
@@ -165,9 +166,45 @@ struct FrameData {
                 .renderFinishedSemaphore = logicalDevice->createSemaphoreUnique(vk::SemaphoreCreateInfo()),
                 .fence = logicalDevice->createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled)) });
     }
-    return frameDatas;
+    return frameDataList;
 }
 
-[[nodiscard]] auto createRenderPass(const vk::UniqueDevice& logicalDevice, const vk::Format format) -> vk::UniqueRenderPass;;
+class FrameDataList {
+public:
+    explicit FrameDataList(const vk::UniqueDevice& logicalDevice, const vk::UniqueCommandPool& commandPool,
+                           const uint32_t maxFrames) noexcept {
+        m_frameDataList = createFrameDataList(logicalDevice, commandPool, maxFrames);
+    }
+
+    [[nodiscard]] auto getNext() noexcept -> const FrameData& {
+        const auto index = getNextFrameIndex();
+        return m_frameDataList[index];
+    };
+
+private:
+    std::vector<FrameData> m_frameDataList;
+
+    uint32_t frameIndex{ 0 };
+
+    [[nodiscard]] uint32_t getNextFrameIndex() noexcept {
+        const auto currentFrameIndex = frameIndex;
+        frameIndex = (frameIndex + 1) % m_frameDataList.size();
+        return currentFrameIndex;
+    };
+};
+
+[[nodiscard]] auto createRenderPass(const vk::UniqueDevice& logicalDevice, const vk::Format format)
+        -> vk::UniqueRenderPass;
+
+struct GraphicPipelineCreateInfo {
+    const vk::UniqueDevice& logicalDevice;
+    const vk::UniqueRenderPass& renderPass;
+    const vk::UniquePipelineLayout& pipelineLayout;
+    vk::SampleCountFlagBits samples;
+    const std::vector<vk::PipelineShaderStageCreateInfo>& shaderStages;
+};
+
+[[nodiscard]] auto createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipelineCreateInfo)
+        -> vk::UniquePipeline;
 
 }// namespace Thyme::Vulkan

@@ -3,8 +3,8 @@ module;
 #include "logger.hpp"
 
 
-#include <fstream>
 #include <filesystem>
+#include <fstream>
 
 export module thyme.core.utils;
 
@@ -26,5 +26,16 @@ std::vector<char> readFile(const std::filesystem::path& filePath) {
     file.close();
     return buffer;
 }
+
+class NoCopyable {
+public:
+    NoCopyable() = default;
+    NoCopyable(const NoCopyable&) = delete;
+    NoCopyable& operator=(const NoCopyable&) = delete;
+    NoCopyable(NoCopyable&&) = delete;
+    NoCopyable& operator=(NoCopyable&&) = delete;
+
+    virtual ~NoCopyable() = default;
+};
 
 }// namespace Thyme

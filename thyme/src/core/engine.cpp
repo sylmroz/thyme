@@ -4,7 +4,7 @@ module;
 #include "thyme/pch.hpp"
 #include "thyme/platform/vulkan_device_manager.hpp"
 
-#include <thyme/platform/vulkan/graphic_pipeline.hpp>
+//#include <thyme/platform/vulkan/graphic_pipeline.hpp>
 
 #include <filesystem>
 #include <ranges>
@@ -15,6 +15,7 @@ module thyme.core.engine;
 import thyme.core.utils;
 import thyme.core.window;
 import thyme.platform.glfw_window;
+import thyme.platform.vulkan;
 
 Thyme::Engine::Engine(const EngineConfig& engineConfig) : m_engineConfig{ engineConfig } {}
 
@@ -40,7 +41,7 @@ void Thyme::Engine::run() const {
     const auto devices = Vulkan::getPhysicalDevices(instance.instance, surface);
     const Vulkan::PhysicalDevicesManager physicalDevicesManager(devices);
 
-    const auto device = physicalDevicesManager.getSelectedDevice();
+    const auto& device = physicalDevicesManager.getSelectedDevice();
     const auto& logicalDevice = device.logicalDevice;
 
     const auto& swapChainSupportDetails = device.swapChainSupportDetails;
@@ -58,13 +59,7 @@ void Thyme::Engine::run() const {
             vk::CommandPoolCreateFlagBits::eResetCommandBuffer, device.queueFamilyIndices.graphicFamily.value()));
 
     constexpr uint32_t maxFrames{ 2 };
-    const auto frameDatas = Vulkan::createFrameDatas(device.logicalDevice, commandPool, maxFrames);
-
-    auto getNextFrameIndex = [frameIndex = 0, maxFrames]() mutable {
-        const auto currentFrameIndex = frameIndex;
-        frameIndex = (frameIndex + 1) % maxFrames;
-        return currentFrameIndex;
-    };
+    auto frameDataList = Vulkan::FrameDataList(device.logicalDevice, commandPool, maxFrames);
 
     auto recreateSwapChain = [&] {
         logicalDevice->waitIdle();
@@ -73,9 +68,8 @@ void Thyme::Engine::run() const {
         swapChain = Vulkan::SwapChainData(swapChainSettings, device, renderPass, surface, *swapChain.swapChain);
     };
 
-    const auto drawFrame = [&] {
-        const auto frameIndex = getNextFrameIndex();
-        const auto& [commandBuffer, imageAvailableSemaphore, renderFinishedSemaphore, fence] = frameDatas[frameIndex];
+    auto drawFrame = [&]  {
+        const auto& [commandBuffer, imageAvailableSemaphore, renderFinishedSemaphore, fence] = frameDataList.getNext();
 
         if (logicalDevice->waitForFences({ *fence }, vk::True, std::numeric_limits<uint64_t>::max())
             != vk::Result::eSuccess) {
