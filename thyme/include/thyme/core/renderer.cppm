@@ -9,6 +9,6 @@ namespace Thyme {
 export class THYME_API Renderer : public NoCopyable {
 public:
     Renderer() = default;
-    virtual void draw() const = 0;
+    virtual void draw() = 0;
 };
 }// namespace Thyme

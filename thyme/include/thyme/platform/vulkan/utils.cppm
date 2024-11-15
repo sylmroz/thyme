@@ -8,6 +8,7 @@ module;
 
 export module thyme.platform.vulkan:utils;
 import thyme.core.common_structs;
+import thyme.platform.glfw_window;
 
 export namespace Thyme::Vulkan {
 
@@ -45,7 +46,7 @@ struct QueueFamilyIndices {
 struct SwapChainSettings {
     vk::SurfaceFormatKHR surfaceFormat;
     vk::PresentModeKHR presetMode;
-    vk::Extent2D extent;
+    uint32_t imageCount;
 };
 
 class SwapChainSupportDetails {
@@ -81,6 +82,14 @@ public:
         return vk::PresentModeKHR::eFifo;
     }
 
+    [[nodiscard]] inline uint32_t getImageCount() const noexcept {
+        uint32_t swapChainImageCount = capabilities.minImageCount + 1;
+        if (capabilities.maxImageCount > 0 && swapChainImageCount > capabilities.maxImageCount) {
+            return capabilities.maxImageCount;
+        }
+        return swapChainImageCount;
+    }
+
     [[nodiscard]] inline auto getSwapExtent(const Resolution& fallbackResolution) const noexcept -> vk::Extent2D {
         if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
             return capabilities.currentExtent;
@@ -92,11 +101,10 @@ public:
                              std::clamp(height, minImageExtent.height, maxImageExtent.height) };
     }
 
-    [[nodiscard]] inline auto getBestSwapChainSettings(const Resolution& fallbackResolution) const noexcept
-            -> SwapChainSettings {
+    [[nodiscard]] inline auto getBestSwapChainSettings() const noexcept -> SwapChainSettings {
         return SwapChainSettings{ .surfaceFormat = getBestSurfaceFormat(),
                                   .presetMode = getBestPresetMode(),
-                                  .extent = getSwapExtent(fallbackResolution) };
+                                  .imageCount = getImageCount() };
     }
 };
 
@@ -127,21 +135,20 @@ struct Device {
 
 std::vector<PhysicalDevice> getPhysicalDevices(const vk::UniqueInstance& instance, const vk::UniqueSurfaceKHR& surface);
 
+struct SwapChainFrame {
+    vk::Image image;
+    vk::UniqueImageView imageView;
+    vk::UniqueFramebuffer frameBuffer;
+};
+
 class SwapChainData {
 public:
-    explicit SwapChainData(const SwapChainSettings& swapChainDetails,
-                           const Device& device,
-                           const vk::UniqueRenderPass& renderPass,
-                           const vk::UniqueSurfaceKHR& surface,
-                           const vk::SwapchainKHR& oldSwapChain = {});
+    explicit SwapChainData(const Device& device, const SwapChainSettings& swapChainSettings,
+                           const vk::Extent2D& swapChainExtent, const vk::UniqueRenderPass& renderPass,
+                           const vk::UniqueSurfaceKHR& surface, const vk::SwapchainKHR& oldSwapChain = {});
 
     vk::UniqueSwapchainKHR swapChain;
-    std::vector<vk::Image> images;
-    std::vector<vk::UniqueImageView> imageViews;
-    std::vector<vk::UniqueFramebuffer> frameBuffers;
-
-private:
-    SwapChainSettings m_swapChainDetails;
+    std::vector<SwapChainFrame> swapChainFrame;
 };
 
 struct FrameData {

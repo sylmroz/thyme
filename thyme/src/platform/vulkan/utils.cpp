@@ -224,28 +224,21 @@ std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueIn
             vk::DeviceCreateFlags(), deviceQueueCreateInfos, nullptr, deviceExtensions, &features));
 }
 
-SwapChainData::SwapChainData(const SwapChainSettings& swapChainDetails,
-                             const Device& device,
+SwapChainData::SwapChainData(const Device& device,
+                             const SwapChainSettings& swapChainSettings,
+                             const vk::Extent2D& swapChainExtent,
                              const vk::UniqueRenderPass& renderPass,
                              const vk::UniqueSurfaceKHR& surface,
-                             const vk::SwapchainKHR& oldSwapChain)
-    : m_swapChainDetails{ swapChainDetails } {
-    const auto& [surfaceFormat, presetMode, extent] = swapChainDetails;
+                             const vk::SwapchainKHR& oldSwapChain) {
+    const auto& [surfaceFormat, presetMode, imageCount] = swapChainSettings;
     const auto& [physicalDevice, logicalDevice, queueFamilyIndices, swapChainSupportDetails] = device;
-    const auto imageCount = [&capabilities = swapChainSupportDetails.capabilities] {
-        uint32_t swapChainImageCount = capabilities.minImageCount + 1;
-        if (capabilities.maxImageCount > 0 && swapChainImageCount > capabilities.maxImageCount) {
-            swapChainImageCount = capabilities.maxImageCount;
-        }
-        return swapChainImageCount;
-    }();
     const auto swapChainCreateInfo = [&] {
         auto info = vk::SwapchainCreateInfoKHR(vk::SwapchainCreateFlagsKHR(),
                                                *surface,
                                                imageCount,
                                                surfaceFormat.format,
                                                surfaceFormat.colorSpace,
-                                               extent,
+                                               swapChainExtent,
                                                1,
                                                vk::ImageUsageFlagBits::eColorAttachment);
         info.preTransform = swapChainSupportDetails.capabilities.currentTransform;
@@ -264,22 +257,23 @@ SwapChainData::SwapChainData(const SwapChainSettings& swapChainDetails,
     }();
 
     swapChain = logicalDevice->createSwapchainKHRUnique(swapChainCreateInfo);
-    images = logicalDevice->getSwapchainImagesKHR(*swapChain);
-    imageViews.reserve(images.size());
-    frameBuffers.reserve(images.size());
-    for (const auto& swapChainImage : images) {
-        const auto imageViewCreateInfo =
-                vk::ImageViewCreateInfo(vk::ImageViewCreateFlags(),
-                                        swapChainImage,
-                                        vk::ImageViewType::e2D,
-                                        surfaceFormat.format,
-                                        vk::ComponentMapping(),
-                                        vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
-        const auto& imageView = imageViews.emplace_back(logicalDevice->createImageViewUnique(imageViewCreateInfo));
-        frameBuffers.emplace_back(logicalDevice->createFramebufferUnique(vk::FramebufferCreateInfo(
-                vk::FramebufferCreateFlagBits(), *renderPass, { *imageView }, extent.width, extent.height, 1)));
-    }
+    swapChainFrame = logicalDevice->getSwapchainImagesKHR(*swapChain) | std::views::transform([&](const vk::Image& image) -> SwapChainFrame {
+        auto imageView = logicalDevice->createImageViewUnique(vk::ImageViewCreateInfo(vk::ImageViewCreateFlags(),
+                                       image,
+                                       vk::ImageViewType::e2D,
+                                       surfaceFormat.format,
+                                       vk::ComponentMapping(),
+                                       vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1)));
+        auto frameBuffer = logicalDevice->createFramebufferUnique(vk::FramebufferCreateInfo(vk::FramebufferCreateFlagBits(),
+                                                                                 *renderPass,
+                                                                                 { *imageView },
+                                                                                 swapChainExtent.width,
+                                                                                 swapChainExtent.height,
+                                                                                 1));
+                                                                                 return SwapChainFrame{std::move(image), std::move(imageView), std::move(frameBuffer)};
+    }) | std::ranges::to<std::vector<SwapChainFrame>>();
 }
+
 
 auto Vulkan::createRenderPass(const vk::UniqueDevice& logicalDevice, const vk::Format format) -> vk::UniqueRenderPass {
     const auto colorAttachment = vk::AttachmentDescription(vk::AttachmentDescriptionFlagBits(),
@@ -305,6 +299,7 @@ auto Vulkan::createRenderPass(const vk::UniqueDevice& logicalDevice, const vk::F
     return logicalDevice->createRenderPassUnique(vk::RenderPassCreateInfo(
             vk::RenderPassCreateFlagBits(), { colorAttachment }, { subpassDescription }, { subpassDependency }));
 }
+
 auto Vulkan::createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipelineCreateInfo) -> vk::UniquePipeline {
     const auto& [logicalDevice, renderPass, pipelineLayout, samples, shaderStages] = graphicPipelineCreateInfo;
     constexpr auto dynamicStates = { vk::DynamicState::eViewport, vk::DynamicState::eScissor };

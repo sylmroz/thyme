@@ -23,7 +23,7 @@ class GlfwWindow: public Window {
 
 public:
     explicit GlfwWindow(const WindowConfig& config);
-    bool frameBufferResized{ false };
+    mutable bool frameBufferResized{ false };
 
     void poolEvents() override {
         glfwPollEvents();

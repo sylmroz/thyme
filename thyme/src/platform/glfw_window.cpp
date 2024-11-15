@@ -29,7 +29,7 @@ GlfwWindow::GlfwWindow(const WindowConfig& config) : Window{ config } {
         TH_API_LOG_INFO(windowResize.toString());
     });
 
-    glfwSetFramebufferSizeCallback(m_window.get(), [](GLFWwindow* window, int width, int height) {
+    glfwSetFramebufferSizeCallback(m_window.get(), [](GLFWwindow* window, int, int) {
         const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
         app->frameBufferResized = true;
     });
