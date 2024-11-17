@@ -17,6 +17,7 @@ target_sources(${PROJECT_NAME}
 		src/core/engine.cpp
 
 		src/platform/glfw_window.cpp
+		src/platform/vulkan/graphic_pipeline.cpp
 		src/platform/vulkan/renderer.cpp
 		src/platform/vulkan/utils.cpp
 	PUBLIC

@@ -22,7 +22,7 @@ public:
                   vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
                                             device.queueFamilyIndices.graphicFamily.value())) },
           m_swapChainSettings{ device.swapChainSupportDetails.getBestSwapChainSettings() },
-          m_renderPass{ Vulkan::createRenderPass(device.logicalDevice, m_swapChainSettings.surfaceFormat.format) },
+          m_renderPass{ createRenderPass(device.logicalDevice, m_swapChainSettings.surfaceFormat.format) },
           m_frameDataList{ FrameDataList(device.logicalDevice, m_commandPool, maxFramesInFlight) },
           m_swapChainExtent{ m_device.swapChainSupportDetails.getSwapExtent(m_window.getFrameBufferSize()) },
           m_swapChainData{ SwapChainData(m_device, m_swapChainSettings, m_swapChainExtent, m_renderPass, m_surface,
