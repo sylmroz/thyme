@@ -127,6 +127,7 @@ void UniqueInstance::validateExtensions(const std::vector<const char*>& extensio
         throw std::runtime_error(message);
     }
 }
+
 void UniqueInstance::setupDebugMessenger(const std::vector<const char*>& extensions) {
     validateExtensions(extensions);
 
@@ -257,21 +258,25 @@ SwapChainData::SwapChainData(const Device& device,
     }();
 
     swapChain = logicalDevice->createSwapchainKHRUnique(swapChainCreateInfo);
-    swapChainFrame = logicalDevice->getSwapchainImagesKHR(*swapChain) | std::views::transform([&](const vk::Image& image) -> SwapChainFrame {
-        auto imageView = logicalDevice->createImageViewUnique(vk::ImageViewCreateInfo(vk::ImageViewCreateFlags(),
-                                       image,
-                                       vk::ImageViewType::e2D,
-                                       surfaceFormat.format,
-                                       vk::ComponentMapping(),
-                                       vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1)));
-        auto frameBuffer = logicalDevice->createFramebufferUnique(vk::FramebufferCreateInfo(vk::FramebufferCreateFlagBits(),
-                                                                                 *renderPass,
-                                                                                 { *imageView },
-                                                                                 swapChainExtent.width,
-                                                                                 swapChainExtent.height,
-                                                                                 1));
-                                                                                 return SwapChainFrame{std::move(image), std::move(imageView), std::move(frameBuffer)};
-    }) | std::ranges::to<std::vector<SwapChainFrame>>();
+    swapChainFrame = logicalDevice->getSwapchainImagesKHR(*swapChain)
+                     | std::views::transform([&](const vk::Image& image) -> SwapChainFrame {
+                           auto imageView = logicalDevice->createImageViewUnique(vk::ImageViewCreateInfo(
+                                   vk::ImageViewCreateFlags(),
+                                   image,
+                                   vk::ImageViewType::e2D,
+                                   surfaceFormat.format,
+                                   vk::ComponentMapping(),
+                                   vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1)));
+                           auto frameBuffer = logicalDevice->createFramebufferUnique(
+                                   vk::FramebufferCreateInfo(vk::FramebufferCreateFlagBits(),
+                                                             *renderPass,
+                                                             { *imageView },
+                                                             swapChainExtent.width,
+                                                             swapChainExtent.height,
+                                                             1));
+                           return SwapChainFrame{ std::move(image), std::move(imageView), std::move(frameBuffer) };
+                       })
+                     | std::ranges::to<decltype(swapChainFrame)>();
 }
 
 

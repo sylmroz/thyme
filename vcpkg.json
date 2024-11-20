@@ -1,8 +1,9 @@
 {
   "dependencies": [
     "glfw3",
-    "spdlog",
-    "vulkan-headers",
-    "vulkan-validationlayers"
-  ]
+    "imgui",
+    "spdlog"
+  ],
+  "version": "0.0.1",
+  "name": "thyme"
 }

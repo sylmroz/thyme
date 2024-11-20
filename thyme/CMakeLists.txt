@@ -17,8 +17,10 @@ target_sources(${PROJECT_NAME}
 		src/core/engine.cpp
 
 		src/platform/glfw_window.cpp
+
 		src/platform/vulkan/graphic_pipeline.cpp
 		src/platform/vulkan/renderer.cpp
+		#src/platform/vulkan/shader.cpp #for now there are problems with integrating shaderc from google
 		src/platform/vulkan/utils.cpp
 	PUBLIC
 		FILE_SET CXX_MODULES
@@ -37,6 +39,7 @@ target_sources(${PROJECT_NAME}
 
 			include/thyme/platform/vulkan/graphic_pipeline.cppm
 			include/thyme/platform/vulkan/renderer.cppm
+			#include/thyme/platform/vulkan/shader.cppm #for now there are problems with integrating shaderc from google
 			include/thyme/platform/vulkan/utils.cppm
 			include/thyme/platform/vulkan/vulkan.cppm
 )
@@ -75,16 +78,16 @@ target_precompile_headers(${PROJECT_NAME}
 
 find_package(spdlog REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
-find_package(Vulkan REQUIRED)
-find_package(VulkanHeaders CONFIG REQUIRED)
+find_package(Vulkan REQUIRED COMPONENTS shaderc_combined)
+
 target_link_libraries(${PROJECT_NAME} 
     PRIVATE
         spdlog::spdlog_header_only
         glfw
         Vulkan::Vulkan
         Vulkan::Headers
+		Vulkan::shaderc_combined
 )
-
 
 # copy dlls to the app
 if (WIN32)
