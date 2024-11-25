@@ -1,8 +1,12 @@
 {
   "dependencies": [
     "glfw3",
-    "imgui",
-    "spdlog"
+    {
+      "name": "imgui",
+      "features": ["docking-experimental"]
+    },
+    "spdlog",
+    "glm"
   ],
   "version": "0.0.1",
   "name": "thyme"

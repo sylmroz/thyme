@@ -1,6 +1,6 @@
 module;
 
-#include "thyme/export_macros.hpp"
+#include <thyme/export_macros.hpp>
 
 export module thyme.core.renderer;
 

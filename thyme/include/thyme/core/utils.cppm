@@ -2,7 +2,6 @@ module;
 
 #include "logger.hpp"
 
-
 #include <filesystem>
 #include <fstream>
 

@@ -1,7 +1,5 @@
 module;
 
-#include <filesystem>
-
 #include <vulkan/vulkan.hpp>
 
 export module thyme.platform.vulkan:graphic_pipeline;

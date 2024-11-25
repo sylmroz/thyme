@@ -29,6 +29,10 @@ target_sources(${PROJECT_NAME}
 			include/thyme/core/common_structs.cppm
 			include/thyme/core/engine.cppm
 			include/thyme/core/event.cppm
+			include/thyme/core/key_codes.cppm
+			include/thyme/core/layer.cppm
+			include/thyme/core/layer_stack.cppm
+			include/thyme/core/mouse_codes.cppm
 			include/thyme/core/platform_context.cppm
 			include/thyme/core/renderer.cppm
 			include/thyme/core/utils.cppm
@@ -64,14 +68,20 @@ target_precompile_headers(${PROJECT_NAME}
         #"${header_path}/pch.hpp"
     PRIVATE 
         <array>
+		<functional>
+		<filesystem>
+		<fstream>
         <iostream>
         <ranges>
         <map>
         <memory>
+		<ostream>
         <set>
         <string>
         <string_view>
+		<utility>
         <unordered_map>
+		<variant>
         <vector>
         <type_traits>
 )
