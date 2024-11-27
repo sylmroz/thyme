@@ -5,6 +5,8 @@ module;
 #include <string>
 
 export module thyme.core.engine;
+import thyme.core.layer;
+import thyme.core.layer_stack;
 
 namespace Thyme {
 
@@ -15,21 +17,15 @@ export struct EngineConfig {
     uint32_t height{ 1080 };
 };
 
-export class THYME_API Engine {
+export class THYME_API Engine final {
 public:
-    explicit Engine(const EngineConfig& engineConfig);
-
-    explicit Engine(const Engine&) = default;
-    explicit Engine(Engine&&) = default;
-
-    Engine& operator=(const Engine&) = default;
-    Engine& operator=(Engine&&) = default;
+    explicit Engine(const EngineConfig& engineConfig, LayerStack<Layer>& layers);
 
     void run() const;
-    virtual ~Engine() = default;
 
 private:
     EngineConfig m_engineConfig;
+    LayerStack<Layer>& m_layers;
 };
 
 }// namespace Thyme

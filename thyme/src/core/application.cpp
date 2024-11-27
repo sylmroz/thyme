@@ -6,24 +6,28 @@ module;
 module thyme.core.application;
 
 import thyme.core.engine;
+import thyme.core.layer;
+import thyme.core.layer_stack;
 import thyme.core.platform_context;
 import thyme.platform.gflw_vulkan_platform_context;
 
+using namespace Thyme;
+
 template<typename Context>
-    requires(std::is_base_of_v<Thyme::PlatformContext, Context>)
-Thyme::Engine createEngine(const Thyme::EngineConfig& config) {
+    requires(std::is_base_of_v<PlatformContext, Context>)
+Engine createEngine(const EngineConfig& config, LayerStack<Layer>& layers) {
     [[maybe_unused]] static auto ctx = Context();
-    return Thyme::Engine(config);
+    return Engine(config, layers);
 }
 
-Thyme::Application::Application() {
+Application::Application() {
     ThymeLogger::init(spdlog::level::trace);
 }
 
-void Thyme::Application::run() const {
+void Application::run() {
     TH_API_LOG_INFO("Start {} app", name);
     try {
-        const auto engine = createEngine<GlfwVulkanPlatformContext>(EngineConfig{ .appName = name });
+        const auto engine = createEngine<GlfwVulkanPlatformContext>(EngineConfig{ .appName = name }, layers);
         engine.run();
     } catch (const std::exception& e) {
         TH_API_LOG_ERROR(e.what());

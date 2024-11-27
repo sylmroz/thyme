@@ -4,13 +4,17 @@ module;
 
 export module thyme.core.layer_stack;
 
-import thyme.core.layer;
+namespace Thyme {
 
-export namespace Thyme {
+export enum class LayerType : uint8_t {
+    overlay,
+    non_overlay
+};
 
+export template <typename Layer>
 class THYME_API LayerStack {
 public:
-    void pushLayer(Layer* layer) {
+    inline void pushLayer(Layer* layer) {
         if (layer->getType() == LayerType::overlay) {
             pushOverlay(layer);
         } else {
@@ -24,6 +28,27 @@ public:
         } else {
             popNonOverlayLayer(layer);
         }
+    }
+
+    inline void pushOverlay(Layer* layer) {
+        const auto it = std::next(m_layers.begin(), m_nextOverlayIndex);
+        m_layers.emplace(it, layer);
+        ++m_nextOverlayIndex;
+    }
+
+    inline void popOverlay(Layer* layer) {
+        m_layers.remove(layer);
+        if (m_nextOverlayIndex > 0) {
+            --m_nextOverlayIndex;
+        }
+    }
+
+    inline void pushNonOverlayLayer(Layer* layer) {
+        m_layers.push_back(layer);
+    }
+
+    inline void popNonOverlayLayer(Layer* layer) {
+        m_layers.remove(layer);
     }
 
     [[nodiscard]] inline auto begin() noexcept {
@@ -43,29 +68,7 @@ public:
     }
 
 private:
-    inline void pushOverlay(Layer* layer) {
-        const auto it = std::next(m_layers.begin(), m_lastOverlayIndex);
-        m_layers.emplace(it, layer);
-        ++m_lastOverlayIndex;
-    }
-
-    inline void popOverlay(Layer* layer) {
-        m_layers.remove(layer);
-        if (m_lastOverlayIndex > 0) {
-            --m_lastOverlayIndex;
-        }
-    }
-
-    inline void pushNonOverlayLayer(Layer* layer) {
-        m_layers.push_back(layer);
-    }
-
-    inline void popNonOverlayLayer(Layer* layer) {
-        m_layers.remove(layer);
-    }
-
-private:
-    uint32_t m_lastOverlayIndex{ 0 };
+    uint32_t m_nextOverlayIndex{ 0 };
     std::list<Layer*> m_layers;
 };
 

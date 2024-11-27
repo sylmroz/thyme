@@ -8,16 +8,18 @@ module;
 export module thyme.core.window;
 
 import thyme.core.engine;
+import thyme.core.event;
 
 export namespace Thyme {
 
 struct THYME_API WindowConfig {
     WindowConfig() = default;
-    explicit WindowConfig(const EngineConfig& config)
-        : width{ config.width }, height{ config.height }, name{ config.appName } {}
+    explicit WindowConfig(const EngineConfig& config, const EventSubject& eventSubject)
+        : width{ config.width }, height{ config.height }, name{ config.appName }, eventSubject{eventSubject} {}
     uint32_t width{ 0 };
     uint32_t height{ 0 };
     std::string name;
+    EventSubject eventSubject;
 };
 
 class THYME_API Window {

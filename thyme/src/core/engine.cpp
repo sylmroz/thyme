@@ -4,7 +4,7 @@ module;
 #include "thyme/pch.hpp"
 #include "thyme/platform/vulkan_device_manager.hpp"
 
-//#include <thyme/platform/vulkan/graphic_pipeline.hpp>
+// #include <thyme/platform/vulkan/graphic_pipeline.hpp>
 
 #include <filesystem>
 #include <ranges>
@@ -12,18 +12,27 @@ module;
 
 module thyme.core.engine;
 
+import thyme.core.event;
+import thyme.core.layer;
+import thyme.core.layer_stack;
 import thyme.core.utils;
 import thyme.core.window;
 import thyme.platform.glfw_window;
 import thyme.platform.vulkan;
 
-Thyme::Engine::Engine(const EngineConfig& engineConfig) : m_engineConfig{ engineConfig } {}
+Thyme::Engine::Engine(const EngineConfig& engineConfig, LayerStack<Layer>& layers)
+    : m_engineConfig{ engineConfig }, m_layers{ layers } {}
 
 void Thyme::Engine::run() const {
-
     TH_API_LOG_INFO("Start {} engine", m_engineConfig.engineName);
 
-    VulkanGlfwWindow window(WindowConfig{ m_engineConfig });
+    EventSubject windowEvents;
+    windowEvents.subscribe([&layers = m_layers](const Event& event) {
+        for (const auto layer: layers) {
+            layer->onEvent(event);
+        }
+    });
+    VulkanGlfwWindow window(WindowConfig{ m_engineConfig, windowEvents });
 
     const auto glfwExtensions = VulkanGlfwWindow::getRequiredInstanceExtensions();
     // clang-format off
@@ -45,9 +54,11 @@ void Thyme::Engine::run() const {
 
     Vulkan::VulkanRenderer renderer(window, device, surface);
 
-
     while (!window.shouldClose()) {
         window.poolEvents();
+        for (const auto& layer : m_layers) {
+            layer->draw();
+        }
         renderer.draw();
     }
 

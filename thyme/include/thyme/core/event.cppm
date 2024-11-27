@@ -17,7 +17,7 @@ struct THYME_API WindowResize {
     int width;
     int height;
 
-    std::string toString() {
+    std::string toString() const {
         return std::format("WindowResize {{ width:{} height:{} }}", width, height);
     }
 };

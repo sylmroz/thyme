@@ -6,13 +6,24 @@ module;
 
 export module thyme.core.application;
 
+import thyme.core.layer;
+import thyme.core.layer_stack;
+
 namespace Thyme {
 
 export class THYME_API Application {
 public:
     Application();
     std::string name{ "Thyme" };
-    void run() const;
+    void run();
+
+    template <typename L>
+    L addLayer() noexcept {
+        return L(layers);
+    }
+
+private:
+    LayerStack<Layer> layers;
 };
 
 }// namespace Thyme

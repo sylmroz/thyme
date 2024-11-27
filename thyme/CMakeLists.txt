@@ -27,6 +27,7 @@ target_sources(${PROJECT_NAME}
 		FILES
 			include/thyme/core/application.cppm
 			include/thyme/core/common_structs.cppm
+			include/thyme/core/core.cppm
 			include/thyme/core/engine.cppm
 			include/thyme/core/event.cppm
 			include/thyme/core/key_codes.cppm
