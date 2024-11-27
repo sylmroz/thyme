@@ -5,21 +5,21 @@
 
 import thyme.core;
 
-class ExampleLayer: public Thyme::OverlayLayer {
+class ExampleLayer final: public Thyme::OverlayLayer {
+    struct MyEventDispatcher final: Thyme::EventDispatcher<Thyme::WindowResize> {
+        void operator()(const Thyme::WindowResize& event) override {
+            TH_APP_LOG_INFO("Example Layer::onEvent {}", event.toString());
+        }
+        using EventDispatcher::operator();
+    };
+
 public:
     explicit ExampleLayer(Thyme::LayerStack<Layer>& layers) : OverlayLayer("example layer", layers) {}
     void draw() override {}
     void onAttach() override {}
     void onDetach() override {}
     void onEvent(const Thyme::Event& event) override {
-        std::visit(Thyme::Overload(
-                           [](const Thyme::WindowResize& resizeEvent) {
-                               TH_APP_LOG_INFO("Example Layer::onEvent {}", resizeEvent.toString());
-                           },
-                           [](auto&&) {
-                               // ignore
-                           }),
-                   event);
+        std::visit(MyEventDispatcher{}, event);
     }
 };
 

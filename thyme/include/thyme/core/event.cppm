@@ -58,26 +58,33 @@ using MouseEvent = std::variant<MouseMove, MouseButtonDown, MouseButtonUp>;
 
 using KeyEvent = std::variant<KeyPressed, KeyReleased>;
 
-using Event = std::variant<WindowResize, WindowClose, MouseMove, MouseButtonDown, MouseButtonUp, KeyPressed,
-                           KeyPressedRepeated, KeyReleased>;
+using Event = std::variant<WindowResize,
+                           WindowClose,
+                           MouseMove,
+                           MouseButtonDown,
+                           MouseButtonUp,
+                           KeyPressed,
+                           KeyPressedRepeated,
+                           KeyReleased>;
 
 class THYME_API EventSubject {
 public:
     using event_fn = std::function<void(Event)>;
 
-    void next(const Event& event) const {
+    void next(const Event& event) const noexcept {
         for (const auto& f : m_handlers | std::views::keys) {
             f(event);
         }
     }
-    
-    int subscribe(event_fn fn) {
+
+    int subscribe(event_fn fn) noexcept {
         m_handlers.emplace_back(std::make_pair(fn, m_handlerId));
         return m_handlerId++;
     }
 
-    void unsubscribe(const int id) {
-        if (const auto it = std::ranges::find(m_handlers, id, &std::pair<event_fn, int>::second); it != m_handlers.end()) {
+    void unsubscribe(const int id) noexcept {
+        if (const auto it = std::ranges::find(m_handlers, id, &std::pair<event_fn, int>::second);
+            it != m_handlers.end()) {
             m_handlers.erase(it);
         }
     }
@@ -85,6 +92,18 @@ public:
 private:
     std::vector<std::pair<event_fn, int>> m_handlers;
     int m_handlerId{ 0 };
+};
+
+template <typename Event>
+struct EventDispatcherHelper {
+    virtual void operator()(const Event& event) = 0;
+
+    virtual ~EventDispatcherHelper() = default;
+};
+
+template <typename... Events>
+struct EventDispatcher : EventDispatcherHelper<Events>... {
+    void operator()(auto&&) {}
 };
 
 }// namespace Thyme

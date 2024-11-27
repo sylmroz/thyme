@@ -6,7 +6,7 @@ export module thyme.core.layer_stack;
 
 namespace Thyme {
 
-export enum class LayerType : uint8_t {
+export enum class LayerType: uint8_t {
     overlay,
     non_overlay
 };
@@ -63,7 +63,7 @@ public:
         return m_layers.end();
     }
 
-    [[nodiscard]] inline auto end() const noexcept{
+    [[nodiscard]] inline auto end() const noexcept {
         return m_layers.end();
     }
 
@@ -72,4 +72,4 @@ private:
     std::list<Layer*> m_layers;
 };
 
-}
+}// namespace Thyme
