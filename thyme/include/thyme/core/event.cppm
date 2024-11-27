@@ -10,6 +10,7 @@ module;
 export module thyme.core.event;
 import thyme.core.key_codes;
 import thyme.core.mouse_codes;
+import thyme.core.utils;
 
 export namespace Thyme {
 
@@ -95,10 +96,8 @@ private:
 };
 
 template <typename Event>
-struct EventDispatcherHelper {
+struct EventDispatcherHelper : NoCopyable {
     virtual void operator()(const Event& event) = 0;
-
-    virtual ~EventDispatcherHelper() = default;
 };
 
 template <typename... Events>
