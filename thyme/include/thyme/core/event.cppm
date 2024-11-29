@@ -25,8 +25,8 @@ struct THYME_API WindowResize {
 
 struct THYME_API WindowClose {};
 
-struct THYME_API MouseMove {
-    glm::vec2 position;
+struct THYME_API MousePosition {
+    glm::vec2 pos;
 };
 
 struct THYME_API MouseButtonDown {
@@ -38,7 +38,7 @@ struct THYME_API MouseButtonUp {
 };
 
 struct THYME_API MouseWheel {
-    int wheel;
+    glm::vec2 wheel;
 };
 
 struct THYME_API KeyPressed {

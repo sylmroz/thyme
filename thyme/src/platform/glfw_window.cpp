@@ -25,15 +25,28 @@ GlfwWindow::GlfwWindow(const WindowConfig& config) : Window{ config } {
                           });
     glfwSetWindowUserPointer(m_window.get(), this);
     glfwSetWindowSizeCallback(m_window.get(), [](GLFWwindow* window, int width, int height) {
-        auto windowResize = WindowResize{ .width = width, .height = height };
         const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
-        app->config.eventSubject.next(windowResize);
-        TH_API_LOG_INFO(windowResize.toString());
+        app->config.eventSubject.next(WindowResize{ .width = width, .height = height });
     });
 
     glfwSetFramebufferSizeCallback(m_window.get(), [](GLFWwindow* window, int, int) {
         const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
         app->frameBufferResized = true;
+    });
+
+    glfwSetWindowCloseCallback(m_window.get(), [](GLFWwindow* window) {
+        const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
+        app->config.eventSubject.next(WindowClose{});
+    });
+
+    glfwSetCursorPosCallback(m_window.get(), [](GLFWwindow* window, double x, double y) {
+        const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
+        app->config.eventSubject.next(MousePosition{ { x, y } });
+    });
+
+    glfwSetScrollCallback(m_window.get(), [](GLFWwindow* window, double x, double y) {
+        const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
+        app->config.eventSubject.next(MouseWheel{ { x, y } });
     });
 }
 
