@@ -6,8 +6,11 @@
 import thyme.core;
 
 class ExampleLayer final: public Thyme::OverlayLayer {
-    struct MyEventDispatcher final: Thyme::EventDispatcher<Thyme::WindowResize> {
+    struct MyEventDispatcher final: Thyme::EventDispatcher<Thyme::WindowResize, Thyme::MousePosition> {
         void operator()(const Thyme::WindowResize& event) override {
+            TH_APP_LOG_INFO("Example Layer::onEvent {}", event.toString());
+        }
+        void operator()(const Thyme::MousePosition& event) override {
             TH_APP_LOG_INFO("Example Layer::onEvent {}", event.toString());
         }
         using EventDispatcher::operator();

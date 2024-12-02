@@ -27,6 +27,9 @@ struct THYME_API WindowClose {};
 
 struct THYME_API MousePosition {
     glm::vec2 pos;
+    std::string toString() const {
+        return std::format("MousePosition {{ x: {}, y: {}}}", pos.x, pos.y);
+    }
 };
 
 struct THYME_API MouseButtonDown {
@@ -55,13 +58,14 @@ struct THYME_API KeyReleased {
 
 using WindowEvent = std::variant<WindowResize, WindowClose>;
 
-using MouseEvent = std::variant<MouseMove, MouseButtonDown, MouseButtonUp>;
+using MouseEvent = std::variant<MousePosition, MouseWheel, MouseButtonDown, MouseButtonUp>;
 
 using KeyEvent = std::variant<KeyPressed, KeyReleased>;
 
 using Event = std::variant<WindowResize,
                            WindowClose,
-                           MouseMove,
+                           MousePosition,
+                           MouseWheel,
                            MouseButtonDown,
                            MouseButtonUp,
                            KeyPressed,
@@ -96,12 +100,12 @@ private:
 };
 
 template <typename Event>
-struct EventDispatcherHelper : NoCopyable {
+struct EventDispatcherHelper: NoCopyable {
     virtual void operator()(const Event& event) = 0;
 };
 
 template <typename... Events>
-struct EventDispatcher : EventDispatcherHelper<Events>... {
+struct EventDispatcher: EventDispatcherHelper<Events>... {
     void operator()(auto&&) {}
 };
 
