@@ -3,7 +3,11 @@
     "glfw3",
     {
       "name": "imgui",
-      "features": ["docking-experimental"]
+      "features": [
+        "docking-experimental",
+        "vulkan-binding",
+        "glfw-binding"
+      ]
     },
     "spdlog",
     "glm"

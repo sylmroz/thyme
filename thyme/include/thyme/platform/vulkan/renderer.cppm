@@ -3,6 +3,7 @@ module;
 #include <thyme/core/logger.hpp>
 
 #include <vulkan/vulkan.hpp>
+#include <imgui_impl_vulkan.h>
 
 export module thyme.platform.vulkan:renderer;
 import :graphic_pipeline;
@@ -76,8 +77,18 @@ public:
             pipeline->draw(commandBuffer);
         }
 
+        const auto data = ImGui::GetDrawData();
+        ImGui_ImplVulkan_RenderDrawData(data, commandBuffer.get());
+
         commandBuffer->endRenderPass();
         commandBuffer->end();
+
+        // Update and Render additional Platform Windows
+        if (const auto io = ImGui::GetIO(); io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+        {
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+        }
 
         const vk::PipelineStageFlags f = vk::PipelineStageFlagBits::eColorAttachmentOutput;
         const auto submitInfo = vk::SubmitInfo(
@@ -107,6 +118,18 @@ public:
         recreateSwapChain(resolution);
     }
 
+    // temporary public
+    const Device& m_device;
+    const VulkanGlfwWindow& m_window;
+    const vk::UniqueSurfaceKHR& m_surface;
+    const vk::UniqueCommandPool m_commandPool;
+    SwapChainSettings m_swapChainSettings;
+    const vk::UniqueRenderPass m_renderPass;
+    FrameDataList m_frameDataList;
+    vk::Extent2D m_swapChainExtent;
+    SwapChainData m_swapChainData;
+
+    static constexpr uint32_t maxFramesInFlight{ 2 };
 private:
     inline void recreateSwapChain(const Resolution& resolution) {
         m_device.logicalDevice->waitIdle();
@@ -124,17 +147,5 @@ private:
 
 private:
     std::vector<std::unique_ptr<GraphicPipeline>> m_pipelines;
-
-    const Device& m_device;
-    const VulkanGlfwWindow& m_window;
-    const vk::UniqueSurfaceKHR& m_surface;
-    const vk::UniqueCommandPool m_commandPool;
-    SwapChainSettings m_swapChainSettings;
-    const vk::UniqueRenderPass m_renderPass;
-    FrameDataList m_frameDataList;
-    vk::Extent2D m_swapChainExtent;
-    SwapChainData m_swapChainData;
-
-    static constexpr uint32_t maxFramesInFlight{ 2 };
 };
 }// namespace Thyme::Vulkan

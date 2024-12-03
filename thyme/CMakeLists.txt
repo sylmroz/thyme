@@ -6,8 +6,7 @@ set(source_path "${${PROJECT_NAME}_SOURCE_DIR}/src")
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 set(CMAKE_CXX_SCAN_FOR_MODULES ON)
-
-option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
+set(VCPKG_TARGET_TRIPLET "x64-windows-static")
 
 add_library(${PROJECT_NAME})
 
@@ -90,6 +89,7 @@ target_precompile_headers(${PROJECT_NAME}
 find_package(spdlog REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(Vulkan REQUIRED COMPONENTS shaderc_combined)
+find_package(imgui CONFIG REQUIRED)
 
 target_link_libraries(${PROJECT_NAME} 
     PRIVATE
@@ -98,6 +98,7 @@ target_link_libraries(${PROJECT_NAME}
         Vulkan::Vulkan
         Vulkan::Headers
 		Vulkan::shaderc_combined
+		imgui::imgui
 )
 
 # copy dlls to the app

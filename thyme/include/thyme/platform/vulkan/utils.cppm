@@ -1,6 +1,6 @@
 module;
 
-#include <functional>
+#include <numeric>
 #include <vector>
 
 #include <fmt/format.h>
@@ -213,5 +213,32 @@ struct GraphicPipelineCreateInfo {
 
 [[nodiscard]] auto createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipelineCreateInfo)
         -> vk::UniquePipeline;
+
+[[nodiscard]] vk::UniqueDescriptorPool createDescriptorPool(const vk::UniqueDevice& device, const std::vector<vk::DescriptorPoolSize>& descriptorSizes)
+{
+    const uint32_t maxSet = std::accumulate(std::begin(descriptorSizes), std::end(descriptorSizes), 0,
+            [](const uint32_t sum, const vk::DescriptorPoolSize& descriptorPoolSize) { return sum + descriptorPoolSize.descriptorCount; });
+
+    return device->createDescriptorPoolUnique(vk::DescriptorPoolCreateInfo(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, maxSet, static_cast<uint32_t>(descriptorSizes.size()), descriptorSizes.data()));
+}
+// TODO - can it be done much better??
+template <typename F, typename... Args>
+        void singleTimeCommand(const vk::UniqueCommandBuffer& commandBuffer, const vk::UniqueCommandPool& commandPool, const vk::Queue& graphicQueue, F fun, Args... args)
+{
+    commandBuffer->begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
+    fun(commandBuffer, args...);
+    commandBuffer->end();
+    graphicQueue.submit(vk::SubmitInfo(0, nullptr, nullptr, 1, &(commandBuffer.get())), nullptr);
+    graphicQueue.waitIdle();
+}
+
+template <typename F, typename... Args>
+void singleTimeCommand(const vk::UniqueDevice& device, const vk::UniqueCommandPool& commandPool, const vk::Queue& graphicQueue, F fun, Args... args)
+{
+    auto commandBuffer = std::move(
+            device->allocateCommandBuffersUnique(
+                    vk::CommandBufferAllocateInfo(commandPool.get(), vk::CommandBufferLevel::ePrimary, 1)).front());
+    singleTimeCommand(commandBuffer, commandPool, graphicQueue, fun, args...);
+}
 
 }// namespace Thyme::Vulkan
