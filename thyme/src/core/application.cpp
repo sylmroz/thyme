@@ -27,7 +27,7 @@ Application::Application() {
 void Application::run() {
     TH_API_LOG_INFO("Start {} app", name);
     try {
-        const auto engine = createEngine<GlfwVulkanPlatformContext>(EngineConfig{ .appName = name }, layers);
+        const auto engine = createEngine<GlfwVulkanPlatformContext>(EngineConfig{ .appName = name }, m_layers);
         engine.run();
     } catch (const std::exception& e) {
         TH_API_LOG_ERROR(e.what());

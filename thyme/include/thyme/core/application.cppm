@@ -19,11 +19,11 @@ public:
 
     template <typename L>
     L addLayer() noexcept {
-        return L(layers);
+        return L(m_layers);
     }
 
 private:
-    LayerStack<Layer> layers;
+    LayerStack<Layer> m_layers;
 };
 
 }// namespace Thyme

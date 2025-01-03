@@ -198,7 +198,7 @@ std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueIn
     }
 
     if (physicalDevices.empty()) {
-        constexpr auto message = "No physical device exist which meet all requirements!";
+        constexpr auto message = "No physical device exist which met all requirements!";
         TH_API_LOG_ERROR(message);
         throw std::runtime_error(message);
     }

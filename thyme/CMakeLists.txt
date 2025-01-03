@@ -40,11 +40,13 @@ target_sources(${PROJECT_NAME}
 
 			include/thyme/platform/glfw_vulkan_platform_context.cppm
 			include/thyme/platform/glfw_window.cppm
+			include/thyme/platform/imgui_vulkan_glfw_context.cppm
 
 			include/thyme/platform/vulkan/graphic_pipeline.cppm
 			include/thyme/platform/vulkan/renderer.cppm
 			#include/thyme/platform/vulkan/shader.cppm #for now there are problems with integrating shaderc from google
 			include/thyme/platform/vulkan/utils.cppm
+			include/thyme/platform/vulkan/vulkan_layer.cppm
 			include/thyme/platform/vulkan/vulkan.cppm
 )
 
@@ -107,6 +109,13 @@ if (WIN32)
 		COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:app> $<TARGET_FILE_DIR:app>
 		COMMAND_EXPAND_LISTS)
 endif()
+
+#copy ifc files for InetlliSense
+install (
+	DIRECTORY $(CMAKE_CURRENT_BINARY_DIR)/CMakeFiles/thyme.dir
+	DESTINATION $(CMAKE_CURRENT_BINARY_DIR)/ifc
+	FILES_MATCHING PATTERN "*.ifc"
+)
 
 # if (BUILD_TESTING)
 #     add_subdirectory("tests")

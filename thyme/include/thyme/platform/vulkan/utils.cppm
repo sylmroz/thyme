@@ -83,7 +83,7 @@ public:
     }
 
     [[nodiscard]] inline uint32_t getImageCount() const noexcept {
-        uint32_t swapChainImageCount = capabilities.minImageCount + 1;
+        const auto swapChainImageCount = capabilities.minImageCount + 1;
         if (capabilities.maxImageCount > 0 && swapChainImageCount > capabilities.maxImageCount) {
             return capabilities.maxImageCount;
         }

@@ -65,20 +65,24 @@ public:
         const auto renderPassBeginInfo =
                 vk::RenderPassBeginInfo(*m_renderPass,
                                         *m_swapChainData.swapChainFrame[imageIndex].frameBuffer,
-                                        vk::Rect2D(vk::Offset2D(0, 0), vk::Extent2D(1920, 1000)),
+                                        vk::Rect2D(vk::Offset2D(0, 0), m_swapChainExtent),
                                         { clearValues });
         commandBuffer->beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 
         commandBuffer->setViewport(
                 0, { vk::Viewport(0, 0, m_swapChainExtent.width, m_swapChainExtent.height, 0.0f, 1.0f) });
         commandBuffer->setScissor(0, { vk::Rect2D(vk::Offset2D(0, 0), m_swapChainExtent) });
+        bool showDemoWindow = true;
+        ImGui::NewFrame();
+
+        ImGui::ShowDemoWindow(&showDemoWindow);
+        ImGui::Render();
 
         for (const auto& pipeline : m_pipelines) {
             pipeline->draw(commandBuffer);
         }
 
-        const auto data = ImGui::GetDrawData();
-        ImGui_ImplVulkan_RenderDrawData(data, commandBuffer.get());
+        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer.get());
 
         commandBuffer->endRenderPass();
         commandBuffer->end();
@@ -133,7 +137,9 @@ public:
 private:
     inline void recreateSwapChain(const Resolution& resolution) {
         m_device.logicalDevice->waitIdle();
-        m_swapChainExtent = m_device.swapChainSupportDetails.getSwapExtent(resolution);
+        const auto swapChainSupportDetails = SwapChainSupportDetails(m_device.physicalDevice, m_surface);
+        m_swapChainExtent = swapChainSupportDetails.getSwapExtent(resolution);
+        m_swapChainSettings = SwapChainSupportDetails(m_device.physicalDevice, m_surface).getBestSwapChainSettings();
         m_swapChainData = SwapChainData(m_device,
                                         m_swapChainSettings,
                                         m_swapChainExtent,
