@@ -14,14 +14,14 @@ module;
 module thyme.core.engine;
 
 import thyme.core.event;
-import thyme.core.layer;
-import thyme.core.layer_stack;
+// import thyme.core.layer;
+// import thyme.core.layer_stack;
 import thyme.core.utils;
 import thyme.core.window;
 import thyme.platform.glfw_window;
-//import thyme.platform.vulkan;
+import thyme.platform.vulkan_layer;
 
-Thyme::Engine::Engine(const EngineConfig& engineConfig, LayerStack<Layer> &layers)
+Thyme::Engine::Engine(const EngineConfig& engineConfig, Vulkan::VulkanLayerStack &layers)
     : m_engineConfig{ engineConfig }, m_layers{ layers } {}
 
 void Thyme::Engine::run() const {
@@ -110,13 +110,6 @@ void Thyme::Engine::run() const {
     };
     ImGui_ImplVulkan_Init(&initInfo);
 
-    // Vulkan::singleTimeCommand(
-    //         device.logicalDevice,
-    //         renderer.m_commandPool,
-    //         device.logicalDevice->getQueue(device.queueFamilyIndices.graphicFamily.value(), 0),
-    //         [](const vk::UniqueCommandBuffer& commandBuffer) { ImGui_ImplVulkan_CreateFontsTexture(); });
-
-
     while (!window.shouldClose()) {
         window.poolEvents();
 
@@ -124,7 +117,7 @@ void Thyme::Engine::run() const {
         ImGui_ImplGlfw_NewFrame();
 
         for (const auto& layer : m_layers) {
-            layer->draw();
+            //layer->draw();
         }
         renderer.draw();
     }

@@ -2,10 +2,12 @@
 #include <variant>
 
 #include <spdlog/spdlog.h>
+#include <vulkan/vulkan.hpp>
 
 import thyme.core;
+import thyme.platform.vulkan_layer;
 
-class ExampleLayer final: public Thyme::OverlayLayer {
+class ExampleLayer final: public Thyme::Vulkan::VulkanOverlayLayer {
     struct MyEventDispatcher final: Thyme::EventDispatcher<Thyme::WindowResize, Thyme::MousePosition> {
         void operator()(const Thyme::WindowResize& event) override {
             // TH_APP_LOG_INFO("Example Layer::onEvent {}", event.toString());
@@ -17,8 +19,8 @@ class ExampleLayer final: public Thyme::OverlayLayer {
     };
 
 public:
-    explicit ExampleLayer(Thyme::LayerStack<Layer>& layers) : OverlayLayer("example layer", layers) {}
-    void draw() override {}
+    explicit ExampleLayer() : OverlayLayer("example layer") {}
+    void draw(vk::UniqueCommandBuffer&&) override {}
     void onAttach() override {}
     void onDetach() override {}
     void onEvent(const Thyme::Event& event) override {
@@ -28,7 +30,9 @@ public:
 
 class ExampleApp: public Thyme::Application {
 public:
-    ExampleApp() : exampleLayer(addLayer<ExampleLayer>()) {}
+    ExampleApp() {
+        layers.pushLayer(&exampleLayer);
+    }
 
 private:
     ExampleLayer exampleLayer;

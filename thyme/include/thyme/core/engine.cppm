@@ -5,8 +5,7 @@ module;
 #include <string>
 
 export module thyme.core.engine;
-import thyme.core.layer;
-import thyme.core.layer_stack;
+import thyme.platform.vulkan_layer;
 
 namespace Thyme {
 
@@ -19,13 +18,13 @@ export struct EngineConfig {
 
 export class THYME_API Engine final {
 public:
-    explicit Engine(const EngineConfig& engineConfig, LayerStack<Layer>& layers);
+    explicit Engine(const EngineConfig& engineConfig, Vulkan::VulkanLayerStack& layers);
 
     void run() const;
 
 private:
     EngineConfig m_engineConfig;
-    LayerStack<Layer>& m_layers;
+    Vulkan::VulkanLayerStack& m_layers;
 };
 
 }// namespace Thyme

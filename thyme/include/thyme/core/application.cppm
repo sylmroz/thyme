@@ -6,8 +6,7 @@ module;
 
 export module thyme.core.application;
 
-import thyme.core.layer;
-import thyme.core.layer_stack;
+import thyme.platform.vulkan_layer;
 
 namespace Thyme {
 
@@ -17,13 +16,7 @@ public:
     std::string name{ "Thyme" };
     void run();
 
-    template <typename L>
-    L addLayer() noexcept {
-        return L(m_layers);
-    }
-
-private:
-    LayerStack<Layer> m_layers;
+    Vulkan::VulkanLayerStack layers;
 };
 
 }// namespace Thyme

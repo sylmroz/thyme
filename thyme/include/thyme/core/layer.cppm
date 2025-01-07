@@ -5,28 +5,32 @@ module;
 export module thyme.core.layer;
 
 import thyme.core.event;
-import thyme.core.layer_stack;
 
 export namespace Thyme {
 
+enum class LayerType: uint8_t {
+    overlay,
+    non_overlay
+};
+
+template <typename... Args>
 class THYME_API Layer {
 public:
-    explicit Layer(const LayerType type, const std::string_view name, LayerStack<Layer>& layers,
+    explicit Layer(const LayerType type, const std::string_view name,
                    const bool visible = true)
-        : m_type{ type }, m_visible{ visible }, m_name{ name }, m_layers{ layers } {
-        layers.pushLayer(this);
+        : m_type{ type }, m_visible{ visible }, m_name{ name } {
     }
 
-    explicit Layer(const Layer&) = delete;
-    explicit Layer(Layer&& layer) noexcept = delete;
+    explicit Layer(const Layer&) = default;
+    explicit Layer(Layer&&) noexcept = default;
 
-    Layer& operator=(const Layer&) = delete;
-    Layer& operator=(Layer&&) = delete;
+    Layer& operator=(const Layer&) = default;
+    Layer& operator=(Layer&&) = default;
 
     virtual void onEvent(const Event& event) = 0;
     virtual void onAttach() = 0;
     virtual void onDetach() = 0;
-    virtual void draw() = 0;
+    virtual void draw(Args&&...) = 0;
 
     [[nodiscard]] inline std::string_view getName() const noexcept {
         return m_name;
@@ -46,27 +50,26 @@ public:
         m_visible = false;
     }
 
-    virtual ~Layer() noexcept {
-        m_layers.popLayer(this);
-    };
+    virtual ~Layer() noexcept = default;
 
 private:
     LayerType m_type;
     bool m_visible;
     std::string m_name;
-    LayerStack<Layer>& m_layers;
 };
 
-class THYME_API OverlayLayer: public Layer {
+template <typename... Args>
+class THYME_API OverlayLayer: public Layer<Args...> {
 public:
-    explicit OverlayLayer(const std::string_view name, LayerStack<Layer>& layers, const bool visible = true)
-        : Layer{ LayerType::overlay, name, layers, visible } {}
+    explicit OverlayLayer(const std::string_view name, const bool visible = true)
+        : Layer<Args...>{ LayerType::overlay, name, visible } {}
 };
 
-class THYME_API NonOverlayLayer: public Layer {
+template <typename... Args>
+class THYME_API NonOverlayLayer: public Layer<Args...> {
 public:
-    explicit NonOverlayLayer(const std::string_view name, LayerStack<Layer>& layers, const bool visible = true)
-        : Layer{ LayerType::non_overlay, name, layers, visible } {}
+    explicit NonOverlayLayer(const std::string_view name, const bool visible = true)
+        : Layer<Args...>{ LayerType::non_overlay, name, visible } {}
 };
 
 }// namespace Thyme
