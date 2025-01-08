@@ -57,22 +57,6 @@ void Thyme::Engine::run() const {
 
     // ImGui implementation is temporary.
     // It will have to be adjusted with vulkan and renderer to be more concise together
-
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-
-    ImGui::StyleColorsDark();
-
-    auto& style = ImGui::GetStyle();
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        style.WindowRounding = 0.0f;
-        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-    }
-
     ImGui_ImplGlfw_InitForVulkan(window.getHandler().get(), true);
     ImGui_ImplVulkan_InitInfo initInfo{};
     initInfo.Instance = instance.instance.get();
@@ -102,7 +86,7 @@ void Thyme::Engine::run() const {
     initInfo.ImageCount = Vulkan::VulkanRenderer::maxFramesInFlight;
     initInfo.MSAASamples = VkSampleCountFlagBits::VK_SAMPLE_COUNT_1_BIT;
     initInfo.Allocator = nullptr;
-    initInfo.CheckVkResultFn = [](auto vkResult) {
+    initInfo.CheckVkResultFn = [](const auto vkResult) {
         if (vkResult == VK_SUCCESS) {
             return;
         }
@@ -126,5 +110,4 @@ void Thyme::Engine::run() const {
 
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
 }

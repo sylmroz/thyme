@@ -96,8 +96,8 @@ UniqueInstance::UniqueInstance(const UniqueInstanceConfig& config) {
                                     enabledExtensions },
             createDebugUtilsMessengerCreateInfo());
 #else
-    const vk::InstanceCreateInfo instanceCreateInfo(
-            vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR, &applicationInfo, nullptr, enabledExtensions);
+    const vk::StructureChain instanceCreateInfo(vk::InstanceCreateInfo{
+            vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR, &applicationInfo, nullptr, enabledExtensions });
 #endif
 
     try {

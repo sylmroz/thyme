@@ -21,18 +21,19 @@ public:
         : PlatformContext{ PlatformContextArguments{
                 .initializer =
                         [] {
+                            const auto terminate_handler = [](const std::string_view message) {
+                                glfwTerminate();
+                                TH_API_LOG_ERROR(message);
+                                throw std::runtime_error(message.data()) ;
+                            };
                             if (glfwInit() == GLFW_FALSE) {
                                 constexpr auto message = "Failed to initialize GLFW!";
-                                TH_API_LOG_ERROR(message);
-                                glfwTerminate();
-                                throw std::runtime_error(message);
+                                terminate_handler(message);
                             }
 
                             if (glfwVulkanSupported() == GLFW_FALSE) {
                                 constexpr auto message = "GLFW3 does not support vulkan!";
-                                TH_API_LOG_ERROR(message);
-                                glfwTerminate();
-                                throw std::runtime_error(message);
+                                terminate_handler(message);
                             }
                             glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
                             TH_API_LOG_INFO("GLFW Vulkan platform context initialized.")
