@@ -310,8 +310,10 @@ auto Vulkan::createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipe
     constexpr auto dynamicStates = { vk::DynamicState::eViewport, vk::DynamicState::eScissor };
     const auto dynamicStateCreateInfo =
             vk::PipelineDynamicStateCreateInfo(vk::PipelineDynamicStateCreateFlagBits(), dynamicStates);
-    constexpr auto vertexInputStateCreateInfo =
-            vk::PipelineVertexInputStateCreateInfo(vk::PipelineVertexInputStateCreateFlagBits());
+    constexpr auto bindingDescription = Vertex::getBindingDescription();
+    constexpr auto attributeDescriptions = Vertex::getAttributeDescriptions();
+    const auto vertexInputStateCreateInfo = vk::PipelineVertexInputStateCreateInfo(
+            vk::PipelineVertexInputStateCreateFlagBits(), { bindingDescription }, attributeDescriptions);
     constexpr auto inputAssemblyStateCreateInfo = vk::PipelineInputAssemblyStateCreateInfo(
             vk::PipelineInputAssemblyStateCreateFlagBits(), vk::PrimitiveTopology::eTriangleList, vk::False);
     constexpr auto viewportState =

@@ -21,7 +21,7 @@ import thyme.core.window;
 import thyme.platform.glfw_window;
 import thyme.platform.vulkan_layer;
 
-Thyme::Engine::Engine(const EngineConfig& engineConfig, Vulkan::VulkanLayerStack &layers)
+Thyme::Engine::Engine(const EngineConfig& engineConfig, Vulkan::VulkanLayerStack& layers)
     : m_engineConfig{ engineConfig }, m_layers{ layers } {}
 
 void Thyme::Engine::run() const {
@@ -94,6 +94,11 @@ void Thyme::Engine::run() const {
     };
     ImGui_ImplVulkan_Init(&initInfo);
 
+    constexpr std::array vertices = { Vulkan::Vertex{ { 0.0f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
+                                      Vulkan::Vertex{ { 0.5f, 0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
+                                      Vulkan::Vertex{ { -0.5f, 0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f } } };
+
+
     while (!window.shouldClose()) {
         window.poolEvents();
 
@@ -101,7 +106,7 @@ void Thyme::Engine::run() const {
         ImGui_ImplGlfw_NewFrame();
 
         for (const auto& layer : m_layers) {
-            //layer->draw();
+            // layer->draw();
         }
         renderer.draw();
     }

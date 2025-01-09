@@ -4,6 +4,7 @@ module;
 #include <vector>
 
 #include <fmt/format.h>
+#include <glm/vec3.hpp>
 #include <vulkan/vulkan.hpp>
 
 export module thyme.platform.vulkan:utils;
@@ -214,7 +215,7 @@ struct GraphicPipelineCreateInfo {
 [[nodiscard]] auto createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipelineCreateInfo)
         -> vk::UniquePipeline;
 
-[[nodiscard]] vk::UniqueDescriptorPool createDescriptorPool(const vk::UniqueDevice& device, const std::vector<vk::DescriptorPoolSize>& descriptorSizes)
+[[nodiscard]] auto createDescriptorPool(const vk::UniqueDevice& device, const std::vector<vk::DescriptorPoolSize>& descriptorSizes) -> vk::UniqueDescriptorPool
 {
     const uint32_t maxSet = std::accumulate(std::begin(descriptorSizes), std::end(descriptorSizes), 0,
             [](const uint32_t sum, const vk::DescriptorPoolSize& descriptorPoolSize) { return sum + descriptorPoolSize.descriptorCount; });
@@ -240,5 +241,21 @@ void singleTimeCommand(const vk::UniqueDevice& device, const vk::UniqueCommandPo
                     vk::CommandBufferAllocateInfo(commandPool.get(), vk::CommandBufferLevel::ePrimary, 1)).front());
     singleTimeCommand(commandBuffer, commandPool, graphicQueue, fun, args...);
 }
+
+struct Vertex {
+    glm::vec3 pos;
+    glm::vec3 color;
+
+    static constexpr auto getBindingDescription() -> vk::VertexInputBindingDescription {
+        return vk::VertexInputBindingDescription(0, sizeof(Vertex), vk::VertexInputRate::eVertex);
+    }
+
+    static constexpr auto getAttributeDescriptions() -> std::array<vk::VertexInputAttributeDescription, 2> {
+        return std::array{
+            vk::VertexInputAttributeDescription(0, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, pos)),
+            vk::VertexInputAttributeDescription(1, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, color)),
+        };
+    }
+};
 
 }// namespace Thyme::Vulkan
