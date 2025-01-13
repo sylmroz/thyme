@@ -28,7 +28,7 @@ public:
           m_swapChainExtent{ m_device.swapChainSupportDetails.getSwapExtent(m_window.getFrameBufferSize()) },
           m_swapChainData{ SwapChainData(m_device, m_swapChainSettings, m_swapChainExtent, m_renderPass, m_surface,
                                          m_swapChainData.swapChain.get()) } {
-        m_pipelines.emplace_back(std::make_unique<TriangleGraphicPipeline>(device.logicalDevice, m_renderPass));
+        m_pipelines.emplace_back(std::make_unique<TriangleGraphicPipeline>(device, m_renderPass));
     }
 
     void draw() override {

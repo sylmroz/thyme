@@ -94,11 +94,6 @@ void Thyme::Engine::run() const {
     };
     ImGui_ImplVulkan_Init(&initInfo);
 
-    constexpr std::array vertices = { Vulkan::Vertex{ { 0.0f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
-                                      Vulkan::Vertex{ { 0.5f, 0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
-                                      Vulkan::Vertex{ { -0.5f, 0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f } } };
-
-
     while (!window.shouldClose()) {
         window.poolEvents();
 

@@ -215,17 +215,26 @@ struct GraphicPipelineCreateInfo {
 [[nodiscard]] auto createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipelineCreateInfo)
         -> vk::UniquePipeline;
 
-[[nodiscard]] auto createDescriptorPool(const vk::UniqueDevice& device, const std::vector<vk::DescriptorPoolSize>& descriptorSizes) -> vk::UniqueDescriptorPool
-{
-    const uint32_t maxSet = std::accumulate(std::begin(descriptorSizes), std::end(descriptorSizes), 0,
-            [](const uint32_t sum, const vk::DescriptorPoolSize& descriptorPoolSize) { return sum + descriptorPoolSize.descriptorCount; });
+[[nodiscard]] auto createDescriptorPool(const vk::UniqueDevice& device,
+                                        const std::vector<vk::DescriptorPoolSize>& descriptorSizes)
+        -> vk::UniqueDescriptorPool {
+    const uint32_t maxSet = std::accumulate(std::begin(descriptorSizes),
+                                            std::end(descriptorSizes),
+                                            0,
+                                            [](const uint32_t sum, const vk::DescriptorPoolSize& descriptorPoolSize) {
+                                                return sum + descriptorPoolSize.descriptorCount;
+                                            });
 
-    return device->createDescriptorPoolUnique(vk::DescriptorPoolCreateInfo(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, maxSet, static_cast<uint32_t>(descriptorSizes.size()), descriptorSizes.data()));
+    return device->createDescriptorPoolUnique(
+            vk::DescriptorPoolCreateInfo(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
+                                         maxSet,
+                                         static_cast<uint32_t>(descriptorSizes.size()),
+                                         descriptorSizes.data()));
 }
 // TODO - can it be done much better??
 template <typename F, typename... Args>
-        void singleTimeCommand(const vk::UniqueCommandBuffer& commandBuffer, const vk::UniqueCommandPool& commandPool, const vk::Queue& graphicQueue, F fun, Args... args)
-{
+void singleTimeCommand(const vk::UniqueCommandBuffer& commandBuffer, const vk::UniqueCommandPool& commandPool,
+                       const vk::Queue& graphicQueue, F fun, Args... args) {
     commandBuffer->begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
     fun(commandBuffer, args...);
     commandBuffer->end();
@@ -234,11 +243,12 @@ template <typename F, typename... Args>
 }
 
 template <typename F, typename... Args>
-void singleTimeCommand(const vk::UniqueDevice& device, const vk::UniqueCommandPool& commandPool, const vk::Queue& graphicQueue, F fun, Args... args)
-{
+void singleTimeCommand(const vk::UniqueDevice& device, const vk::UniqueCommandPool& commandPool,
+                       const vk::Queue& graphicQueue, F fun, Args... args) {
     auto commandBuffer = std::move(
             device->allocateCommandBuffersUnique(
-                    vk::CommandBufferAllocateInfo(commandPool.get(), vk::CommandBufferLevel::ePrimary, 1)).front());
+                          vk::CommandBufferAllocateInfo(commandPool.get(), vk::CommandBufferLevel::ePrimary, 1))
+                    .front());
     singleTimeCommand(commandBuffer, commandPool, graphicQueue, fun, args...);
 }
 
@@ -257,5 +267,16 @@ struct Vertex {
         };
     }
 };
+
+[[nodiscard]] uint32_t findMemoryType(const vk::PhysicalDevice& device, const uint32_t typeFilter,
+                                      const vk::MemoryPropertyFlags properties) {
+    const auto& memProperties = device.getMemoryProperties();
+    for (uint32_t i{ 0 }; i < memProperties.memoryTypeCount; ++i) {
+        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+            return i;
+        }
+    }
+    throw std::runtime_error("failed to find suitable memory type!");
+}
 
 }// namespace Thyme::Vulkan
