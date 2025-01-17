@@ -233,6 +233,7 @@ struct GraphicPipelineCreateInfo {
 }
 // TODO - can it be done much better??
 template <typename F, typename... Args>
+    requires(std::invocable<F, const vk::UniqueCommandBuffer&, Args...>)
 void singleTimeCommand(const vk::UniqueCommandBuffer& commandBuffer, const vk::UniqueCommandPool& commandPool,
                        const vk::Queue& graphicQueue, F fun, Args... args) {
     commandBuffer->begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
@@ -243,6 +244,7 @@ void singleTimeCommand(const vk::UniqueCommandBuffer& commandBuffer, const vk::U
 }
 
 template <typename F, typename... Args>
+    requires(std::invocable<F, const vk::UniqueCommandBuffer&, Args...>)
 void singleTimeCommand(const vk::UniqueDevice& device, const vk::UniqueCommandPool& commandPool,
                        const vk::Queue& graphicQueue, F fun, Args... args) {
     auto commandBuffer = std::move(
@@ -279,4 +281,57 @@ struct Vertex {
     throw std::runtime_error("failed to find suitable memory type!");
 }
 
+void copyBuffer(const vk::UniqueDevice& device, const vk::UniqueCommandPool& commandPool, const vk::Queue& graphicQueue,
+                const vk::UniqueBuffer& srcBuffer, const vk::UniqueBuffer& dstBuffer, const uint32_t size) {
+    singleTimeCommand(device, commandPool, graphicQueue, [&](const vk::UniqueCommandBuffer& commandBuffer) {
+        commandBuffer->copyBuffer(*srcBuffer, *dstBuffer, { vk::BufferCopy(0, 0, size) });
+    });
+}
+
+
+struct MemoryBuffer {
+    vk::UniqueBuffer buffer;
+    vk::UniqueDeviceMemory memory;
+};
+
+[[nodiscard]] MemoryBuffer createMemoryBuffer(const Device& device, const uint32_t size,
+                                              const vk::BufferUsageFlags usage,
+                                              const vk::MemoryPropertyFlags properties) {
+    auto buffer = device.logicalDevice->createBufferUnique(
+            vk::BufferCreateInfo(vk::BufferCreateFlagBits(), size, usage, vk::SharingMode::eExclusive));
+
+    vk::MemoryRequirements memoryRequirements;
+    device.logicalDevice->getBufferMemoryRequirements(*buffer, &memoryRequirements);
+
+    auto memory = device.logicalDevice->allocateMemoryUnique(vk::MemoryAllocateInfo(
+            memoryRequirements.size,
+            findMemoryType(device.physicalDevice, memoryRequirements.memoryTypeBits, properties)));
+
+    device.logicalDevice->bindBufferMemory(*buffer, *memory, 0);
+
+    return MemoryBuffer{ .buffer = std::move(buffer), .memory = std::move(memory) };
+}
+
+template <typename Vec>
+[[nodiscard]] MemoryBuffer createMemoryBuffer(const Device& device, const vk::UniqueCommandPool& commandPool,
+                                              const Vec& data, const vk::BufferUsageFlags usage) {
+    const auto size = data.size() * sizeof(data[0]);
+
+    const auto stagingMemoryBuffer =
+            createMemoryBuffer(device,
+                               size,
+                               vk::BufferUsageFlagBits::eTransferSrc,
+                               vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+
+    void* mappedMemory = nullptr;
+    [[maybe_unused]] const auto result =
+            device.logicalDevice->mapMemory(*stagingMemoryBuffer.memory, 0, size, vk::MemoryMapFlags(), &mappedMemory);
+    memcpy(mappedMemory, data.data(), size);
+    device.logicalDevice->unmapMemory(*stagingMemoryBuffer.memory);
+    auto memoryBuffer = createMemoryBuffer(
+            device, size, vk::BufferUsageFlagBits::eTransferDst | usage, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    const auto& graphicQueue = device.logicalDevice->getQueue(device.queueFamilyIndices.graphicFamily.value(), 0);
+    copyBuffer(device.logicalDevice, commandPool, graphicQueue, stagingMemoryBuffer.buffer, memoryBuffer.buffer, size);
+    return memoryBuffer;
+}
 }// namespace Thyme::Vulkan

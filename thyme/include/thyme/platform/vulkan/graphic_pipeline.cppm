@@ -5,9 +5,9 @@ module;
 export module thyme.platform.vulkan:graphic_pipeline;
 import :utils;
 
-export namespace Thyme::Vulkan {
+namespace Thyme::Vulkan {
 
-class GraphicPipeline {
+export class GraphicPipeline {
 public:
     GraphicPipeline() = default;
 
@@ -21,24 +21,28 @@ public:
     virtual ~GraphicPipeline() = default;
 };
 
-class TriangleGraphicPipeline final: public GraphicPipeline {
+export class TriangleGraphicPipeline final: public GraphicPipeline {
 public:
-    explicit TriangleGraphicPipeline(const Device& device, const vk::UniqueRenderPass& renderPass);
+    explicit TriangleGraphicPipeline(const Device& device, const vk::UniqueRenderPass& renderPass,
+                                     const vk::UniqueCommandPool& commandPool);
 
     inline virtual void draw(const vk::UniqueCommandBuffer& commandBuffer) const override {
         commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, *m_pipeline);
-        commandBuffer->bindVertexBuffers(0, { *m_vertexBuffer }, { 0 });
-        commandBuffer->draw(vertices.size(), 1, 0, 0);
+        commandBuffer->bindVertexBuffers(0, { *m_vertexMemoryBuffer.buffer }, { 0 });
+        commandBuffer->bindIndexBuffer(*m_indexMemoryBuffer.buffer, 0, vk::IndexType::eUint16);
+        commandBuffer->drawIndexed(indices.size(), 1, 0, 0, 0);
     }
 
 private:
     vk::UniquePipeline m_pipeline;
     vk::UniquePipelineLayout m_pipelineLayout;
-    vk::UniqueBuffer m_vertexBuffer;
-    vk::UniqueDeviceMemory m_vertexBufferMemory;
+    MemoryBuffer m_vertexMemoryBuffer;
+    MemoryBuffer m_indexMemoryBuffer;
 
-    std::array<Vertex, 3> vertices = { Vertex{ { 0.0f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
-                                                 Vertex{ { 0.5f, 0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
-                                                 Vertex{ { -0.5f, 0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f } } };
+    static constexpr std::array vertices = { Vertex{ { -0.5f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
+                                             Vertex{ { 0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
+                                             Vertex{ { 0.5f, 0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
+                                             Vertex{ { -0.5f, 0.5f, 0.0f }, { 1.0f, 1.0f, 1.0f } } };
+    static constexpr std::array<uint16_t, 6> indices = { 0, 1, 2, 2, 3, 0 };
 };
 }// namespace Thyme::Vulkan

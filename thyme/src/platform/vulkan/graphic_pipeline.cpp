@@ -6,7 +6,8 @@ import thyme.platform.vulkan;
 import thyme.core.utils;
 
 using namespace Thyme::Vulkan;
-TriangleGraphicPipeline::TriangleGraphicPipeline(const Device& device, const vk::UniqueRenderPass& renderPass)
+TriangleGraphicPipeline::TriangleGraphicPipeline(const Device& device, const vk::UniqueRenderPass& renderPass,
+                                                 const vk::UniqueCommandPool& commandPool)
     : GraphicPipeline() {
     m_pipelineLayout = device.logicalDevice->createPipelineLayoutUnique(vk::PipelineLayoutCreateInfo());
     const auto currentDir = std::filesystem::current_path();
@@ -30,26 +31,6 @@ TriangleGraphicPipeline::TriangleGraphicPipeline(const Device& device, const vk:
                                                                    .samples = vk::SampleCountFlagBits::e1,
                                                                    .shaderStages = shaderStages });
 
-    m_vertexBuffer =
-            device.logicalDevice->createBufferUnique(vk::BufferCreateInfo(vk::BufferCreateFlagBits(),
-                                                                          vertices.size() * sizeof(vertices[0]),
-                                                                          vk::BufferUsageFlagBits::eVertexBuffer,
-                                                                          vk::SharingMode::eExclusive));
-
-    vk::MemoryRequirements memoryRequirements;
-    device.logicalDevice->getBufferMemoryRequirements(*m_vertexBuffer, &memoryRequirements);
-
-    m_vertexBufferMemory = device.logicalDevice->allocateMemoryUnique(vk::MemoryAllocateInfo(
-            memoryRequirements.size,
-            findMemoryType(device.physicalDevice,
-                           memoryRequirements.memoryTypeBits,
-                           vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent)));
-
-    device.logicalDevice->bindBufferMemory(*m_vertexBuffer, *m_vertexBufferMemory, 0);
-    void* mappedMemory = nullptr;
-    [[maybe_unused]] const auto result = device.logicalDevice->mapMemory(
-            *m_vertexBufferMemory, 0, vertices.size() * sizeof(vertices[0]), vk::MemoryMapFlags(), &mappedMemory);
-    memcpy(mappedMemory, vertices.data(), vertices.size() * sizeof(vertices[0]));
-    device.logicalDevice->unmapMemory(*m_vertexBufferMemory);
-
+    m_vertexMemoryBuffer = createMemoryBuffer(device, commandPool, vertices, vk::BufferUsageFlagBits::eVertexBuffer);
+    m_indexMemoryBuffer = createMemoryBuffer(device, commandPool, indices, vk::BufferUsageFlagBits::eIndexBuffer);
 }
