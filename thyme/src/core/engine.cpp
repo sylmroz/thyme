@@ -68,17 +68,17 @@ void Thyme::Engine::run() const {
     initInfo.PipelineCache = pipelineCache.get();
     const auto descriptorPool =
             Vulkan::createDescriptorPool(device.logicalDevice,
-                                         { vk::DescriptorPoolSize(vk::DescriptorType::eSampler, 1000),
-                                           vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, 1000),
-                                           vk::DescriptorPoolSize(vk::DescriptorType::eSampledImage, 1000),
-                                           vk::DescriptorPoolSize(vk::DescriptorType::eStorageImage, 1000),
-                                           vk::DescriptorPoolSize(vk::DescriptorType::eUniformTexelBuffer, 1000),
-                                           vk::DescriptorPoolSize(vk::DescriptorType::eStorageTexelBuffer, 1000),
-                                           vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, 1000),
-                                           vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, 1000),
-                                           vk::DescriptorPoolSize(vk::DescriptorType::eUniformBufferDynamic, 1000),
-                                           vk::DescriptorPoolSize(vk::DescriptorType::eStorageBufferDynamic, 1000),
-                                           vk::DescriptorPoolSize(vk::DescriptorType::eInputAttachment, 1000) });
+                                         { vk::DescriptorPoolSize(vk::DescriptorType::eSampler, 2),
+                                           vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, 2),
+                                           vk::DescriptorPoolSize(vk::DescriptorType::eSampledImage, 2),
+                                           vk::DescriptorPoolSize(vk::DescriptorType::eStorageImage, 2),
+                                           vk::DescriptorPoolSize(vk::DescriptorType::eUniformTexelBuffer, 2),
+                                           vk::DescriptorPoolSize(vk::DescriptorType::eStorageTexelBuffer, 2),
+                                           vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, 2),
+                                           vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, 2),
+                                           vk::DescriptorPoolSize(vk::DescriptorType::eUniformBufferDynamic, 2),
+                                           vk::DescriptorPoolSize(vk::DescriptorType::eStorageBufferDynamic, 2),
+                                           vk::DescriptorPoolSize(vk::DescriptorType::eInputAttachment, 2) });
     initInfo.DescriptorPool = descriptorPool.get();
     initInfo.RenderPass = renderer.m_renderPass.get();
     initInfo.Subpass = 0;

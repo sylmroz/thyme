@@ -8,7 +8,8 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 set(VCPKG_TARGET_TRIPLET "x64-windows-static")
 
-add_library(${PROJECT_NAME})
+add_library(${PROJECT_NAME}
+		)
 
 target_sources(${PROJECT_NAME}
 	PRIVATE
@@ -42,6 +43,8 @@ target_sources(${PROJECT_NAME}
 			include/thyme/platform/glfw_window.cppm
 			include/thyme/platform/imgui_context.cppm
 
+			include/thyme/renderer/models.cppm
+
 			include/thyme/platform/vulkan/graphic_pipeline.cppm
 			include/thyme/platform/vulkan/renderer.cppm
 			#include/thyme/platform/vulkan/shader.cppm #for now there are problems with integrating shaderc from google
@@ -68,7 +71,8 @@ generate_export_header(
 target_precompile_headers(${PROJECT_NAME} 
     PUBLIC
         #"${header_path}/pch.hpp"
-    PRIVATE 
+    PRIVATE
+		### std
         <array>
 		<functional>
 		<filesystem>
@@ -86,6 +90,8 @@ target_precompile_headers(${PROJECT_NAME}
 		<variant>
         <vector>
         <type_traits>
+		#### glm
+		<glm/glm.hpp>
 )
 
 find_package(spdlog REQUIRED)

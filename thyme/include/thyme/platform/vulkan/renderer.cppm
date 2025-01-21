@@ -32,7 +32,7 @@ public:
     }
 
     void draw() override {
-        const auto& [commandBuffer, imageAvailableSemaphore, renderFinishedSemaphore, fence] =
+        const auto& [commandBuffer, imageAvailableSemaphore, renderFinishedSemaphore, fence, currentFrame] =
                 m_frameDataList.getNext();
         const auto& logicalDevice = m_device.logicalDevice;
         const auto& queueFamilyIndices = m_device.queueFamilyIndices;
@@ -79,7 +79,7 @@ public:
         ImGui::Render();
 
         for (const auto& pipeline : m_pipelines) {
-            pipeline->draw(commandBuffer);
+            pipeline->draw(commandBuffer, m_swapChainExtent, currentFrame);
         }
 
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer.get());

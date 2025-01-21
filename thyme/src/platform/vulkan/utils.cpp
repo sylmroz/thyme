@@ -323,7 +323,7 @@ auto Vulkan::createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipe
                                                                          vk::False,
                                                                          vk::PolygonMode::eFill,
                                                                          vk::CullModeFlagBits::eBack,
-                                                                         vk::FrontFace::eClockwise,
+                                                                         vk::FrontFace::eCounterClockwise,
                                                                          vk::False,
                                                                          0.0f,
                                                                          0.0f,

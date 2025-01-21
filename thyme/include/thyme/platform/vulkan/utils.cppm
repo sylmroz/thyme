@@ -157,6 +157,7 @@ struct FrameData {
     vk::UniqueSemaphore imageAvailableSemaphore;
     vk::UniqueSemaphore renderFinishedSemaphore;
     vk::UniqueFence fence;
+    uint32_t currentFrame;
 };
 
 [[nodiscard]] inline auto createFrameDataList(const vk::UniqueDevice& logicalDevice,
@@ -164,7 +165,7 @@ struct FrameData {
                                               const uint32_t maxFrames) noexcept -> std::vector<FrameData> {
     std::vector<FrameData> frameDataList;
     frameDataList.reserve(maxFrames);
-    for (int i = 0; i < maxFrames; i++) {
+    for (uint32_t i = 0; i < maxFrames; i++) {
         frameDataList.emplace_back(FrameData{
                 .commandBuffer = std::move(logicalDevice
                                                    ->allocateCommandBuffersUnique(vk::CommandBufferAllocateInfo(
@@ -172,7 +173,9 @@ struct FrameData {
                                                    .front()),
                 .imageAvailableSemaphore = logicalDevice->createSemaphoreUnique(vk::SemaphoreCreateInfo()),
                 .renderFinishedSemaphore = logicalDevice->createSemaphoreUnique(vk::SemaphoreCreateInfo()),
-                .fence = logicalDevice->createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled)) });
+                .fence = logicalDevice->createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled)),
+                .currentFrame = i,
+        });
     }
     return frameDataList;
 }
@@ -334,4 +337,5 @@ template <typename Vec>
     copyBuffer(device.logicalDevice, commandPool, graphicQueue, stagingMemoryBuffer.buffer, memoryBuffer.buffer, size);
     return memoryBuffer;
 }
+
 }// namespace Thyme::Vulkan
