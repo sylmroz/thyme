@@ -12,4 +12,4 @@ struct UniformBufferObject {
     glm::mat4 proj;
 };
 
-}// namespace thyme::renderer
+}// namespace Thyme::Renderer

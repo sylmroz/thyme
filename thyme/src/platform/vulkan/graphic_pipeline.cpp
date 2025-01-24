@@ -1,25 +1,38 @@
 #include <chrono>
 #include <filesystem>
 
+#define STB_IMAGE_IMPLEMENTATION
 #include <glm/gtc/matrix_transform.hpp>
+#include <stb_image.h>
 #include <vulkan/vulkan.hpp>
 
 import thyme.platform.vulkan;
 import thyme.core.utils;
+import thyme.core.common_structs;
 
 import thyme.renderer.models;
 
 
 using namespace Thyme::Vulkan;
 TriangleGraphicPipeline::TriangleGraphicPipeline(const Device& device, const vk::UniqueRenderPass& renderPass,
-                                                 const vk::UniqueCommandPool& commandPool)
+                                                 const vk::UniqueCommandPool& commandPool, const vk::UniqueSampler& sampler)
     : GraphicPipeline() {
-    constexpr auto binding =
+    constexpr auto uboBinding =
             vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex);
+    constexpr auto samplerLayoutBinding = vk::DescriptorSetLayoutBinding(
+            1, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eFragment);
+    constexpr auto bindings = std::array{ uboBinding, samplerLayoutBinding };
     m_descriptorSetLayout = device.logicalDevice->createDescriptorSetLayoutUnique(
-            vk::DescriptorSetLayoutCreateInfo(vk::DescriptorSetLayoutCreateFlags{}, { binding }));
+            vk::DescriptorSetLayoutCreateInfo(vk::DescriptorSetLayoutCreateFlags{}, bindings));
     m_pipelineLayout = device.logicalDevice->createPipelineLayoutUnique(
             vk::PipelineLayoutCreateInfo(vk::PipelineLayoutCreateFlags(), 1, &(*m_descriptorSetLayout)));
+    m_descriptorPool = createDescriptorPool(device.logicalDevice,
+                                            { vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, 2),
+                                              vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, 2) });
+    const std::array descriptorSetLayouts = { *m_descriptorSetLayout, *m_descriptorSetLayout };
+    m_descriptorSets = device.logicalDevice->allocateDescriptorSets(
+            vk::DescriptorSetAllocateInfo(*m_descriptorPool, descriptorSetLayouts));
+
     const auto currentDir = std::filesystem::current_path();
     const auto shaderPath = currentDir / "../../../../thyme/include/thyme/platform/shaders/spv";
     const auto shaderAbsolutePath = std::filesystem::absolute(shaderPath);
@@ -41,13 +54,15 @@ TriangleGraphicPipeline::TriangleGraphicPipeline(const Device& device, const vk:
                                                                    .samples = vk::SampleCountFlagBits::e1,
                                                                    .shaderStages = shaderStages });
 
-    m_vertexMemoryBuffer = createMemoryBuffer(device, commandPool, vertices, vk::BufferUsageFlagBits::eVertexBuffer);
-    m_indexMemoryBuffer = createMemoryBuffer(device, commandPool, indices, vk::BufferUsageFlagBits::eIndexBuffer);
 
+    m_vertexMemoryBuffer = createBufferMemory(device, commandPool, vertices, vk::BufferUsageFlagBits::eVertexBuffer);
+    m_indexMemoryBuffer = createBufferMemory(device, commandPool, indices, vk::BufferUsageFlagBits::eIndexBuffer);
+
+    // uniform buffers
     for (auto memoryBufferMap : std::views::zip(m_uniformMemoryBuffer, m_mappedMemoryBuffer)) {
         constexpr auto ubSize = sizeof(Renderer::UniformBufferObject);
         auto& memoryBuffer = std::get<0>(memoryBufferMap);
-        memoryBuffer = createMemoryBuffer(device,
+        memoryBuffer = createBufferMemory(device,
                                           ubSize,
                                           vk::BufferUsageFlagBits::eUniformBuffer,
                                           vk::MemoryPropertyFlagBits::eHostVisible
@@ -56,22 +71,33 @@ TriangleGraphicPipeline::TriangleGraphicPipeline(const Device& device, const vk:
                 *memoryBuffer.memory, 0, ubSize, vk::MemoryMapFlags(), &std::get<1>(memoryBufferMap));
     }
 
-    m_descriptorPool = createDescriptorPool(device.logicalDevice,
-                                            { vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, 2) });
+    // image
+    int texWidth, texHeight, texChannels;
+    const auto pixels =
+            stbi_load("C:\\Users\\sylwek\\Desktop\\grumpy.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    const auto size = texWidth * texHeight * 4;
+    m_imageMemory = createImageMemory(
+            device,
+            commandPool,
+            std::span(pixels, size),
+            Resolution{ .width = static_cast<uint32_t>(texWidth), .height = static_cast<uint32_t>(texHeight) });
+    stbi_image_free(pixels);
 
-    const std::array descriptorSetLayouts = { *m_descriptorSetLayout, *m_descriptorSetLayout };
-
-    m_descriptorSets = device.logicalDevice->allocateDescriptorSets(
-            vk::DescriptorSetAllocateInfo(*m_descriptorPool, descriptorSetLayouts));
-
-    std::array<vk::WriteDescriptorSet, 2> writeDescriptorSets;
-    for (auto ub : std::views::zip(m_uniformMemoryBuffer, m_descriptorSets, writeDescriptorSets)) {
+    ///
+    for (auto ub : std::views::zip(m_uniformMemoryBuffer, m_descriptorSets)) {
         const auto descriptorBufferInfo =
                 vk::DescriptorBufferInfo(*std::get<0>(ub).buffer, 0, sizeof(Renderer::UniformBufferObject));
-        std::get<2>(ub) = vk::WriteDescriptorSet(
-                std::get<1>(ub), 0, 0, vk::DescriptorType::eUniformBuffer, {}, { descriptorBufferInfo });
+        const auto descriptorImageInfo =
+                vk::DescriptorImageInfo(*sampler, *m_imageMemory.imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
+        const auto descriptorSet = std::get<1>(ub);
+        const auto writeDescriptorSets = std::array{
+            vk::WriteDescriptorSet(
+                    descriptorSet, 0, 0, vk::DescriptorType::eUniformBuffer, {}, { descriptorBufferInfo }),
+            vk::WriteDescriptorSet(
+                    descriptorSet, 1, 0, vk::DescriptorType::eCombinedImageSampler, { descriptorImageInfo }, {})
+        };
+        device.logicalDevice->updateDescriptorSets(writeDescriptorSets, {});
     }
-    device.logicalDevice->updateDescriptorSets(writeDescriptorSets, {});
 }
 
 void TriangleGraphicPipeline::updateUBO(const uint32_t currentImage, const vk::Extent2D& extend) const {
@@ -79,7 +105,7 @@ void TriangleGraphicPipeline::updateUBO(const uint32_t currentImage, const vk::E
     static const auto startTime = high_resolution_clock::now();
     const auto currentTime = high_resolution_clock::now();
     const auto deltaTime = duration<float, seconds::period>(currentTime - startTime).count();
-    Renderer::UniformBufferObject ubo{
+    auto ubo = Renderer::UniformBufferObject{
         .model = glm::rotate(glm::mat4(1.0f), deltaTime * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
         .view = glm::lookAt(glm::vec3(2.0f), glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
         .proj = glm::perspective(glm::radians(45.0f), extend.width / static_cast<float>(extend.height), 0.1f, 10.0f)

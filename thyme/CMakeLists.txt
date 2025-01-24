@@ -6,10 +6,8 @@ set(source_path "${${PROJECT_NAME}_SOURCE_DIR}/src")
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 set(CMAKE_CXX_SCAN_FOR_MODULES ON)
-set(VCPKG_TARGET_TRIPLET "x64-windows-static")
 
-add_library(${PROJECT_NAME}
-		)
+add_library(${PROJECT_NAME})
 
 target_sources(${PROJECT_NAME}
 	PRIVATE
@@ -57,11 +55,14 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
 
 configure_file("${header_path}/version.hpp.in" "${header_path}/version.hpp")
 
-target_include_directories(
-  ${PROJECT_NAME}
-  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
-         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+target_include_directories(${PROJECT_NAME}
+	PUBLIC
+		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+		$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
+		$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+	PRIVATE
+		${Stb_INCLUDE_DIR}
+)
 
 include(GenerateExportHeader)
 generate_export_header(
@@ -98,6 +99,7 @@ find_package(spdlog REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(Vulkan REQUIRED COMPONENTS shaderc_combined)
 find_package(imgui CONFIG REQUIRED)
+find_package(Stb REQUIRED)
 
 target_link_libraries(${PROJECT_NAME} 
     PRIVATE

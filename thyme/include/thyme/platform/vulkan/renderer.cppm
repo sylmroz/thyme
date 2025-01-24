@@ -17,7 +17,7 @@ export namespace Thyme::Vulkan {
 class VulkanRenderer final: public Renderer {
 public:
     explicit VulkanRenderer(const VulkanGlfwWindow& window, const Device& device,
-                            const vk::UniqueSurfaceKHR& surface) noexcept
+                            const vk::UniqueSurfaceKHR& surface, const vk::UniqueSampler& sampler) noexcept
         : m_device{ device }, m_window{ window }, m_surface{ surface },
           m_commandPool{ device.logicalDevice->createCommandPoolUnique(
                   vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
@@ -28,7 +28,7 @@ public:
           m_swapChainExtent{ m_device.swapChainSupportDetails.getSwapExtent(m_window.getFrameBufferSize()) },
           m_swapChainData{ SwapChainData(m_device, m_swapChainSettings, m_swapChainExtent, m_renderPass, m_surface,
                                          m_swapChainData.swapChain.get()) } {
-        m_pipelines.emplace_back(std::make_unique<TriangleGraphicPipeline>(device, m_renderPass, m_commandPool));
+        m_pipelines.emplace_back(std::make_unique<TriangleGraphicPipeline>(device, m_renderPass, m_commandPool, sampler));
     }
 
     void draw() override {

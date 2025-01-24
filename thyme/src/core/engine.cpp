@@ -52,8 +52,9 @@ void Thyme::Engine::run() const {
     const Vulkan::PhysicalDevicesManager physicalDevicesManager(devices);
 
     const auto& device = physicalDevicesManager.getSelectedDevice();
+    const auto sampler = createImageSampler(device);
 
-    Vulkan::VulkanRenderer renderer(window, device, surface);
+    Vulkan::VulkanRenderer renderer(window, device, surface, sampler);
 
     // ImGui implementation is temporary.
     // It will have to be adjusted with vulkan and renderer to be more concise together

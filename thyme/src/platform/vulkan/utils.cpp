@@ -192,7 +192,7 @@ std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueIn
         const auto deviceSupportExtensions = deviceHasAllRequiredExtensions(device);
         const auto swapChainSupportDetails = SwapChainSupportDetails(device, surface);
 
-        if (queueFamilyIndex.isCompleted() && deviceSupportExtensions && swapChainSupportDetails.isValid()) {
+        if (queueFamilyIndex.isCompleted() && deviceSupportExtensions && swapChainSupportDetails.isValid() && device.getFeatures().samplerAnisotropy) {
             physicalDevices.emplace_back(device, queueFamilyIndex, swapChainSupportDetails);
         }
     }
@@ -260,13 +260,7 @@ SwapChainData::SwapChainData(const Device& device,
     swapChain = logicalDevice->createSwapchainKHRUnique(swapChainCreateInfo);
     swapChainFrame = logicalDevice->getSwapchainImagesKHR(*swapChain)
                      | std::views::transform([&](const vk::Image& image) -> SwapChainFrame {
-                           auto imageView = logicalDevice->createImageViewUnique(vk::ImageViewCreateInfo(
-                                   vk::ImageViewCreateFlags(),
-                                   image,
-                                   vk::ImageViewType::e2D,
-                                   surfaceFormat.format,
-                                   vk::ComponentMapping(),
-                                   vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1)));
+                           auto imageView = createImageView(*logicalDevice, image, surfaceFormat.format);
                            auto frameBuffer = logicalDevice->createFramebufferUnique(
                                    vk::FramebufferCreateInfo(vk::FramebufferCreateFlagBits(),
                                                              *renderPass,

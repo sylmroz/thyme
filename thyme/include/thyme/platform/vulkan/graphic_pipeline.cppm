@@ -24,7 +24,7 @@ public:
 export class TriangleGraphicPipeline final: public GraphicPipeline {
 public:
     explicit TriangleGraphicPipeline(const Device& device, const vk::UniqueRenderPass& renderPass,
-                                     const vk::UniqueCommandPool& commandPool);
+                                     const vk::UniqueCommandPool& commandPool, const vk::UniqueSampler& sampler);
 
     inline virtual void draw(const vk::UniqueCommandBuffer& commandBuffer, const vk::Extent2D& extend, const uint32_t currentImage) const override {
         updateUBO(currentImage, extend);
@@ -37,21 +37,25 @@ public:
 private:
     vk::UniquePipeline m_pipeline;
     vk::UniquePipelineLayout m_pipelineLayout;
-    MemoryBuffer m_vertexMemoryBuffer;
-    MemoryBuffer m_indexMemoryBuffer;
+    BufferMemory m_vertexMemoryBuffer;
+    BufferMemory m_indexMemoryBuffer;
 
     vk::UniqueDescriptorSetLayout m_descriptorSetLayout;
     // 2 = max frames in flight
-    std::array<MemoryBuffer, 2> m_uniformMemoryBuffer;
+    std::array<BufferMemory, 2> m_uniformMemoryBuffer;
     std::array<void*, 2> m_mappedMemoryBuffer;
 
     vk::UniqueDescriptorPool m_descriptorPool;
     std::vector<vk::DescriptorSet> m_descriptorSets;
 
-    static constexpr std::array vertices = { Vertex{ { -0.5f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
-                                             Vertex{ { 0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
-                                             Vertex{ { 0.5f, 0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
-                                             Vertex{ { -0.5f, 0.5f, 0.0f }, { 1.0f, 1.0f, 1.0f } } };
+    ImageMemory m_imageMemory;
+
+    vk::UniqueSampler m_sampler;
+
+    static constexpr std::array vertices = { Vertex{ { -0.5f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f }, {1.0f, 0.0f} },
+                                             Vertex{ { 0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f }, {0.0f, 0.0f } },
+                                             Vertex{ { 0.5f, 0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f }, {0.0f, 1.0f } },
+                                             Vertex{ { -0.5f, 0.5f, 0.0f }, { 1.0f, 1.0f, 1.0f }, {1.0f, 1.0f} } };
     static constexpr std::array<uint16_t, 6> indices = { 0, 1, 2, 2, 3, 0 };
 
     void updateUBO(const uint32_t currentImage, const vk::Extent2D& extend) const;
