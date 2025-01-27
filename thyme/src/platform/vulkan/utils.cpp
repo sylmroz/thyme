@@ -192,7 +192,8 @@ std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueIn
         const auto deviceSupportExtensions = deviceHasAllRequiredExtensions(device);
         const auto swapChainSupportDetails = SwapChainSupportDetails(device, surface);
 
-        if (queueFamilyIndex.isCompleted() && deviceSupportExtensions && swapChainSupportDetails.isValid() && device.getFeatures().samplerAnisotropy) {
+        if (queueFamilyIndex.isCompleted() && deviceSupportExtensions && swapChainSupportDetails.isValid()
+            && device.getFeatures().samplerAnisotropy) {
             physicalDevices.emplace_back(device, queueFamilyIndex, swapChainSupportDetails);
         }
     }
@@ -230,6 +231,7 @@ SwapChainData::SwapChainData(const Device& device,
                              const vk::Extent2D& swapChainExtent,
                              const vk::UniqueRenderPass& renderPass,
                              const vk::UniqueSurfaceKHR& surface,
+                             const vk::UniqueImageView& depthImageView,
                              const vk::SwapchainKHR& oldSwapChain) {
     const auto& [surfaceFormat, presetMode, imageCount] = swapChainSettings;
     const auto& [physicalDevice, logicalDevice, queueFamilyIndices, swapChainSupportDetails] = device;
@@ -260,11 +262,13 @@ SwapChainData::SwapChainData(const Device& device,
     swapChain = logicalDevice->createSwapchainKHRUnique(swapChainCreateInfo);
     swapChainFrame = logicalDevice->getSwapchainImagesKHR(*swapChain)
                      | std::views::transform([&](const vk::Image& image) -> SwapChainFrame {
-                           auto imageView = createImageView(*logicalDevice, image, surfaceFormat.format);
+                           auto imageView = createImageView(
+                                   *logicalDevice, image, surfaceFormat.format, vk::ImageAspectFlagBits::eColor);
+                           const auto attachments = std::array{ *imageView, *depthImageView };
                            auto frameBuffer = logicalDevice->createFramebufferUnique(
                                    vk::FramebufferCreateInfo(vk::FramebufferCreateFlagBits(),
                                                              *renderPass,
-                                                             { *imageView },
+                                                             attachments,
                                                              swapChainExtent.width,
                                                              swapChainExtent.height,
                                                              1));
@@ -274,9 +278,29 @@ SwapChainData::SwapChainData(const Device& device,
 }
 
 
-auto Vulkan::createRenderPass(const vk::UniqueDevice& logicalDevice, const vk::Format format) -> vk::UniqueRenderPass {
+auto Vulkan::createRenderPass(const vk::UniqueDevice& logicalDevice,
+                              const vk::Format colorFormat,
+                              const vk::Format depthFormat) -> vk::UniqueRenderPass {
+
+    constexpr auto colorAttachmentRef = vk::AttachmentReference(0, vk::ImageLayout::eColorAttachmentOptimal);
+    constexpr auto depthAttachmentRef = vk::AttachmentReference(1, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+    const auto subpassDescription = vk::SubpassDescription(vk::SubpassDescriptionFlagBits(),
+                                                           vk::PipelineBindPoint::eGraphics,
+                                                           {},
+                                                           { colorAttachmentRef },
+                                                           {},
+                                                           &depthAttachmentRef);
+
+    constexpr auto subpassDependency = vk::SubpassDependency(
+            vk::SubpassExternal,
+            0,
+            vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests,
+            vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests,
+            vk::AccessFlagBits::eNone,
+            vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite);
+
     const auto colorAttachment = vk::AttachmentDescription(vk::AttachmentDescriptionFlagBits(),
-                                                           format,
+                                                           colorFormat,
                                                            vk::SampleCountFlagBits::e1,
                                                            vk::AttachmentLoadOp::eClear,
                                                            vk::AttachmentStoreOp::eStore,
@@ -284,19 +308,20 @@ auto Vulkan::createRenderPass(const vk::UniqueDevice& logicalDevice, const vk::F
                                                            vk::AttachmentStoreOp::eDontCare,
                                                            vk::ImageLayout::eUndefined,
                                                            vk::ImageLayout::ePresentSrcKHR);
-    constexpr auto colorAttachmentRef = vk::AttachmentReference(0, vk::ImageLayout::eColorAttachmentOptimal);
-    const auto subpassDescription = vk::SubpassDescription(
-            vk::SubpassDescriptionFlagBits(), vk::PipelineBindPoint::eGraphics, {}, { colorAttachmentRef });
 
-    constexpr auto subpassDependency = vk::SubpassDependency(vk::SubpassExternal,
-                                                             0,
-                                                             vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                                                             vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                                                             vk::AccessFlagBits::eNone,
-                                                             vk::AccessFlagBits::eColorAttachmentWrite);
+    const auto depthAttachment = vk::AttachmentDescription(vk::AttachmentDescriptionFlagBits(),
+                                                           depthFormat,
+                                                           vk::SampleCountFlagBits::e1,
+                                                           vk::AttachmentLoadOp::eClear,
+                                                           vk::AttachmentStoreOp::eDontCare,
+                                                           vk::AttachmentLoadOp::eDontCare,
+                                                           vk::AttachmentStoreOp::eDontCare,
+                                                           vk::ImageLayout::eUndefined,
+                                                           vk::ImageLayout::eDepthAttachmentOptimal);
 
+    const auto attachments = std::array{ colorAttachment, depthAttachment };
     return logicalDevice->createRenderPassUnique(vk::RenderPassCreateInfo(
-            vk::RenderPassCreateFlagBits(), { colorAttachment }, { subpassDescription }, { subpassDependency }));
+            vk::RenderPassCreateFlagBits(), attachments, { subpassDescription }, { subpassDependency }));
 }
 
 auto Vulkan::createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipelineCreateInfo) -> vk::UniquePipeline {
@@ -341,6 +366,17 @@ auto Vulkan::createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipe
                                                   vk::LogicOp::eClear,
                                                   { colorBlendAttachments },
                                                   std::array{ 0.0f, 0.0f, 0.0f, 0.0f });
+    const auto deptStencilStateCreateInfo =
+            vk::PipelineDepthStencilStateCreateInfo(vk::PipelineDepthStencilStateCreateFlagBits(),
+                                                    vk::True,
+                                                    vk::True,
+                                                    vk::CompareOp::eLess,
+                                                    vk::False,
+                                                    vk::False,
+                                                    {},
+                                                    {},
+                                                    0.0f,
+                                                    1.0f);
     return logicalDevice
             ->createGraphicsPipelineUnique({},
                                            vk::GraphicsPipelineCreateInfo(vk::PipelineCreateFlagBits(),
@@ -351,7 +387,7 @@ auto Vulkan::createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipe
                                                                           &viewportState,
                                                                           &rasterizer,
                                                                           &multisampling,
-                                                                          nullptr,
+                                                                          &deptStencilStateCreateInfo,
                                                                           &colorBlendStateCreateInfo,
                                                                           &dynamicStateCreateInfo,
                                                                           *pipelineLayout,

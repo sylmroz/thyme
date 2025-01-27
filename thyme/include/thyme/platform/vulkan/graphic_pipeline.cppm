@@ -50,13 +50,19 @@ private:
 
     ImageMemory m_imageMemory;
 
-    vk::UniqueSampler m_sampler;
-
     static constexpr std::array vertices = { Vertex{ { -0.5f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f }, {1.0f, 0.0f} },
                                              Vertex{ { 0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f }, {0.0f, 0.0f } },
                                              Vertex{ { 0.5f, 0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f }, {0.0f, 1.0f } },
-                                             Vertex{ { -0.5f, 0.5f, 0.0f }, { 1.0f, 1.0f, 1.0f }, {1.0f, 1.0f} } };
-    static constexpr std::array<uint16_t, 6> indices = { 0, 1, 2, 2, 3, 0 };
+                                             Vertex{ { -0.5f, 0.5f, 0.0f }, { 1.0f, 1.0f, 1.0f }, {1.0f, 1.0f} },
+
+                                             Vertex{ { -0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }, {1.0f, 0.0f} },
+                                             Vertex{ { 0.5f, -0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f }, {0.0f, 0.0f } },
+                                             Vertex{ { 0.5f, 0.5f, -0.5f }, { 0.0f, 0.0f, 1.0f }, {0.0f, 1.0f } },
+                                             Vertex{ { -0.5f, 0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f }, {1.0f, 1.0f} }
+
+    };
+    static constexpr std::array<uint16_t, 12> indices = { 0, 1, 2, 2, 3, 0,
+                                                          4, 5, 6, 6, 7, 4};
 
     void updateUBO(const uint32_t currentImage, const vk::Extent2D& extend) const;
 };

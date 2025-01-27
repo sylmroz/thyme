@@ -146,7 +146,8 @@ class SwapChainData {
 public:
     explicit SwapChainData(const Device& device, const SwapChainSettings& swapChainSettings,
                            const vk::Extent2D& swapChainExtent, const vk::UniqueRenderPass& renderPass,
-                           const vk::UniqueSurfaceKHR& surface, const vk::SwapchainKHR& oldSwapChain = {});
+                           const vk::UniqueSurfaceKHR& surface, const vk::UniqueImageView& depthImageView,
+                           const vk::SwapchainKHR& oldSwapChain = {});
 
     vk::UniqueSwapchainKHR swapChain;
     std::vector<SwapChainFrame> swapChainFrame;
@@ -204,8 +205,8 @@ private:
     };
 };
 
-[[nodiscard]] auto createRenderPass(const vk::UniqueDevice& logicalDevice, const vk::Format format)
-        -> vk::UniqueRenderPass;
+[[nodiscard]] auto createRenderPass(const vk::UniqueDevice& logicalDevice, const vk::Format colorFormat,
+                                    const vk::Format depthFormat) -> vk::UniqueRenderPass;
 
 struct GraphicPipelineCreateInfo {
     const vk::UniqueDevice& logicalDevice;
@@ -394,15 +395,14 @@ void copyBufferToImage(const Device& device, const vk::UniqueCommandPool& comman
             });
 }
 
-[[nodiscard]] auto createImageView(vk::Device device, vk::Image image, vk::Format format) noexcept
-        -> vk::UniqueImageView {
-    return device.createImageViewUnique(
-            vk::ImageViewCreateInfo(vk::ImageViewCreateFlags(),
-                                    image,
-                                    vk::ImageViewType::e2D,
-                                    format,
-                                    vk::ComponentMapping(),
-                                    vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1)));
+[[nodiscard]] auto createImageView(const vk::Device& device, const vk::Image& image, const vk::Format format,
+                                   const vk::ImageAspectFlags aspectFlag) noexcept -> vk::UniqueImageView {
+    return device.createImageViewUnique(vk::ImageViewCreateInfo(vk::ImageViewCreateFlags(),
+                                                                image,
+                                                                vk::ImageViewType::e2D,
+                                                                format,
+                                                                vk::ComponentMapping(),
+                                                                vk::ImageSubresourceRange(aspectFlag, 0, 1, 0, 1)));
 }
 
 struct ImageMemory {
@@ -410,6 +410,33 @@ struct ImageMemory {
     vk::UniqueDeviceMemory memory;
     vk::UniqueImageView imageView;
 };
+
+[[nodiscard]] ImageMemory createImageMemory(const Device& device, const Resolution& resolution, const vk::Format format,
+                                            const vk::ImageUsageFlags imageUsageFlags,
+                                            const vk::MemoryPropertyFlags memoryPropertyFlags,
+                                            const vk::ImageAspectFlags aspectFlags) {
+    auto image = device.logicalDevice->createImageUnique(
+            vk::ImageCreateInfo(vk::ImageCreateFlags(),
+                                vk::ImageType::e2D,
+                                format,
+                                vk::Extent3D(resolution.width, resolution.height, 1),
+                                1,
+                                1,
+                                vk::SampleCountFlagBits::e1,
+                                vk::ImageTiling::eOptimal,
+                                imageUsageFlags,
+                                vk::SharingMode::eExclusive
+
+                                ));
+    vk::MemoryRequirements memoryRequirements;
+    device.logicalDevice->getImageMemoryRequirements(*image, &memoryRequirements);
+    auto memory = device.logicalDevice->allocateMemoryUnique(vk::MemoryAllocateInfo(
+            memoryRequirements.size,
+            findMemoryType(device.physicalDevice, memoryRequirements.memoryTypeBits, memoryPropertyFlags)));
+    device.logicalDevice->bindImageMemory(*image, *memory, 0);
+    auto imageView = createImageView(*device.logicalDevice, *image, format, aspectFlags);
+    return ImageMemory{ .image = std::move(image), .memory = std::move(memory), .imageView = std::move(imageView) };
+}
 
 [[nodiscard]] ImageMemory createImageMemory(const Device& device, const vk::UniqueCommandPool& commandPool,
                                             const std::span<const uint8_t> data, const Resolution& resolution) {
@@ -424,35 +451,23 @@ struct ImageMemory {
     memcpy(mappedMemory, data.data(), data.size());
     device.logicalDevice->unmapMemory(*stagingMemoryBuffer.memory);
 
-    auto image = device.logicalDevice->createImageUnique(
-            vk::ImageCreateInfo(vk::ImageCreateFlags(),
-                                vk::ImageType::e2D,
-                                vk::Format::eR8G8B8A8Srgb,
-                                vk::Extent3D(resolution.width, resolution.height, 1),
-                                1,
-                                1,
-                                vk::SampleCountFlagBits::e1,
-                                vk::ImageTiling::eOptimal,
-                                vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
-                                vk::SharingMode::eExclusive
+    auto imageMemory = createImageMemory(device,
+                                         resolution,
+                                         vk::Format::eR8G8B8A8Srgb,
+                                         vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+                                         vk::MemoryPropertyFlagBits::eDeviceLocal,
+                                         vk::ImageAspectFlagBits::eColor);
 
-                                ));
-    vk::MemoryRequirements memoryRequirements;
-    device.logicalDevice->getImageMemoryRequirements(*image, &memoryRequirements);
-    auto memory = device.logicalDevice->allocateMemoryUnique(
-            vk::MemoryAllocateInfo(memoryRequirements.size,
-                                   findMemoryType(device.physicalDevice,
-                                                  memoryRequirements.memoryTypeBits,
-                                                  vk::MemoryPropertyFlagBits::eDeviceLocal)));
-    device.logicalDevice->bindImageMemory(*image, *memory, 0);
-
-    transitImageLayout(device, commandPool, image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
-    copyBufferToImage(device, commandPool, stagingMemoryBuffer.buffer, image, resolution);
     transitImageLayout(
-            device, commandPool, image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
-    auto imageView = createImageView(*device.logicalDevice, *image, vk::Format::eR8G8B8A8Srgb);
+            device, commandPool, imageMemory.image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+    copyBufferToImage(device, commandPool, stagingMemoryBuffer.buffer, imageMemory.image, resolution);
+    transitImageLayout(device,
+                       commandPool,
+                       imageMemory.image,
+                       vk::ImageLayout::eTransferDstOptimal,
+                       vk::ImageLayout::eShaderReadOnlyOptimal);
 
-    return ImageMemory{ .image = std::move(image), .memory = std::move(memory), .imageView = std::move(imageView) };
+    return imageMemory;
 }
 
 [[nodiscard]] auto createImageSampler(const Device& device) noexcept -> vk::UniqueSampler {
@@ -473,6 +488,34 @@ struct ImageMemory {
                                   0.0f,
                                   vk::BorderColor::eIntOpaqueBlack,
                                   vk::False));
+}
+
+[[nodiscard]] auto findSupportedImageFormat(const vk::PhysicalDevice& device, const std::span<const vk::Format> formats,
+                                            const vk::ImageTiling imageTiling, const vk::FormatFeatureFlags features)
+        -> vk::Format {
+    for (const auto format : formats) {
+        const auto properties = device.getFormatProperties(format);
+        if (imageTiling == vk::ImageTiling::eLinear && (properties.linearTilingFeatures & features) == features) {
+            return format;
+        }
+        if (imageTiling == vk::ImageTiling::eOptimal && (properties.optimalTilingFeatures & features) == features) {
+            return format;
+        }
+    }
+    throw std::runtime_error("filed to find image format");
+}
+
+[[nodiscard]] auto findDepthFormat(const vk::PhysicalDevice& device) -> vk::Format {
+    constexpr auto formats =
+            std::array{ vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint };
+    return findSupportedImageFormat(device,
+                                    std::span(formats.data(), formats.size()),
+                                    vk::ImageTiling::eOptimal,
+                                    vk::FormatFeatureFlagBits::eDepthStencilAttachment);
+}
+
+[[nodiscard]] bool hasStencilFormat(const vk::Format format) noexcept {
+    return format == vk::Format::eD24UnormS8Uint || format == vk::Format::eD32SfloatS8Uint;
 }
 
 }// namespace Thyme::Vulkan
