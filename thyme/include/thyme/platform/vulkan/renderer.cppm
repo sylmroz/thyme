@@ -16,8 +16,7 @@ export namespace Thyme::Vulkan {
 
 class VulkanRenderer final: public Renderer {
 public:
-    explicit VulkanRenderer(const VulkanGlfwWindow& window, const Device& device, const vk::UniqueSurfaceKHR& surface,
-                            const vk::UniqueSampler& sampler) noexcept;
+    explicit VulkanRenderer(const VulkanGlfwWindow& window, const Device& device, const vk::UniqueSurfaceKHR& surface) noexcept;
 
     void draw() override;
 

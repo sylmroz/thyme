@@ -24,7 +24,7 @@ public:
 export class TriangleGraphicPipeline final: public GraphicPipeline {
 public:
     explicit TriangleGraphicPipeline(const Device& device, const vk::UniqueRenderPass& renderPass,
-                                     const vk::UniqueCommandPool& commandPool, const vk::UniqueSampler& sampler);
+                                     const vk::UniqueCommandPool& commandPool);
 
     inline virtual void draw(const vk::UniqueCommandBuffer& commandBuffer, const vk::Extent2D& extend, const uint32_t currentImage) const override {
         updateUBO(currentImage, extend);
@@ -49,6 +49,7 @@ private:
     std::vector<vk::DescriptorSet> m_descriptorSets;
 
     ImageMemory m_imageMemory;
+    vk::UniqueSampler m_sampler;
 
     static constexpr std::array vertices = { Vertex{ { -0.5f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f }, {1.0f, 0.0f} },
                                              Vertex{ { 0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f }, {0.0f, 0.0f } },

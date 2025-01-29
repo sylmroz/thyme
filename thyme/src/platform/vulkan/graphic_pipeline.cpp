@@ -16,7 +16,7 @@ import thyme.renderer.models;
 
 using namespace Thyme::Vulkan;
 TriangleGraphicPipeline::TriangleGraphicPipeline(const Device& device, const vk::UniqueRenderPass& renderPass,
-                                                 const vk::UniqueCommandPool& commandPool, const vk::UniqueSampler& sampler)
+                                                 const vk::UniqueCommandPool& commandPool)
     : GraphicPipeline() {
     constexpr auto uboBinding =
             vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex);
@@ -77,19 +77,22 @@ TriangleGraphicPipeline::TriangleGraphicPipeline(const Device& device, const vk:
     const auto pixels =
             stbi_load("C:\\Users\\sylwek\\Desktop\\grumpy.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     const auto size = texWidth * texHeight * 4;
+    const auto mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
     m_imageMemory = createImageMemory(
             device,
             commandPool,
             std::span(pixels, size),
-            Resolution{ .width = static_cast<uint32_t>(texWidth), .height = static_cast<uint32_t>(texHeight) });
+            Resolution{ .width = static_cast<uint32_t>(texWidth), .height = static_cast<uint32_t>(texHeight) },
+            mipLevels);
     stbi_image_free(pixels);
+    m_sampler = createImageSampler(device, mipLevels);
 
     ///
     for (auto ub : std::views::zip(m_uniformMemoryBuffer, m_descriptorSets)) {
         const auto descriptorBufferInfo =
                 vk::DescriptorBufferInfo(*std::get<0>(ub).buffer, 0, sizeof(Renderer::UniformBufferObject));
         const auto descriptorImageInfo =
-                vk::DescriptorImageInfo(*sampler, *m_imageMemory.imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
+                vk::DescriptorImageInfo(*m_sampler, *m_imageMemory.imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
         const auto descriptorSet = std::get<1>(ub);
         const auto writeDescriptorSets = std::array{
             vk::WriteDescriptorSet(

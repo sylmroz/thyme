@@ -317,7 +317,7 @@ auto Vulkan::createRenderPass(const vk::UniqueDevice& logicalDevice,
                                                            vk::AttachmentLoadOp::eDontCare,
                                                            vk::AttachmentStoreOp::eDontCare,
                                                            vk::ImageLayout::eUndefined,
-                                                           vk::ImageLayout::eDepthAttachmentOptimal);
+                                                           vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
     const auto attachments = std::array{ colorAttachment, depthAttachment };
     return logicalDevice->createRenderPassUnique(vk::RenderPassCreateInfo(
