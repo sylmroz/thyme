@@ -52,7 +52,7 @@ TriangleGraphicPipeline::TriangleGraphicPipeline(const Device& device, const vk:
     m_pipeline = createGraphicsPipeline(GraphicPipelineCreateInfo{ .logicalDevice = device.logicalDevice,
                                                                    .renderPass = renderPass,
                                                                    .pipelineLayout = m_pipelineLayout,
-                                                                   .samples = vk::SampleCountFlagBits::e1,
+                                                                   .samples = device.maxMsaaSamples,
                                                                    .shaderStages = shaderStages });
 
 
@@ -83,6 +83,7 @@ TriangleGraphicPipeline::TriangleGraphicPipeline(const Device& device, const vk:
             commandPool,
             std::span(pixels, size),
             Resolution{ .width = static_cast<uint32_t>(texWidth), .height = static_cast<uint32_t>(texHeight) },
+            vk::SampleCountFlagBits::e1,
             mipLevels);
     stbi_image_free(pixels);
     m_sampler = createImageSampler(device, mipLevels);

@@ -84,7 +84,7 @@ void Thyme::Engine::run() const {
     initInfo.Subpass = 0;
     initInfo.MinImageCount = Vulkan::VulkanRenderer::maxFramesInFlight;
     initInfo.ImageCount = Vulkan::VulkanRenderer::maxFramesInFlight;
-    initInfo.MSAASamples = VkSampleCountFlagBits::VK_SAMPLE_COUNT_1_BIT;
+    initInfo.MSAASamples = static_cast<VkSampleCountFlagBits>(device.maxMsaaSamples);
     initInfo.Allocator = nullptr;
     initInfo.CheckVkResultFn = [](const auto vkResult) {
         if (vkResult == VK_SUCCESS) {

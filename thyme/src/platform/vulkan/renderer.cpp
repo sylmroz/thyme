@@ -18,14 +18,19 @@ VulkanRenderer::VulkanRenderer(const VulkanGlfwWindow& window, const Device& dev
                                         device.queueFamilyIndices.graphicFamily.value())) },
       m_swapChainSettings{ device.swapChainSupportDetails.getBestSwapChainSettings() },
       m_swapChainExtent{ m_device.swapChainSupportDetails.getSwapExtent(m_window.getFrameBufferSize()) },
-      m_depthImage(createImageMemory(device, Resolution{ m_swapChainExtent.width, m_swapChainExtent.height },
-                                     findDepthFormat(device.physicalDevice),
-                                     vk::ImageUsageFlagBits::eDepthStencilAttachment,
-                                     vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eDepth)),
+      m_colorImageMemory(createImageMemory(
+              device, Resolution{ m_swapChainExtent.width, m_swapChainExtent.height },
+              m_swapChainSettings.surfaceFormat.format, vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment,
+              vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor, m_device.maxMsaaSamples, 1)),
+      m_depthImage(createImageMemory(
+              device, Resolution{ m_swapChainExtent.width, m_swapChainExtent.height },
+              findDepthFormat(device.physicalDevice), vk::ImageUsageFlagBits::eDepthStencilAttachment,
+              vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eDepth, m_device.maxMsaaSamples, 1)),
       m_renderPass{ createRenderPass(device.logicalDevice, m_swapChainSettings.surfaceFormat.format,
-                                     findDepthFormat(device.physicalDevice)) },
+                                     findDepthFormat(device.physicalDevice), device.maxMsaaSamples) },
       m_frameDataList{ FrameDataList(device.logicalDevice, m_commandPool, maxFramesInFlight) },
       m_swapChainData{ SwapChainData(m_device, m_swapChainSettings, m_swapChainExtent, m_renderPass, m_surface,
+                                     m_colorImageMemory.imageView,
                                      m_depthImage.imageView, m_swapChainData.swapChain.get()) } {
     m_pipelines.emplace_back(std::make_unique<TriangleGraphicPipeline>(device, m_renderPass, m_commandPool));
 }

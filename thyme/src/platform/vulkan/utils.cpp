@@ -178,8 +178,32 @@ SwapChainSupportDetails::SwapChainSupportDetails(const vk::PhysicalDevice& devic
     presentModes = device.getSurfacePresentModesKHR(*surface);
 }
 
-std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueInstance& instance,
-                                                              const vk::UniqueSurfaceKHR& surface) {
+auto getMaxUsableSampleCount(const vk::PhysicalDevice& device) -> vk::SampleCountFlagBits {
+    const auto counts = device.getProperties().limits.framebufferColorSampleCounts
+                        & device.getProperties().limits.framebufferDepthSampleCounts;
+    if (counts & vk::SampleCountFlagBits::e64) {
+        return vk::SampleCountFlagBits::e64;
+    }
+    if (counts & vk::SampleCountFlagBits::e32) {
+        return vk::SampleCountFlagBits::e32;
+    }
+    if (counts & vk::SampleCountFlagBits::e16) {
+        return vk::SampleCountFlagBits::e16;
+    }
+    if (counts & vk::SampleCountFlagBits::e8) {
+        return vk::SampleCountFlagBits::e8;
+    }
+    if (counts & vk::SampleCountFlagBits::e4) {
+        return vk::SampleCountFlagBits::e4;
+    }
+    if (counts & vk::SampleCountFlagBits::e2) {
+        return vk::SampleCountFlagBits::e2;
+    }
+    return vk::SampleCountFlagBits::e1;
+}
+
+std::vector<PhysicalDevice> Vulkan::getPhysicalDevices(const vk::UniqueInstance& instance,
+                                                       const vk::UniqueSurfaceKHR& surface) {
     static std::map<vk::PhysicalDeviceType, uint32_t> priorities = {
         { vk::PhysicalDeviceType::eOther, 0 },       { vk::PhysicalDeviceType::eCpu, 1 },
         { vk::PhysicalDeviceType::eVirtualGpu, 2 },  { vk::PhysicalDeviceType::eIntegratedGpu, 3 },
@@ -191,10 +215,10 @@ std::vector<PhysicalDevice> Thyme::Vulkan::getPhysicalDevices(const vk::UniqueIn
         const auto queueFamilyIndex = QueueFamilyIndices(device, *surface);
         const auto deviceSupportExtensions = deviceHasAllRequiredExtensions(device);
         const auto swapChainSupportDetails = SwapChainSupportDetails(device, surface);
-
+        const auto maxMsaaSamples = getMaxUsableSampleCount(device);
         if (queueFamilyIndex.isCompleted() && deviceSupportExtensions && swapChainSupportDetails.isValid()
             && device.getFeatures().samplerAnisotropy) {
-            physicalDevices.emplace_back(device, queueFamilyIndex, swapChainSupportDetails);
+            physicalDevices.emplace_back(device, queueFamilyIndex, swapChainSupportDetails, maxMsaaSamples);
         }
     }
 
@@ -231,10 +255,15 @@ SwapChainData::SwapChainData(const Device& device,
                              const vk::Extent2D& swapChainExtent,
                              const vk::UniqueRenderPass& renderPass,
                              const vk::UniqueSurfaceKHR& surface,
+                             const vk::UniqueImageView& colorImageView,
                              const vk::UniqueImageView& depthImageView,
                              const vk::SwapchainKHR& oldSwapChain) {
     const auto& [surfaceFormat, presetMode, imageCount] = swapChainSettings;
-    const auto& [physicalDevice, logicalDevice, queueFamilyIndices, swapChainSupportDetails] = device;
+    [[maybe_unused]] const auto& [physicalDevice,
+                                  logicalDevice,
+                                  queueFamilyIndices,
+                                  swapChainSupportDetails,
+                                  maxMsaaSamples] = device;
     const auto swapChainCreateInfo = [&] {
         auto info = vk::SwapchainCreateInfoKHR(vk::SwapchainCreateFlagsKHR(),
                                                *surface,
@@ -264,7 +293,7 @@ SwapChainData::SwapChainData(const Device& device,
                      | std::views::transform([&](const vk::Image& image) -> SwapChainFrame {
                            auto imageView = createImageView(
                                    *logicalDevice, image, surfaceFormat.format, vk::ImageAspectFlagBits::eColor);
-                           const auto attachments = std::array{ *imageView, *depthImageView };
+                           const auto attachments = std::array{ *colorImageView, *depthImageView, *imageView };
                            auto frameBuffer = logicalDevice->createFramebufferUnique(
                                    vk::FramebufferCreateInfo(vk::FramebufferCreateFlagBits(),
                                                              *renderPass,
@@ -278,17 +307,18 @@ SwapChainData::SwapChainData(const Device& device,
 }
 
 
-auto Vulkan::createRenderPass(const vk::UniqueDevice& logicalDevice,
-                              const vk::Format colorFormat,
-                              const vk::Format depthFormat) -> vk::UniqueRenderPass {
+auto Vulkan::createRenderPass(const vk::UniqueDevice& logicalDevice, const vk::Format colorFormat,
+                              const vk::Format depthFormat, const vk::SampleCountFlagBits samples)
+        -> vk::UniqueRenderPass {
 
     constexpr auto colorAttachmentRef = vk::AttachmentReference(0, vk::ImageLayout::eColorAttachmentOptimal);
     constexpr auto depthAttachmentRef = vk::AttachmentReference(1, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+    constexpr auto colorAttachmentResolveRef = vk::AttachmentReference(2, vk::ImageLayout::eColorAttachmentOptimal);
     const auto subpassDescription = vk::SubpassDescription(vk::SubpassDescriptionFlagBits(),
                                                            vk::PipelineBindPoint::eGraphics,
                                                            {},
                                                            { colorAttachmentRef },
-                                                           {},
+                                                           { colorAttachmentResolveRef },
                                                            &depthAttachmentRef);
 
     constexpr auto subpassDependency = vk::SubpassDependency(
@@ -301,25 +331,34 @@ auto Vulkan::createRenderPass(const vk::UniqueDevice& logicalDevice,
 
     const auto colorAttachment = vk::AttachmentDescription(vk::AttachmentDescriptionFlagBits(),
                                                            colorFormat,
-                                                           vk::SampleCountFlagBits::e1,
+                                                           samples,
                                                            vk::AttachmentLoadOp::eClear,
                                                            vk::AttachmentStoreOp::eStore,
                                                            vk::AttachmentLoadOp::eDontCare,
                                                            vk::AttachmentStoreOp::eDontCare,
                                                            vk::ImageLayout::eUndefined,
-                                                           vk::ImageLayout::ePresentSrcKHR);
+                                                           vk::ImageLayout::eColorAttachmentOptimal);
 
     const auto depthAttachment = vk::AttachmentDescription(vk::AttachmentDescriptionFlagBits(),
                                                            depthFormat,
-                                                           vk::SampleCountFlagBits::e1,
+                                                           samples,
                                                            vk::AttachmentLoadOp::eClear,
                                                            vk::AttachmentStoreOp::eDontCare,
                                                            vk::AttachmentLoadOp::eDontCare,
                                                            vk::AttachmentStoreOp::eDontCare,
                                                            vk::ImageLayout::eUndefined,
                                                            vk::ImageLayout::eDepthStencilAttachmentOptimal);
+    const auto colorAttachmentResolve = vk::AttachmentDescription(vk::AttachmentDescriptionFlagBits(),
+                                                                  colorFormat,
+                                                                  vk::SampleCountFlagBits::e1,
+                                                                  vk::AttachmentLoadOp::eDontCare,
+                                                                  vk::AttachmentStoreOp::eStore,
+                                                                  vk::AttachmentLoadOp::eDontCare,
+                                                                  vk::AttachmentStoreOp::eDontCare,
+                                                                  vk::ImageLayout::eUndefined,
+                                                                  vk::ImageLayout::ePresentSrcKHR);
 
-    const auto attachments = std::array{ colorAttachment, depthAttachment };
+    const auto attachments = std::array{ colorAttachment, depthAttachment, colorAttachmentResolve };
     return logicalDevice->createRenderPassUnique(vk::RenderPassCreateInfo(
             vk::RenderPassCreateFlagBits(), attachments, { subpassDescription }, { subpassDependency }));
 }

@@ -112,13 +112,15 @@ public:
 class PhysicalDevice {
 public:
     explicit PhysicalDevice(const vk::PhysicalDevice& physicalDevice, const QueueFamilyIndices& queueFamilyIndices,
-                            const SwapChainSupportDetails& swapChainSupportDetails) noexcept
+                            const SwapChainSupportDetails& swapChainSupportDetails,
+                            const vk::SampleCountFlagBits maxMsaaSamples) noexcept
         : physicalDevice{ physicalDevice }, queueFamilyIndices{ queueFamilyIndices },
-          swapChainSupportDetails{ swapChainSupportDetails } {}
+          swapChainSupportDetails{ swapChainSupportDetails }, maxMsaaSamples{ maxMsaaSamples } {}
 
     vk::PhysicalDevice physicalDevice;
     QueueFamilyIndices queueFamilyIndices;
     SwapChainSupportDetails swapChainSupportDetails;
+    vk::SampleCountFlagBits maxMsaaSamples;
 
     [[nodiscard]] vk::UniqueDevice createLogicalDevice() const;
 };
@@ -127,11 +129,13 @@ struct Device {
     explicit Device(PhysicalDevice physicalDevice)
         : physicalDevice(physicalDevice.physicalDevice), logicalDevice(physicalDevice.createLogicalDevice()),
           queueFamilyIndices(physicalDevice.queueFamilyIndices),
-          swapChainSupportDetails(physicalDevice.swapChainSupportDetails) {}
+          swapChainSupportDetails(physicalDevice.swapChainSupportDetails),
+          maxMsaaSamples{ physicalDevice.maxMsaaSamples } {}
     vk::PhysicalDevice physicalDevice;
     vk::UniqueDevice logicalDevice;
     QueueFamilyIndices queueFamilyIndices;
     SwapChainSupportDetails swapChainSupportDetails;
+    vk::SampleCountFlagBits maxMsaaSamples;
 
     auto getGraphicQueue() const noexcept -> vk::Queue {
         return logicalDevice->getQueue(queueFamilyIndices.graphicFamily.value(), 0);
@@ -150,8 +154,8 @@ class SwapChainData {
 public:
     explicit SwapChainData(const Device& device, const SwapChainSettings& swapChainSettings,
                            const vk::Extent2D& swapChainExtent, const vk::UniqueRenderPass& renderPass,
-                           const vk::UniqueSurfaceKHR& surface, const vk::UniqueImageView& depthImageView,
-                           const vk::SwapchainKHR& oldSwapChain = {});
+                           const vk::UniqueSurfaceKHR& surface, const vk::UniqueImageView& colorImageView,
+                           const vk::UniqueImageView& depthImageView, const vk::SwapchainKHR& oldSwapChain = {});
 
     vk::UniqueSwapchainKHR swapChain;
     std::vector<SwapChainFrame> swapChainFrame;
@@ -210,7 +214,8 @@ private:
 };
 
 [[nodiscard]] auto createRenderPass(const vk::UniqueDevice& logicalDevice, const vk::Format colorFormat,
-                                    const vk::Format depthFormat) -> vk::UniqueRenderPass;
+                                    const vk::Format depthFormat, const vk::SampleCountFlagBits samples)
+        -> vk::UniqueRenderPass;
 
 struct GraphicPipelineCreateInfo {
     const vk::UniqueDevice& logicalDevice;
@@ -362,14 +367,15 @@ void transitImageLayout(const Device& device, const vk::UniqueCommandPool& comma
     singleTimeCommand(device, commandPool, [&](const vk::UniqueCommandBuffer& commandBuffer) {
         const auto [barrier, srcPipelineStage, dstPipelineStage] = [&] {
             const auto createBarrier = [&](const vk::AccessFlags srcAccessFlag, const vk::AccessFlags dstAccessFlag) {
-                return vk::ImageMemoryBarrier(srcAccessFlag,
-                                              dstAccessFlag,
-                                              oldLayout,
-                                              newLayout,
-                                              vk::QueueFamilyIgnored,
-                                              vk::QueueFamilyIgnored,
-                                              *image,
-                                              vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, mipLevels, 0, 1));
+                return vk::ImageMemoryBarrier(
+                        srcAccessFlag,
+                        dstAccessFlag,
+                        oldLayout,
+                        newLayout,
+                        vk::QueueFamilyIgnored,
+                        vk::QueueFamilyIgnored,
+                        *image,
+                        vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, mipLevels, 0, 1));
             };
 
             if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal) {
@@ -424,7 +430,8 @@ struct ImageMemory {
 [[nodiscard]] ImageMemory createImageMemory(const Device& device, const Resolution& resolution, const vk::Format format,
                                             const vk::ImageUsageFlags imageUsageFlags,
                                             const vk::MemoryPropertyFlags memoryPropertyFlags,
-                                            const vk::ImageAspectFlags aspectFlags, uint32_t mipLevels = 1) {
+                                            const vk::ImageAspectFlags aspectFlags, const vk::SampleCountFlagBits msaa,
+                                            const uint32_t mipLevels) {
     auto image = device.logicalDevice->createImageUnique(
             vk::ImageCreateInfo(vk::ImageCreateFlags(),
                                 vk::ImageType::e2D,
@@ -432,7 +439,7 @@ struct ImageMemory {
                                 vk::Extent3D(resolution.width, resolution.height, 1),
                                 mipLevels,
                                 1,
-                                vk::SampleCountFlagBits::e1,
+                                msaa,
                                 vk::ImageTiling::eOptimal,
                                 imageUsageFlags,
                                 vk::SharingMode::eExclusive
@@ -457,14 +464,15 @@ void generateMipmaps(const Device& device, const vk::UniqueCommandPool& commandP
     }
     singleTimeCommand(device, commandPool, [&](const vk::UniqueCommandBuffer& commandBuffer) {
         const auto getImageBarrier = [&image](const uint32_t mipLevel) -> vk::ImageMemoryBarrier {
-            return vk::ImageMemoryBarrier(vk::AccessFlagBits::eTransferWrite,
-                                          vk::AccessFlagBits::eTransferRead,
-                                          vk::ImageLayout::eTransferDstOptimal,
-                                          vk::ImageLayout::eTransferSrcOptimal,
-                                          vk::QueueFamilyIgnored,
-                                          vk::QueueFamilyIgnored,
-                                          *image,
-                                          vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, mipLevel, 1, 0, 1));
+            return vk::ImageMemoryBarrier(
+                    vk::AccessFlagBits::eTransferWrite,
+                    vk::AccessFlagBits::eTransferRead,
+                    vk::ImageLayout::eTransferDstOptimal,
+                    vk::ImageLayout::eTransferSrcOptimal,
+                    vk::QueueFamilyIgnored,
+                    vk::QueueFamilyIgnored,
+                    *image,
+                    vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, mipLevel, 1, 0, 1));
         };
         const auto getImageBlit =
                 [&resolution](const uint32_t mipLevel, const int mipWidth, const int mipHeight) -> vk::ImageBlit {
@@ -520,7 +528,7 @@ void generateMipmaps(const Device& device, const vk::UniqueCommandPool& commandP
 
 [[nodiscard]] ImageMemory createImageMemory(const Device& device, const vk::UniqueCommandPool& commandPool,
                                             const std::span<const uint8_t> data, const Resolution& resolution,
-                                            const uint32_t mipLevels = 1) {
+                                            const vk::SampleCountFlagBits msaa, const uint32_t mipLevels = 1) {
     const auto stagingMemoryBuffer =
             createBufferMemory(device,
                                data.size(),
@@ -539,6 +547,7 @@ void generateMipmaps(const Device& device, const vk::UniqueCommandPool& commandP
                                                  | vk::ImageUsageFlagBits::eSampled,
                                          vk::MemoryPropertyFlagBits::eDeviceLocal,
                                          vk::ImageAspectFlagBits::eColor,
+                                         msaa,
                                          mipLevels);
 
     transitImageLayout(device,
