@@ -1,13 +1,10 @@
-module;
+#pragma once
 
 #include <imgui.h>
 
-export module thyme.platform.imgui_context;
+#include <thyme/core/platform_context.hpp>
 
-import thyme.core.platform_context;
-
-
-export namespace Thyme {
+namespace Thyme {
 
 class ImGuiContext: public PlatformContext {
 public:

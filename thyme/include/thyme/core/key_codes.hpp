@@ -1,10 +1,10 @@
-module;
+#pragma once
 
-export module thyme.core.key_codes;
+#include <stdint.h>
 
 namespace Thyme {
 // from glfw3.h
-export enum class KeyCode : int16_t {
+enum class KeyCode : int16_t {
     space = 32,
     apostrophe = 39 /* ' */,
     comma = 44 /* , */,

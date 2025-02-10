@@ -1,11 +1,9 @@
-module;
+#pragma once
 
 #include <shaderc/shaderc.hpp>
 
-export module thyme.platform.vulkan:shader;
-
 namespace Thyme::Vulkan {
-export enum class ShaderType {
+enum class ShaderType {
     vertex,
     fragment,
     geometry,
@@ -22,10 +20,10 @@ static std::map<ShaderType, shaderc_shader_kind> shaderTypeToKind = {
     { ShaderType::tess_evaluation, shaderc_tess_evaluation_shader },
 };
 
-export [[nodiscard]] auto compileGlslToSpv(const std::span<const char> source, const shaderc_shader_kind kind)
+[[nodiscard]] auto compileGlslToSpv(const std::span<const char> source, const shaderc_shader_kind kind)
         -> std::vector<uint32_t>;
 
-export [[nodiscard]] auto compileGlslToSpv(const std::span<const char> source, const ShaderType type)
+[[nodiscard]] auto compileGlslToSpv(const std::span<const char> source, const ShaderType type)
         -> std::vector<uint32_t> {
     return compileGlslToSpv(source, shaderTypeToKind[type]);
 }

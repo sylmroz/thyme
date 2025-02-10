@@ -1,12 +1,10 @@
-module;
+#pragma once
 
 #include <thyme/export_macros.hpp>
 
-export module thyme.core.layer_stack;
+#include <thyme/core/layer.hpp>
 
-import thyme.core.layer;
-
-export namespace Thyme {
+namespace Thyme {
 
 template <typename... Args>
 class THYME_API LayerStack {

@@ -1,11 +1,13 @@
+#include <thyme/core/application.hpp>
 #include <thyme/core/logger.hpp>
+
 #include <variant>
 
 #include <spdlog/spdlog.h>
 #include <vulkan/vulkan.hpp>
 
-import thyme.core;
-import thyme.platform.vulkan_layer;
+#include <thyme/core/core.hpp>
+#include <thyme/platform/vulkan/vulkan_layer.hpp>
 
 class ExampleLayer final: public Thyme::Vulkan::VulkanOverlayLayer {
     struct MyEventDispatcher final: Thyme::EventDispatcher<Thyme::WindowResize, Thyme::MousePosition> {

@@ -1,6 +1,9 @@
-module;
+#pragma once
 
-#include "thyme/core/logger.hpp"
+#include <thyme/core/common_structs.hpp>
+#include <thyme/core/event.hpp>
+#include <thyme/core/logger.hpp>
+#include <thyme/core/window.hpp>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -10,13 +13,7 @@ module;
 #include <functional>
 #include <memory>
 
-export module thyme.platform.glfw_window;
-
-import thyme.core.common_structs;
-import thyme.core.event;
-import thyme.core.window;
-
-export namespace Thyme {
+namespace Thyme {
 
 class GlfwWindow: public Window {
     using WindowHWND = std::unique_ptr<GLFWwindow, std::function<void(GLFWwindow*)>>;

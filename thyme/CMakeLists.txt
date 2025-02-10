@@ -13,6 +13,7 @@ target_sources(${PROJECT_NAME}
 	PRIVATE
 		src/core/application.cpp
 		src/core/engine.cpp
+		src/core/utils.cpp
 
 		src/platform/glfw_window.cpp
 
@@ -20,35 +21,6 @@ target_sources(${PROJECT_NAME}
 		src/platform/vulkan/renderer.cpp
 		#src/platform/vulkan/shader.cpp #for now there are problems with integrating shaderc from google
 		src/platform/vulkan/utils.cpp
-	PUBLIC
-		FILE_SET CXX_MODULES
-		FILES
-			include/thyme/core/application.cppm
-			include/thyme/core/common_structs.cppm
-			include/thyme/core/core.cppm
-			include/thyme/core/engine.cppm
-			include/thyme/core/event.cppm
-			include/thyme/core/key_codes.cppm
-			include/thyme/core/layer.cppm
-			include/thyme/core/layer_stack.cppm
-			include/thyme/core/mouse_codes.cppm
-			include/thyme/core/platform_context.cppm
-			include/thyme/core/renderer.cppm
-			include/thyme/core/utils.cppm
-			include/thyme/core/window.cppm
-
-			include/thyme/platform/glfw_vulkan_platform_context.cppm
-			include/thyme/platform/glfw_window.cppm
-			include/thyme/platform/imgui_context.cppm
-
-			include/thyme/renderer/models.cppm
-
-			include/thyme/platform/vulkan/graphic_pipeline.cppm
-			include/thyme/platform/vulkan/renderer.cppm
-			#include/thyme/platform/vulkan/shader.cppm #for now there are problems with integrating shaderc from google
-			include/thyme/platform/vulkan/utils.cppm
-			include/thyme/platform/vulkan/vulkan_layer.cppm
-			include/thyme/platform/vulkan/vulkan.cppm
 )
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)

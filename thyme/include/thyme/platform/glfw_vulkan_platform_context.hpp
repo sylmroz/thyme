@@ -1,4 +1,4 @@
-module;
+#pragma once
 
 #include "thyme/export_macros.hpp"
 
@@ -9,11 +9,9 @@ module;
 #include <spdlog/spdlog.h>
 #include <vulkan/vulkan.hpp>
 
-export module thyme.platform.gflw_vulkan_platform_context;
+#include <thyme/core/platform_context.hpp>
 
-import thyme.core.platform_context;
-
-export namespace Thyme {
+namespace Thyme {
 
 class THYME_API GlfwVulkanPlatformContext: public PlatformContext {
 public:

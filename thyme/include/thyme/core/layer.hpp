@@ -1,12 +1,12 @@
-module;
+#pragma once
 
 #include <thyme/export_macros.hpp>
 
-export module thyme.core.layer;
+#include <thyme/core/event.hpp>
 
-import thyme.core.event;
+#include <stdint.h>
 
-export namespace Thyme {
+namespace Thyme {
 
 enum class LayerType: uint8_t {
     overlay,

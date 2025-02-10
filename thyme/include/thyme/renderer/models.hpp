@@ -1,10 +1,8 @@
-module;
+#pragma once
 
 #include <glm/glm.hpp>
 
-export module thyme.renderer.models;
-
-export namespace Thyme::Renderer {
+namespace Thyme::Renderer {
 
 struct UniformBufferObject {
     glm::mat4 model;

@@ -1,14 +1,12 @@
-module;
+#pragma once
 
 #include <thyme/export_macros.hpp>
 
-export module thyme.core.renderer;
-
-import thyme.core.utils;
+#include <thyme/core/utils.hpp>
 
 namespace Thyme {
 
-export class THYME_API Renderer: public NoCopyable {
+class THYME_API Renderer: public NoCopyable {
 public:
     Renderer() = default;
     virtual void draw() = 0;

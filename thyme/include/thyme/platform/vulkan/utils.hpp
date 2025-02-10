@@ -1,4 +1,4 @@
-module;
+#pragma once
 
 #include <numeric>
 #include <vector>
@@ -7,11 +7,10 @@ module;
 #include <glm/vec3.hpp>
 #include <vulkan/vulkan.hpp>
 
-export module thyme.platform.vulkan:utils;
-import thyme.core.common_structs;
-import thyme.platform.glfw_window;
+#include <thyme/core/common_structs.hpp>
+#include <thyme/platform/glfw_window.hpp>
 
-export namespace Thyme::Vulkan {
+namespace Thyme::Vulkan {
 
 struct UniqueInstanceConfig {
     std::string_view engineName;
@@ -228,7 +227,7 @@ struct GraphicPipelineCreateInfo {
 [[nodiscard]] auto createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipelineCreateInfo)
         -> vk::UniquePipeline;
 
-[[nodiscard]] auto createDescriptorPool(const vk::UniqueDevice& device,
+[[nodiscard]] inline auto createDescriptorPool(const vk::UniqueDevice& device,
                                         const std::vector<vk::DescriptorPoolSize>& descriptorSizes)
         -> vk::UniqueDescriptorPool {
     const uint32_t maxSet = std::accumulate(std::begin(descriptorSizes),
@@ -297,7 +296,7 @@ struct Vertex {
     }
 };
 
-[[nodiscard]] uint32_t findMemoryType(const vk::PhysicalDevice& device, const uint32_t typeFilter,
+[[nodiscard]] inline uint32_t findMemoryType(const vk::PhysicalDevice& device, const uint32_t typeFilter,
                                       const vk::MemoryPropertyFlags properties) {
     const auto& memProperties = device.getMemoryProperties();
     for (uint32_t i{ 0 }; i < memProperties.memoryTypeCount; ++i) {
@@ -308,7 +307,7 @@ struct Vertex {
     throw std::runtime_error("failed to find suitable memory type!");
 }
 
-void copyBuffer(const vk::UniqueDevice& device, const vk::UniqueCommandPool& commandPool, const vk::Queue& graphicQueue,
+inline void copyBuffer(const vk::UniqueDevice& device, const vk::UniqueCommandPool& commandPool, const vk::Queue& graphicQueue,
                 const vk::UniqueBuffer& srcBuffer, const vk::UniqueBuffer& dstBuffer, const uint32_t size) {
     singleTimeCommand(device, commandPool, graphicQueue, [&](const vk::UniqueCommandBuffer& commandBuffer) {
         commandBuffer->copyBuffer(*srcBuffer, *dstBuffer, { vk::BufferCopy(0, 0, size) });
@@ -321,9 +320,9 @@ struct BufferMemory {
     vk::UniqueDeviceMemory memory;
 };
 
-[[nodiscard]] BufferMemory createBufferMemory(const Device& device, const uint32_t size,
+[[nodiscard]] inline auto createBufferMemory(const Device& device, const uint32_t size,
                                               const vk::BufferUsageFlags usage,
-                                              const vk::MemoryPropertyFlags properties) {
+                                             const vk::MemoryPropertyFlags properties) -> BufferMemory {
     auto buffer = device.logicalDevice->createBufferUnique(
             vk::BufferCreateInfo(vk::BufferCreateFlagBits(), size, usage, vk::SharingMode::eExclusive));
 
@@ -340,8 +339,8 @@ struct BufferMemory {
 }
 
 template <typename Vec>
-[[nodiscard]] BufferMemory createBufferMemory(const Device& device, const vk::UniqueCommandPool& commandPool,
-                                              const Vec& data, const vk::BufferUsageFlags usage) {
+[[nodiscard]] inline auto createBufferMemory(const Device& device, const vk::UniqueCommandPool& commandPool,
+                                              const Vec& data, const vk::BufferUsageFlags usage) -> BufferMemory {
     const auto size = data.size() * sizeof(data[0]);
 
     const auto stagingMemoryBuffer =
@@ -362,7 +361,7 @@ template <typename Vec>
     return memoryBuffer;
 }
 
-void transitImageLayout(const Device& device, const vk::UniqueCommandPool& commandPool, const vk::UniqueImage& image,
+inline void transitImageLayout(const Device& device, const vk::UniqueCommandPool& commandPool, const vk::UniqueImage& image,
                         const vk::ImageLayout oldLayout, const vk::ImageLayout newLayout, const uint32_t mipLevels) {
     singleTimeCommand(device, commandPool, [&](const vk::UniqueCommandBuffer& commandBuffer) {
         const auto [barrier, srcPipelineStage, dstPipelineStage] = [&] {
@@ -396,7 +395,7 @@ void transitImageLayout(const Device& device, const vk::UniqueCommandPool& comma
     });
 }
 
-void copyBufferToImage(const Device& device, const vk::UniqueCommandPool& commandPool, const vk::UniqueBuffer& buffer,
+inline void copyBufferToImage(const Device& device, const vk::UniqueCommandPool& commandPool, const vk::UniqueBuffer& buffer,
                        const vk::UniqueImage& image, const Resolution& resolution) {
     singleTimeCommand(device, commandPool, [&](const vk::UniqueCommandBuffer& commandBuffer) {
         const auto region = vk::BufferImageCopy(0,
@@ -409,7 +408,7 @@ void copyBufferToImage(const Device& device, const vk::UniqueCommandPool& comman
     });
 }
 
-[[nodiscard]] auto createImageView(const vk::Device& device, const vk::Image& image, const vk::Format format,
+[[nodiscard]] inline auto createImageView(const vk::Device& device, const vk::Image& image, const vk::Format format,
                                    const vk::ImageAspectFlags aspectFlag, uint32_t mipLevels = 1) noexcept
         -> vk::UniqueImageView {
     return device.createImageViewUnique(
@@ -427,7 +426,7 @@ struct ImageMemory {
     vk::UniqueImageView imageView;
 };
 
-[[nodiscard]] ImageMemory createImageMemory(const Device& device, const Resolution& resolution, const vk::Format format,
+[[nodiscard]] inline ImageMemory createImageMemory(const Device& device, const Resolution& resolution, const vk::Format format,
                                             const vk::ImageUsageFlags imageUsageFlags,
                                             const vk::MemoryPropertyFlags memoryPropertyFlags,
                                             const vk::ImageAspectFlags aspectFlags, const vk::SampleCountFlagBits msaa,
@@ -455,7 +454,7 @@ struct ImageMemory {
     return ImageMemory{ .image = std::move(image), .memory = std::move(memory), .imageView = std::move(imageView) };
 }
 
-void generateMipmaps(const Device& device, const vk::UniqueCommandPool& commandPool, const vk::UniqueImage& image,
+inline void generateMipmaps(const Device& device, const vk::UniqueCommandPool& commandPool, const vk::UniqueImage& image,
                      const vk::Format format, const Resolution& resolution, const uint32_t mipLevels) {
 
     if (!(device.physicalDevice.getFormatProperties(format).optimalTilingFeatures
@@ -526,7 +525,7 @@ void generateMipmaps(const Device& device, const vk::UniqueCommandPool& commandP
     });
 }
 
-[[nodiscard]] ImageMemory createImageMemory(const Device& device, const vk::UniqueCommandPool& commandPool,
+[[nodiscard]] inline ImageMemory createImageMemory(const Device& device, const vk::UniqueCommandPool& commandPool,
                                             const std::span<const uint8_t> data, const Resolution& resolution,
                                             const vk::SampleCountFlagBits msaa, const uint32_t mipLevels = 1) {
     const auto stagingMemoryBuffer =
@@ -558,16 +557,10 @@ void generateMipmaps(const Device& device, const vk::UniqueCommandPool& commandP
                        mipLevels);
     copyBufferToImage(device, commandPool, stagingMemoryBuffer.buffer, imageMemory.image, resolution);
     generateMipmaps(device, commandPool, imageMemory.image, vk::Format::eR8G8B8A8Srgb, resolution, mipLevels);
-    /*transitImageLayout(device,
-                       commandPool,
-                       imageMemory.image,
-                       vk::ImageLayout::eTransferDstOptimal,
-                       vk::ImageLayout::eShaderReadOnlyOptimal);*/
-
     return imageMemory;
 }
 
-[[nodiscard]] auto createImageSampler(const Device& device, const uint32_t mipLevels) noexcept -> vk::UniqueSampler {
+[[nodiscard]] inline auto createImageSampler(const Device& device, const uint32_t mipLevels) noexcept -> vk::UniqueSampler {
     return device.logicalDevice->createSamplerUnique(
             vk::SamplerCreateInfo(vk::SamplerCreateFlags(),
                                   vk::Filter::eLinear,
@@ -587,7 +580,7 @@ void generateMipmaps(const Device& device, const vk::UniqueCommandPool& commandP
                                   vk::False));
 }
 
-[[nodiscard]] auto findSupportedImageFormat(const vk::PhysicalDevice& device, const std::span<const vk::Format> formats,
+[[nodiscard]] inline auto findSupportedImageFormat(const vk::PhysicalDevice& device, const std::span<const vk::Format> formats,
                                             const vk::ImageTiling imageTiling, const vk::FormatFeatureFlags features)
         -> vk::Format {
     for (const auto format : formats) {
@@ -602,7 +595,7 @@ void generateMipmaps(const Device& device, const vk::UniqueCommandPool& commandP
     throw std::runtime_error("filed to find image format");
 }
 
-[[nodiscard]] auto findDepthFormat(const vk::PhysicalDevice& device) -> vk::Format {
+[[nodiscard]] inline auto findDepthFormat(const vk::PhysicalDevice& device) -> vk::Format {
     constexpr auto formats =
             std::array{ vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint };
     return findSupportedImageFormat(device,
@@ -611,7 +604,7 @@ void generateMipmaps(const Device& device, const vk::UniqueCommandPool& commandP
                                     vk::FormatFeatureFlagBits::eDepthStencilAttachment);
 }
 
-[[nodiscard]] bool hasStencilFormat(const vk::Format format) noexcept {
+[[nodiscard]] inline bool hasStencilFormat(const vk::Format format) noexcept {
     return format == vk::Format::eD24UnormS8Uint || format == vk::Format::eD32SfloatS8Uint;
 }
 

@@ -1,10 +1,8 @@
-module;
+#pragma once
 
 #include <functional>
 
-export module thyme.core.platform_context;
-
-export namespace Thyme {
+namespace Thyme {
 
 struct PlatformContextArguments {
     std::function<void(void)> initializer;

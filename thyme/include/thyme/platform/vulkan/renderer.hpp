@@ -1,18 +1,18 @@
-module;
+#pragma once
 
 #include <thyme/core/logger.hpp>
 
 #include <imgui_impl_vulkan.h>
 #include <vulkan/vulkan.hpp>
 
-export module thyme.platform.vulkan:renderer;
-import :graphic_pipeline;
-import :utils;
+#include <thyme/platform/vulkan/graphic_pipeline.hpp>
+#include <thyme/platform/vulkan/utils.hpp>
 
-import thyme.core.renderer;
-import thyme.platform.glfw_window;
+#include <thyme/core/renderer.hpp>
 
-export namespace Thyme::Vulkan {
+#include <thyme/platform/glfw_window.hpp>
+
+namespace Thyme::Vulkan {
 
 class VulkanRenderer final: public Renderer {
 public:

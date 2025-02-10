@@ -1,13 +1,11 @@
-module;
+#pragma once
 
 #include <vulkan/vulkan.hpp>
 
-export module thyme.platform.vulkan_layer;
+#include <thyme/core/layer.hpp>
+#include <thyme/core/layer_stack.hpp>
 
-import thyme.core.layer;
-import thyme.core.layer_stack;
-
-export namespace Thyme::Vulkan {
+namespace Thyme::Vulkan {
 
 using VulkanLayer = Layer<vk::UniqueCommandBuffer>;
 using VulkanOverlayLayer = OverlayLayer<vk::UniqueCommandBuffer>;

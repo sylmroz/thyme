@@ -1,4 +1,4 @@
-module;
+#pragma once
 
 #include <thyme/export_macros.hpp>
 
@@ -6,13 +6,13 @@ module;
 
 #include <functional>
 #include <variant>
+#include <ranges>
 
-export module thyme.core.event;
-import thyme.core.key_codes;
-import thyme.core.mouse_codes;
-import thyme.core.utils;
+#include <thyme/core/key_codes.hpp>
+#include <thyme/core/mouse_codes.hpp>
+#include <thyme/core/utils.hpp>
 
-export namespace Thyme {
+namespace Thyme {
 
 struct THYME_API WindowResize {
     int width;

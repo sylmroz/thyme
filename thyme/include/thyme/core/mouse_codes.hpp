@@ -1,10 +1,10 @@
-module;
+#pragma once
 
-export module thyme.core.mouse_codes;
+#include <stdint.h>
 
 namespace Thyme {
 // from glfw3.h
-export enum class MouseButton : uint8_t {
+enum class MouseButton : uint8_t {
     button_1 = 0,
     button_2 = 1,
     button_3 = 2,

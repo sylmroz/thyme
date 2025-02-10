@@ -1,8 +1,11 @@
-module;
-
-#include "thyme/core/logger.hpp"
-#include "thyme/pch.hpp"
-#include "thyme/platform/vulkan_device_manager.hpp"
+//#include <thyme/core/event.hpp>
+#include <thyme/core/logger.hpp>
+#include <thyme/core/utils.hpp>
+#include <thyme/core/window.hpp>
+#include <thyme/platform/glfw_window.hpp>
+#include <thyme/platform/vulkan/renderer.hpp>
+#include <thyme/platform/vulkan/vulkan_layer.hpp>
+#include <thyme/platform/vulkan_device_manager.hpp>
 
 #include <ranges>
 #include <vector>
@@ -10,16 +13,6 @@ module;
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
-
-module thyme.core.engine;
-
-import thyme.core.event;
-// import thyme.core.layer;
-// import thyme.core.layer_stack;
-import thyme.core.utils;
-import thyme.core.window;
-import thyme.platform.glfw_window;
-import thyme.platform.vulkan_layer;
 
 Thyme::Engine::Engine(const EngineConfig& engineConfig, Vulkan::VulkanLayerStack& layers)
     : m_engineConfig{ engineConfig }, m_layers{ layers } {}

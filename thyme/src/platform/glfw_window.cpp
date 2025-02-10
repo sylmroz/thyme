@@ -1,10 +1,8 @@
-module;
+#include <thyme/platform/glfw_window.hpp>
+#include <thyme/core/logger.hpp>
+#include <thyme/core/event.hpp>
 
 #include <GLFW/glfw3.h>
-
-#include "thyme/core/logger.hpp"
-
-module thyme.platform.glfw_window;
 
 using namespace Thyme;
 

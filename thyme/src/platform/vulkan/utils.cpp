@@ -1,4 +1,4 @@
-module;
+#include <thyme/platform/vulkan/utils.hpp>
 
 #include "thyme/core/logger.hpp"
 #include "thyme/version.hpp"
@@ -7,8 +7,6 @@ module;
 #include <set>
 #include <vulkan/vulkan.hpp>
 
-module thyme.platform.vulkan;
-import :utils;
 
 using namespace Thyme;
 using namespace Thyme::Vulkan;
@@ -308,8 +306,8 @@ SwapChainData::SwapChainData(const Device& device,
 
 
 auto Vulkan::createRenderPass(const vk::UniqueDevice& logicalDevice, const vk::Format colorFormat,
-                              const vk::Format depthFormat, const vk::SampleCountFlagBits samples)
-        -> vk::UniqueRenderPass {
+                              const vk::Format depthFormat,
+                              const vk::SampleCountFlagBits samples) -> vk::UniqueRenderPass {
 
     constexpr auto colorAttachmentRef = vk::AttachmentReference(0, vk::ImageLayout::eColorAttachmentOptimal);
     constexpr auto depthAttachmentRef = vk::AttachmentReference(1, vk::ImageLayout::eDepthStencilAttachmentOptimal);

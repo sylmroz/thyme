@@ -1,12 +1,8 @@
-module;
-
 #include <thyme/core/logger.hpp>
+#include <thyme/platform/vulkan/renderer.hpp>
 
 #include <imgui_impl_vulkan.h>
 #include <vulkan/vulkan.hpp>
-
-module thyme.platform.vulkan;
-import :renderer;
 
 using namespace Thyme::Vulkan;
 

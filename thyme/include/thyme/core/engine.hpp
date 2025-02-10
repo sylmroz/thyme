@@ -1,22 +1,21 @@
-module;
+#pragma once
 
 #include <thyme/export_macros.hpp>
 
 #include <string>
 
-export module thyme.core.engine;
-import thyme.platform.vulkan_layer;
+#include <thyme/platform/vulkan/vulkan_layer.hpp>
 
 namespace Thyme {
 
-export struct EngineConfig {
+struct THYME_API EngineConfig {
     std::string engineName{ "Thyme" };
     std::string appName;
     uint32_t width{ 1920 };
     uint32_t height{ 1080 };
 };
 
-export class THYME_API Engine final {
+class THYME_API Engine final {
 public:
     explicit Engine(const EngineConfig& engineConfig, Vulkan::VulkanLayerStack& layers);
 

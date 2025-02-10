@@ -1,17 +1,19 @@
+#include <thyme/core/common_structs.hpp>
+#include <thyme/core/utils.hpp>
+#include <thyme/platform/vulkan/graphic_pipeline.hpp>
+#include <thyme/renderer/models.hpp>
+
 #include <chrono>
 #include <filesystem>
+
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/gtc/matrix_transform.hpp>
+
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+
 #include <vulkan/vulkan.hpp>
-
-import thyme.platform.vulkan;
-import thyme.core.utils;
-import thyme.core.common_structs;
-
-import thyme.renderer.models;
 
 
 using namespace Thyme::Vulkan;

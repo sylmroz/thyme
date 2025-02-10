@@ -1,8 +1,9 @@
+#include <thyme/platfrom/vulkan/shader.hpp>
+
 #include <shaderc/shaderc.hpp>
 
 #include <thyme/core/logger.hpp>
 
-import thyme.platform.vulkan;
 
 [[nodiscard]] auto compileGlslToSpv(const std::span<const char> source, const shaderc_shader_kind kind)
         -> std::vector<uint32_t> {

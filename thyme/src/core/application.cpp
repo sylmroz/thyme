@@ -1,15 +1,12 @@
-module;
+#include <thyme/core/application.hpp>
+#include <thyme/core/engine.hpp>
+#include <thyme/core/logger.hpp>
+#include <thyme/core/platform_context.hpp>
+#include <thyme/platform/glfw_vulkan_platform_context.hpp>
+#include <thyme/platform/imgui_context.hpp>
+#include <thyme/platform/vulkan/vulkan_layer.hpp>
 
 #include <spdlog/spdlog.h>
-#include "thyme/core/logger.hpp"
-
-module thyme.core.application;
-
-import thyme.core.engine;
-import thyme.core.platform_context;
-import thyme.platform.gflw_vulkan_platform_context;
-import thyme.platform.imgui_context;
-import thyme.platform.vulkan_layer;
 
 using namespace Thyme;
 

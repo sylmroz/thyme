@@ -1,13 +1,12 @@
-module;
+#pragma once
 
 #include <vulkan/vulkan.hpp>
 
-export module thyme.platform.vulkan:graphic_pipeline;
-import :utils;
+#include <thyme/platform/vulkan/utils.hpp>
 
 namespace Thyme::Vulkan {
 
-export class GraphicPipeline {
+class GraphicPipeline {
 public:
     GraphicPipeline() = default;
 
@@ -21,7 +20,7 @@ public:
     virtual ~GraphicPipeline() = default;
 };
 
-export class TriangleGraphicPipeline final: public GraphicPipeline {
+class TriangleGraphicPipeline final: public GraphicPipeline {
 public:
     explicit TriangleGraphicPipeline(const Device& device, const vk::UniqueRenderPass& renderPass,
                                      const vk::UniqueCommandPool& commandPool);
@@ -67,4 +66,5 @@ private:
 
     void updateUBO(const uint32_t currentImage, const vk::Extent2D& extend) const;
 };
+
 }// namespace Thyme::Vulkan

@@ -1,16 +1,14 @@
-module;
+#pragma once
 
 #include <thyme/export_macros.hpp>
 
 #include <string>
 
-export module thyme.core.application;
-
-import thyme.platform.vulkan_layer;
+#include <thyme/platform/vulkan/vulkan_layer.hpp>
 
 namespace Thyme {
 
-export class THYME_API Application {
+class THYME_API Application {
 public:
     Application();
     std::string name{ "Thyme" };
