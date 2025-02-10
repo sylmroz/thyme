@@ -5,8 +5,8 @@
 #include <glm/vec2.hpp>
 
 #include <functional>
-#include <variant>
 #include <ranges>
+#include <variant>
 
 #include <thyme/core/key_codes.hpp>
 #include <thyme/core/mouse_codes.hpp>

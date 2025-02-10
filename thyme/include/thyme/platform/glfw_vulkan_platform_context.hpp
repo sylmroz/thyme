@@ -17,30 +17,30 @@ class THYME_API GlfwVulkanPlatformContext: public PlatformContext {
 public:
     GlfwVulkanPlatformContext()
         : PlatformContext{ PlatformContextArguments{
-                .initializer =
-                        [] {
-                            const auto terminate_handler = [](const std::string_view message) {
-                                glfwTerminate();
-                                TH_API_LOG_ERROR(message);
-                                throw std::runtime_error(message.data()) ;
-                            };
-                            if (glfwInit() == GLFW_FALSE) {
-                                constexpr auto message = "Failed to initialize GLFW!";
-                                terminate_handler(message);
-                            }
+                  .initializer =
+                          [] {
+                              const auto terminate_handler = [](const std::string_view message) {
+                                  glfwTerminate();
+                                  TH_API_LOG_ERROR(message);
+                                  throw std::runtime_error(message.data());
+                              };
+                              if (glfwInit() == GLFW_FALSE) {
+                                  constexpr auto message = "Failed to initialize GLFW!";
+                                  terminate_handler(message);
+                              }
 
-                            if (glfwVulkanSupported() == GLFW_FALSE) {
-                                constexpr auto message = "GLFW3 does not support vulkan!";
-                                terminate_handler(message);
-                            }
-                            glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-                            TH_API_LOG_INFO("GLFW Vulkan platform context initialized.")
-                        },
-                .destroyer =
-                        [] {
-                            glfwTerminate();
-                            TH_API_LOG_INFO("GLFW Vulkan platform context destroyed.")
-                        } } } {}
+                              if (glfwVulkanSupported() == GLFW_FALSE) {
+                                  constexpr auto message = "GLFW3 does not support vulkan!";
+                                  terminate_handler(message);
+                              }
+                              glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+                              TH_API_LOG_INFO("GLFW Vulkan platform context initialized.")
+                          },
+                  .destroyer =
+                          [] {
+                              glfwTerminate();
+                              TH_API_LOG_INFO("GLFW Vulkan platform context destroyed.")
+                          } } } {}
 };
 
 }// namespace Thyme

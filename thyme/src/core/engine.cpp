@@ -1,4 +1,4 @@
-//#include <thyme/core/event.hpp>
+#include <thyme/core/event.hpp>
 #include <thyme/core/logger.hpp>
 #include <thyme/core/utils.hpp>
 #include <thyme/core/window.hpp>

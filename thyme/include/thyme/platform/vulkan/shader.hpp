@@ -20,11 +20,11 @@ static std::map<ShaderType, shaderc_shader_kind> shaderTypeToKind = {
     { ShaderType::tess_evaluation, shaderc_tess_evaluation_shader },
 };
 
-[[nodiscard]] auto compileGlslToSpv(const std::span<const char> source, const shaderc_shader_kind kind)
-        -> std::vector<uint32_t>;
+[[nodiscard]] auto compileGlslToSpv(const std::span<const char> source,
+                                    const shaderc_shader_kind kind) -> std::vector<uint32_t>;
 
-[[nodiscard]] auto compileGlslToSpv(const std::span<const char> source, const ShaderType type)
-        -> std::vector<uint32_t> {
+[[nodiscard]] auto compileGlslToSpv(const std::span<const char> source,
+                                    const ShaderType type) -> std::vector<uint32_t> {
     return compileGlslToSpv(source, shaderTypeToKind[type]);
 }
 }// namespace Thyme::Vulkan

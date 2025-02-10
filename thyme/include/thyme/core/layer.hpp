@@ -8,7 +8,7 @@
 
 namespace Thyme {
 
-enum class LayerType: uint8_t {
+enum class LayerType : uint8_t {
     overlay,
     non_overlay
 };
@@ -16,10 +16,8 @@ enum class LayerType: uint8_t {
 template <typename... Args>
 class THYME_API Layer {
 public:
-    explicit Layer(const LayerType type, const std::string_view name,
-                   const bool visible = true)
-        : m_type{ type }, m_visible{ visible }, m_name{ name } {
-    }
+    explicit Layer(const LayerType type, const std::string_view name, const bool visible = true)
+        : m_type{ type }, m_visible{ visible }, m_name{ name } {}
 
     explicit Layer(const Layer&) = default;
     explicit Layer(Layer&&) noexcept = default;

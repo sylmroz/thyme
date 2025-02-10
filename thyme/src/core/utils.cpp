@@ -1,5 +1,5 @@
-#include <thyme/core/utils.hpp>
 #include <thyme/core/logger.hpp>
+#include <thyme/core/utils.hpp>
 
 #include <filesystem>
 #include <fstream>
