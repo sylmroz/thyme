@@ -14,12 +14,13 @@
 #include <stb_image.h>
 
 #include <vulkan/vulkan.hpp>
+#include <thyme/platform/vulkan/uniform_buffer_object.hpp>
 
 
 using namespace Thyme::Vulkan;
 TriangleGraphicPipeline::TriangleGraphicPipeline(const Device& device, const vk::UniqueRenderPass& renderPass,
                                                  const vk::UniqueCommandPool& commandPool)
-    : GraphicPipeline() {
+    : m_uniformBufferObject(device), GraphicPipeline() {
     constexpr auto uboBinding =
             vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex);
     constexpr auto samplerLayoutBinding = vk::DescriptorSetLayoutBinding(
@@ -61,19 +62,6 @@ TriangleGraphicPipeline::TriangleGraphicPipeline(const Device& device, const vk:
     m_vertexMemoryBuffer = createBufferMemory(device, commandPool, vertices, vk::BufferUsageFlagBits::eVertexBuffer);
     m_indexMemoryBuffer = createBufferMemory(device, commandPool, indices, vk::BufferUsageFlagBits::eIndexBuffer);
 
-    // uniform buffers
-    for (auto memoryBufferMap : std::views::zip(m_uniformMemoryBuffer, m_mappedMemoryBuffer)) {
-        constexpr auto ubSize = sizeof(Renderer::UniformBufferObject);
-        auto& memoryBuffer = std::get<0>(memoryBufferMap);
-        memoryBuffer = createBufferMemory(device,
-                                          ubSize,
-                                          vk::BufferUsageFlagBits::eUniformBuffer,
-                                          vk::MemoryPropertyFlagBits::eHostVisible
-                                                  | vk::MemoryPropertyFlagBits::eHostCoherent);
-        [[maybe_unused]] const auto result = device.logicalDevice->mapMemory(
-                *memoryBuffer.memory, 0, ubSize, vk::MemoryMapFlags(), &std::get<1>(memoryBufferMap));
-    }
-
     // image
     int texWidth, texHeight, texChannels;
     const auto pixels =
@@ -90,16 +78,15 @@ TriangleGraphicPipeline::TriangleGraphicPipeline(const Device& device, const vk:
     stbi_image_free(pixels);
     m_sampler = createImageSampler(device, mipLevels);
 
-    ///
-    for (auto ub : std::views::zip(m_uniformMemoryBuffer, m_descriptorSets)) {
-        const auto descriptorBufferInfo =
-                vk::DescriptorBufferInfo(*std::get<0>(ub).buffer, 0, sizeof(Renderer::UniformBufferObject));
+    const auto descriptorBufferInfos = m_uniformBufferObject.getDescriptorBufferInfos();
+
+    //
+    for (auto ub : std::views::zip(descriptorBufferInfos, m_descriptorSets)) {
         const auto descriptorImageInfo =
                 vk::DescriptorImageInfo(*m_sampler, *m_imageMemory.imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
         const auto descriptorSet = std::get<1>(ub);
         const auto writeDescriptorSets = std::array{
-            vk::WriteDescriptorSet(
-                    descriptorSet, 0, 0, vk::DescriptorType::eUniformBuffer, {}, { descriptorBufferInfo }),
+            vk::WriteDescriptorSet(descriptorSet, 0, 0, vk::DescriptorType::eUniformBuffer, {}, { std::get<0>(ub) }),
             vk::WriteDescriptorSet(
                     descriptorSet, 1, 0, vk::DescriptorType::eCombinedImageSampler, { descriptorImageInfo }, {})
         };
@@ -112,11 +99,11 @@ void TriangleGraphicPipeline::updateUBO(const uint32_t currentImage, const vk::E
     static const auto startTime = high_resolution_clock::now();
     const auto currentTime = high_resolution_clock::now();
     const auto deltaTime = duration<float, seconds::period>(currentTime - startTime).count();
-    auto ubo = Renderer::UniformBufferObject{
+    auto ubo = MVP{
         .model = glm::rotate(glm::mat4(1.0f), deltaTime * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
         .view = glm::lookAt(glm::vec3(2.0f), glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
         .proj = glm::perspective(glm::radians(45.0f), extend.width / static_cast<float>(extend.height), 0.1f, 10.0f)
     };
     ubo.proj[1][1] *= -1.0f;
-    memcpy(m_mappedMemoryBuffer[currentImage], &ubo, sizeof(ubo));
+    m_uniformBufferObject.update(currentImage, ubo);
 }

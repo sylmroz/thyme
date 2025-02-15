@@ -2,12 +2,12 @@
 
 #include <glm/glm.hpp>
 
-namespace Thyme::Renderer {
+namespace Thyme {
 
-struct UniformBufferObject {
+struct MVP {
     glm::mat4 model;
     glm::mat4 view;
     glm::mat4 proj;
 };
 
-}// namespace Thyme::Renderer
+}// namespace Thyme

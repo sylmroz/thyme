@@ -2,7 +2,9 @@
 
 #include <vulkan/vulkan.hpp>
 
+#include <thyme/platform/vulkan/uniform_buffer_object.hpp>
 #include <thyme/platform/vulkan/utils.hpp>
+
 
 namespace Thyme::Vulkan {
 
@@ -45,8 +47,7 @@ private:
 
     vk::UniqueDescriptorSetLayout m_descriptorSetLayout;
     // 2 = max frames in flight
-    std::array<BufferMemory, 2> m_uniformMemoryBuffer;
-    std::array<void*, 2> m_mappedMemoryBuffer;
+    UniformBufferObject<MVP, 2> m_uniformBufferObject;
 
     vk::UniqueDescriptorPool m_descriptorPool;
     std::vector<vk::DescriptorSet> m_descriptorSets;
