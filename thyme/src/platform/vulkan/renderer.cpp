@@ -33,6 +33,9 @@ VulkanRenderer::VulkanRenderer(const VulkanGlfwWindow& window, const Device& dev
 }
 
 void VulkanRenderer::draw() {
+    if (m_window.isMinimalized()) {
+        return;
+    }
     const auto& [commandBuffer, imageAvailableSemaphore, renderFinishedSemaphore, fence, currentFrame] =
             m_frameDataList.getNext();
     const auto& logicalDevice = m_device.logicalDevice;

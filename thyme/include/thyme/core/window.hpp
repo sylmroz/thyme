@@ -20,6 +20,11 @@ struct THYME_API WindowConfig {
     EventSubject eventSubject;
 };
 
+enum class WindowState {
+    minimalized,
+    maximalized
+};
+
 class THYME_API Window {
 public:
     explicit Window(WindowConfig windowConfiguration) : config{ std::move(windowConfiguration) } {}
@@ -32,10 +37,15 @@ public:
 
     virtual void poolEvents() = 0;
     [[nodiscard]] virtual bool shouldClose() = 0;
+    [[nodiscard]] inline bool isMinimalized() const noexcept {
+        return m_windowState == WindowState::minimalized;
+    }
 
     WindowConfig config;
 
     virtual ~Window() = default;
+protected: 
+    WindowState m_windowState{ WindowState::maximalized };
 };
 
 }// namespace Thyme

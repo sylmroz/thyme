@@ -22,13 +22,22 @@ GlfwWindow::GlfwWindow(const WindowConfig& config) : Window{ config } {
                               }
                           });
     glfwSetWindowUserPointer(m_window.get(), this);
-    glfwSetWindowSizeCallback(m_window.get(), [](GLFWwindow* window, int width, int height) {
+    glfwSetWindowSizeCallback(m_window.get(), [](GLFWwindow* window, const int width, const int height) {
         const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
         app->config.eventSubject.next(WindowResize{ .width = width, .height = height });
     });
 
-    glfwSetFramebufferSizeCallback(m_window.get(), [](GLFWwindow* window, int, int) {
+    glfwSetFramebufferSizeCallback(m_window.get(), [](GLFWwindow* window, int width, int height) {
         const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
+        const auto state = (width == 0 || height == 0) ? WindowState::minimalized : WindowState::maximalized;
+        if (state != app->m_windowState) {
+            app->m_windowState = state;
+            if (state == WindowState::minimalized) {
+                app->config.eventSubject.next(WindowMinimalize{});
+            } else {
+                app->config.eventSubject.next(WindowMaximalize{});
+            }
+        }
         app->frameBufferResized = true;
     });
 

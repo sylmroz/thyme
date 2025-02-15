@@ -23,7 +23,11 @@ struct THYME_API WindowResize {
     }
 };
 
-struct THYME_API WindowClose {};
+struct THYME_API WindowClose{};
+
+struct THYME_API WindowMinimalize{};
+
+struct THYME_API WindowMaximalize{};
 
 struct THYME_API MousePosition {
     glm::vec2 pos;
@@ -56,7 +60,7 @@ struct THYME_API KeyReleased {
     KeyCode code;
 };
 
-using WindowEvent = std::variant<WindowResize, WindowClose>;
+using WindowEvent = std::variant<WindowResize, WindowClose, WindowMinimalize, WindowMaximalize>;
 
 using MouseEvent = std::variant<MousePosition, MouseWheel, MouseButtonDown, MouseButtonUp>;
 
@@ -64,6 +68,8 @@ using KeyEvent = std::variant<KeyPressed, KeyReleased>;
 
 using Event = std::variant<WindowResize,
                            WindowClose,
+                           WindowMinimalize,
+                           WindowMaximalize,
                            MousePosition,
                            MouseWheel,
                            MouseButtonDown,

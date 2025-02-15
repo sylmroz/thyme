@@ -1,8 +1,6 @@
 #pragma once
 
 #include <thyme/core/common_structs.hpp>
-#include <thyme/core/event.hpp>
-#include <thyme/core/logger.hpp>
 #include <thyme/core/window.hpp>
 
 #define GLFW_INCLUDE_VULKAN
@@ -42,7 +40,7 @@ public:
     }
 
 private:
-    WindowHWND m_window;
+    WindowHWND m_window; 
 };
 
 class THYME_API VulkanGlfwWindow final: public GlfwWindow {
