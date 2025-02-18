@@ -107,6 +107,7 @@ private:
 
 template <typename Event>
 struct EventDispatcherHelper: NoCopyable {
+    EventDispatcherHelper() = default;
     virtual void operator()(const Event& event) = 0;
 };
 

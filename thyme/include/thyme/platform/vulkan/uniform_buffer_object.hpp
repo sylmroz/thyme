@@ -1,9 +1,7 @@
 #pragma once
 
 #include <thyme/platform/vulkan/utils.hpp>
-
 #include <thyme/renderer/models.hpp>
-
 
 #include <array>
 #include <ranges>
@@ -12,9 +10,9 @@
 namespace Thyme::Vulkan {
 
 template <typename T, size_t Frames>
-class UniformBufferObject {
+class UniformBufferObject : NoCopyable {
 public:
-    UniformBufferObject(const Device& device) {
+    UniformBufferObject(const Device& device) : m_device{ device } {
         for (auto memoryBufferMap : std::views::zip(m_uniformMemoryBuffers, m_mappedMemoryBuffers)) {
             constexpr auto ubSize = sizeof(T);
             auto& memoryBuffer = std::get<0>(memoryBufferMap);
@@ -38,9 +36,17 @@ public:
         memcpy(m_mappedMemoryBuffers[index], &obj, sizeof(obj));
     }
 
+    ~UniformBufferObject() {
+        for (const auto& uniformMemory : m_uniformMemoryBuffers) {
+            m_device.logicalDevice->unmapMemory(*uniformMemory.memory);
+        }
+    }
+
 private:
     std::array<BufferMemory, Frames> m_uniformMemoryBuffers;
     std::array<void*, Frames> m_mappedMemoryBuffers;
+
+    const Device& m_device;
 };
 
 }// namespace Thyme::Vulkan
