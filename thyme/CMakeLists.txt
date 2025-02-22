@@ -7,7 +7,8 @@ set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 
-add_library(${PROJECT_NAME})
+add_library(${PROJECT_NAME}
+		src/platform/vulkan/texture.cpp)
 
 target_sources(${PROJECT_NAME}
 	PRIVATE
@@ -20,6 +21,7 @@ target_sources(${PROJECT_NAME}
 		src/platform/vulkan/graphic_pipeline.cpp
 		src/platform/vulkan/renderer.cpp
 		#src/platform/vulkan/shader.cpp #for now there are problems with integrating shaderc from google
+		src/core/texture.cpp
 		src/platform/vulkan/utils.cpp
 )
 

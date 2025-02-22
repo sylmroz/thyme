@@ -2,6 +2,8 @@
 #include <thyme/core/utils.hpp>
 #include <thyme/platform/vulkan/graphic_pipeline.hpp>
 #include <thyme/renderer/models.hpp>
+#include <thyme/core/texture.hpp>
+#include <thyme/platform/vulkan/uniform_buffer_object.hpp>
 
 #include <chrono>
 #include <filesystem>
@@ -10,11 +12,7 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/gtc/matrix_transform.hpp>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
 #include <vulkan/vulkan.hpp>
-#include <thyme/platform/vulkan/uniform_buffer_object.hpp>
 
 
 using namespace Thyme::Vulkan;
@@ -63,20 +61,15 @@ TriangleGraphicPipeline::TriangleGraphicPipeline(const Device& device, const vk:
     m_indexMemoryBuffer = createBufferMemory(device, commandPool, indices, vk::BufferUsageFlagBits::eIndexBuffer);
 
     // image
-    int texWidth, texHeight, texChannels;
-    const auto pixels =
-            stbi_load("C:\\Users\\sylwek\\Desktop\\grumpy.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-    const auto size = texWidth * texHeight * 4;
-    const auto mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
+    const auto tex = Texture("C:\\Users\\sylwek\\Desktop\\grumpy.jpg");
     m_imageMemory = createImageMemory(
             device,
             commandPool,
-            std::span(pixels, size),
-            Resolution{ .width = static_cast<uint32_t>(texWidth), .height = static_cast<uint32_t>(texHeight) },
+            std::span(tex.getData()),
+            tex.getResolution(),
             vk::SampleCountFlagBits::e1,
-            mipLevels);
-    stbi_image_free(pixels);
-    m_sampler = createImageSampler(device, mipLevels);
+            tex.getMipLevels());
+    m_sampler = createImageSampler(device, tex.getMipLevels());
 
     const auto descriptorBufferInfos = m_uniformBufferObject.getDescriptorBufferInfos();
 
