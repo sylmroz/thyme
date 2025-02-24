@@ -18,7 +18,7 @@
 using namespace Thyme::Vulkan;
 TriangleGraphicPipeline::TriangleGraphicPipeline(const Device& device, const vk::UniqueRenderPass& renderPass,
                                                  const vk::UniqueCommandPool& commandPool)
-    : m_uniformBufferObject(device), GraphicPipeline() {
+    : m_uniformBufferObject(device), m_texture(device, commandPool, Texture("C:\\Users\\sylwek\\Desktop\\grumpy.jpg")), GraphicPipeline() {
     constexpr auto uboBinding =
             vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex);
     constexpr auto samplerLayoutBinding = vk::DescriptorSetLayoutBinding(
@@ -60,23 +60,14 @@ TriangleGraphicPipeline::TriangleGraphicPipeline(const Device& device, const vk:
     m_vertexMemoryBuffer = createBufferMemory(device, commandPool, vertices, vk::BufferUsageFlagBits::eVertexBuffer);
     m_indexMemoryBuffer = createBufferMemory(device, commandPool, indices, vk::BufferUsageFlagBits::eIndexBuffer);
 
-    // image
-    const auto tex = Texture("C:\\Users\\sylwek\\Desktop\\grumpy.jpg");
-    m_imageMemory = createImageMemory(
-            device,
-            commandPool,
-            std::span(tex.getData()),
-            tex.getResolution(),
-            vk::SampleCountFlagBits::e1,
-            tex.getMipLevels());
-    m_sampler = createImageSampler(device, tex.getMipLevels());
 
+    const auto& [imageMemory, sampler] = m_texture;
     const auto descriptorBufferInfos = m_uniformBufferObject.getDescriptorBufferInfos();
 
     //
     for (auto ub : std::views::zip(descriptorBufferInfos, m_descriptorSets)) {
         const auto descriptorImageInfo =
-                vk::DescriptorImageInfo(*m_sampler, *m_imageMemory.imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
+                vk::DescriptorImageInfo(*sampler, *imageMemory.imageView, vk::ImageLayout::eShaderReadOnlyOptimal);
         const auto descriptorSet = std::get<1>(ub);
         const auto writeDescriptorSets = std::array{
             vk::WriteDescriptorSet(descriptorSet, 0, 0, vk::DescriptorType::eUniformBuffer, {}, { std::get<0>(ub) }),

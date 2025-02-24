@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.hpp>
 
 #include <thyme/platform/vulkan/uniform_buffer_object.hpp>
+#include <thyme/platform/vulkan/texture.hpp>
 #include <thyme/platform/vulkan/utils.hpp>
 
 
@@ -52,8 +53,7 @@ private:
     vk::UniqueDescriptorPool m_descriptorPool;
     std::vector<vk::DescriptorSet> m_descriptorSets;
 
-    ImageMemory m_imageMemory;
-    vk::UniqueSampler m_sampler;
+    VulkanTexture m_texture;
 
     static constexpr std::array vertices = { Vertex{ { -0.5f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
                                              Vertex{ { 0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },

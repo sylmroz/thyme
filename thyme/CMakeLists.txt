@@ -14,6 +14,7 @@ target_sources(${PROJECT_NAME}
 	PRIVATE
 		src/core/application.cpp
 		src/core/engine.cpp
+		src/core/texture.cpp
 		src/core/utils.cpp
 
 		src/platform/glfw_window.cpp
@@ -21,7 +22,7 @@ target_sources(${PROJECT_NAME}
 		src/platform/vulkan/graphic_pipeline.cpp
 		src/platform/vulkan/renderer.cpp
 		#src/platform/vulkan/shader.cpp #for now there are problems with integrating shaderc from google
-		src/core/texture.cpp
+		src/platform/vulkan/texture.cpp
 		src/platform/vulkan/utils.cpp
 )
 

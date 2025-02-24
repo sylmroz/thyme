@@ -3,6 +3,7 @@
 #include <thyme/core/common_structs.hpp>
 
 #include <filesystem>
+#include <mdspan>
 #include <vector>
 
 namespace Thyme {
