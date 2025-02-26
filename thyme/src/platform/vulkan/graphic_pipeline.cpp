@@ -57,7 +57,8 @@ TriangleGraphicPipeline::TriangleGraphicPipeline(const Device& device, const vk:
                                                                    .shaderStages = shaderStages });
 
 
-    m_vertexMemoryBuffer = createBufferMemory(device, commandPool, vertices, vk::BufferUsageFlagBits::eVertexBuffer);
+    m_vertexMemoryBuffers[0] = createBufferMemory(device, commandPool, vertices1, vk::BufferUsageFlagBits::eVertexBuffer);
+    m_vertexMemoryBuffers[1] = createBufferMemory(device, commandPool, vertices2, vk::BufferUsageFlagBits::eVertexBuffer);
     m_indexMemoryBuffer = createBufferMemory(device, commandPool, indices, vk::BufferUsageFlagBits::eIndexBuffer);
 
 

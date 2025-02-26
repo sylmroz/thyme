@@ -10,9 +10,9 @@
 namespace Thyme::Vulkan {
 
 template <typename T, size_t Frames>
-class UniformBufferObject : NoCopyable {
+class UniformBufferObject final: NoCopyable {
 public:
-    UniformBufferObject(const Device& device) : m_device{ device } {
+    explicit UniformBufferObject(const Device& device) : m_device{ device } {
         for (auto memoryBufferMap : std::views::zip(m_uniformMemoryBuffers, m_mappedMemoryBuffers)) {
             constexpr auto ubSize = sizeof(T);
             auto& memoryBuffer = std::get<0>(memoryBufferMap);
@@ -26,7 +26,7 @@ public:
         }
     }
 
-    std::array<vk::DescriptorBufferInfo, Frames> getDescriptorBufferInfos() {
+    [[nodiscard]] auto getDescriptorBufferInfos() const noexcept -> std::array<vk::DescriptorBufferInfo, Frames> {
         return [&]<size_t... Ints>(std::index_sequence<Ints...>) {
             return std::array{ vk::DescriptorBufferInfo(*m_uniformMemoryBuffers[Ints].buffer, 0, sizeof(T))... };
         }(std::make_index_sequence<Frames>());
@@ -36,7 +36,7 @@ public:
         memcpy(m_mappedMemoryBuffers[index], &obj, sizeof(obj));
     }
 
-    ~UniformBufferObject() {
+    ~UniformBufferObject() override {
         for (const auto& uniformMemory : m_uniformMemoryBuffers) {
             m_device.logicalDevice->unmapMemory(*uniformMemory.memory);
         }
