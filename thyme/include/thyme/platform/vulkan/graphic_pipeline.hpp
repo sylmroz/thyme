@@ -33,10 +33,11 @@ public:
                              const uint32_t currentImage) const override {
         commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, *m_pipeline);
         updateUBO(currentImage, extend);
-        commandBuffer->bindDescriptorSets(
-            vk::PipelineBindPoint::eGraphics, *m_pipelineLayout, 0, { m_descriptorSets[currentImage] }, {});
-        for (const auto& [buffer, memory] : m_vertexMemoryBuffers) {
-            commandBuffer->bindVertexBuffers(0, { *buffer }, { 0 });
+
+        for (const auto& [buffer, descriptor] : std::views::zip(m_vertexMemoryBuffers, m_descriptorSets)) {
+            commandBuffer->bindDescriptorSets(
+            vk::PipelineBindPoint::eGraphics, *m_pipelineLayout, 0, { descriptor }, {});
+            commandBuffer->bindVertexBuffers(0, { *buffer.buffer }, { 0 });
             commandBuffer->bindIndexBuffer(*m_indexMemoryBuffer.buffer, 0, vk::IndexType::eUint16);
             commandBuffer->drawIndexed(indices.size(), 1, 0, 0, 0);
         }
@@ -50,12 +51,14 @@ private:
 
     vk::UniqueDescriptorSetLayout m_descriptorSetLayout;
     // 2 = max frames in flight
-    UniformBufferObject<MVP, 2> m_uniformBufferObject;
+    UniformBufferObject<MVP> m_uniformBufferObject;
+    UniformBufferObject<MVP> m_uniformBufferObject2;
 
     vk::UniqueDescriptorPool m_descriptorPool;
     std::vector<vk::DescriptorSet> m_descriptorSets;
 
     VulkanTexture m_texture;
+    VulkanTexture m_texture2;
 
     static constexpr std::array vertices1 = { Vertex{ { -0.5f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
                                               Vertex{ { 0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
