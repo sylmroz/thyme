@@ -9,7 +9,7 @@ namespace Thyme {
 class ImGuiContext: public PlatformContext {
 public:
     explicit ImGuiContext()
-        : PlatformContext(PlatformContextArguments{ .initializer = [this] { init(); },
+        : PlatformContext(PlatformContextArguments{ .initializer = [] { init(); },
                                                     .destroyer = [] { ImGui::DestroyContext(); } }) {}
 
 private:

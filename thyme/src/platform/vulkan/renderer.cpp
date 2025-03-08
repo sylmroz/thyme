@@ -49,7 +49,7 @@ void VulkanRenderer::draw() {
         try {
             return logicalDevice->acquireNextImageKHR(
                     *m_swapChainData.swapChain, std::numeric_limits<uint64_t>::max(), *imageAvailableSemaphore);
-        } catch (const vk::OutOfDateKHRError& err) {
+        } catch (const vk::OutOfDateKHRError&) {
             recreateSwapChain();
         }
         return vk::ResultValue<uint32_t>(vk::Result::eErrorOutOfDateKHR, 0);
@@ -74,7 +74,12 @@ void VulkanRenderer::draw() {
     commandBuffer->beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 
     commandBuffer->setViewport(0,
-                               { vk::Viewport(0, 0, m_swapChainExtent.width, m_swapChainExtent.height, 0.0f, 1.0f) });
+                               { vk::Viewport(0.0f,
+                                              0.0f,
+                                              static_cast<float>(m_swapChainExtent.width),
+                                              static_cast<float>(m_swapChainExtent.height),
+                                              0.0f,
+                                              1.0f) });
     commandBuffer->setScissor(0, { vk::Rect2D(vk::Offset2D(0, 0), m_swapChainExtent) });
     bool showDemoWindow = true;
     ImGui::NewFrame();
@@ -83,7 +88,7 @@ void VulkanRenderer::draw() {
     ImGui::Render();
 
     for (const auto& pipeline : m_pipelines) {
-        pipeline->draw(commandBuffer, m_swapChainExtent, currentFrame);
+        pipeline->draw(commandBuffer, m_swapChainExtent);
     }
 
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer.get());
@@ -97,7 +102,7 @@ void VulkanRenderer::draw() {
         ImGui::RenderPlatformWindowsDefault();
     }
 
-    const vk::PipelineStageFlags f = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    constexpr vk::PipelineStageFlags f = vk::PipelineStageFlagBits::eColorAttachmentOutput;
     const auto submitInfo = vk::SubmitInfo(
             vk::SubmitInfo({ *imageAvailableSemaphore }, { f }, { *commandBuffer }, { *renderFinishedSemaphore }));
     const auto& graphicQueue = logicalDevice->getQueue(m_device.queueFamilyIndices.graphicFamily.value(), 0);
@@ -116,7 +121,7 @@ void VulkanRenderer::draw() {
             TH_API_LOG_ERROR("Failed to present rendered result!");
             throw std::runtime_error("Failed to present rendered result!");
         }
-    } catch (const vk::OutOfDateKHRError& error) {
+    } catch (const vk::OutOfDateKHRError&) {
         recreateSwapChain();
     }
 }

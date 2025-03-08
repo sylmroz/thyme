@@ -11,7 +11,11 @@ GlfwWindow::GlfwWindow(const WindowConfig& config) : Window{ config } {
                      config.width,
                      config.height,
                      config.name);
-    m_window = WindowHWND(glfwCreateWindow(config.width, config.height, config.name.data(), nullptr, nullptr),
+    m_window = WindowHWND(glfwCreateWindow(static_cast<int>(config.width),
+                                           static_cast<int>(config.height),
+                                           config.name.data(),
+                                           nullptr,
+                                           nullptr),
                           [](GLFWwindow* window) {
                               TH_API_LOG_DEBUG("Destroying window with parameters: width = {}, height = {}, name = {}",
                                                config.width,

@@ -84,14 +84,14 @@ TriangleGraphicPipeline::TriangleGraphicPipeline(const Device& device, const vk:
     }
 }
 
-void TriangleGraphicPipeline::updateUBO(const uint32_t currentImage, const vk::Extent2D& extend) const {
+void TriangleGraphicPipeline::updateUBO(const vk::Extent2D& extend) const {
     using namespace std::chrono;
     static const auto startTime = high_resolution_clock::now();
     const auto currentTime = high_resolution_clock::now();
     const auto deltaTime = duration<float, seconds::period>(currentTime - startTime).count();
     const auto view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     auto proj =
-            glm::perspective(glm::radians(45.0f), extend.width / static_cast<float>(extend.height), 0.1f, 10.0f);
+            glm::perspective(glm::radians(45.0f), static_cast<float>(extend.width) / static_cast<float>(extend.height), 0.1f, 10.0f);
     proj[1][1] *= -1.0f;
     const auto ubo =
             MVP{ .model = glm::rotate(glm::mat4(1.0f), deltaTime * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)),

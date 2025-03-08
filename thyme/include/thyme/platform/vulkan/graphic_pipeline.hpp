@@ -19,8 +19,7 @@ public:
     GraphicPipeline& operator=(const GraphicPipeline&) = delete;
     GraphicPipeline& operator=(GraphicPipeline&&) = delete;
 
-    virtual void draw(const vk::UniqueCommandBuffer& commandBuffer, const vk::Extent2D& extend,
-                      const uint32_t currentImage) const = 0;
+    virtual void draw(const vk::UniqueCommandBuffer& commandBuffer, const vk::Extent2D& extend) const = 0;
     virtual ~GraphicPipeline() = default;
 };
 
@@ -29,17 +28,16 @@ public:
     explicit TriangleGraphicPipeline(const Device& device, const vk::UniqueRenderPass& renderPass,
                                      const vk::UniqueCommandPool& commandPool);
 
-    inline virtual void draw(const vk::UniqueCommandBuffer& commandBuffer, const vk::Extent2D& extend,
-                             const uint32_t currentImage) const override {
+    inline virtual void draw(const vk::UniqueCommandBuffer& commandBuffer, const vk::Extent2D& extend) const override {
         commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, *m_pipeline);
-        updateUBO(currentImage, extend);
+        updateUBO(extend);
 
         for (const auto& [buffer, descriptor] : std::views::zip(m_vertexMemoryBuffers, m_descriptorSets)) {
             commandBuffer->bindDescriptorSets(
-            vk::PipelineBindPoint::eGraphics, *m_pipelineLayout, 0, { descriptor }, {});
+                    vk::PipelineBindPoint::eGraphics, *m_pipelineLayout, 0, { descriptor }, {});
             commandBuffer->bindVertexBuffers(0, { *buffer.buffer }, { 0 });
             commandBuffer->bindIndexBuffer(*m_indexMemoryBuffer.buffer, 0, vk::IndexType::eUint16);
-            commandBuffer->drawIndexed(indices.size(), 1, 0, 0, 0);
+            commandBuffer->drawIndexed(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
         }
     }
 
@@ -72,7 +70,7 @@ private:
 
     static constexpr std::array<uint16_t, 6> indices = { 0, 1, 2, 2, 3, 0 };
 
-    void updateUBO(const uint32_t currentImage, const vk::Extent2D& extend) const;
+    void updateUBO(const vk::Extent2D& extend) const;
 };// namespace Thyme::Vulkan
 
 }// namespace Thyme::Vulkan

@@ -7,11 +7,25 @@ set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 
-add_library(${PROJECT_NAME}
-		src/platform/vulkan/texture.cpp)
+add_library(${PROJECT_NAME})
 
-target_sources(${PROJECT_NAME}
-	PRIVATE
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+	# using Clang
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+	# using GCC
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+	# using Intel C++
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+	target_compile_options(${PROJECT_NAME} PRIVATE
+			$<$<CONFIG:Debug>:/Wall /EHsc /ZI /MP>
+			$<$<CONFIG:Release>:/GL /MP>
+			$<$<CONFIG:RelWithDebInfo>:>
+			$<$<CONFIG:MinSizeRel>:>
+	)
+	target_link_options(${PROJECT_NAME} PUBLIC $<$<CONFIG:Debug>:/INCREMENTAL>)
+endif()
+
+target_sources(${PROJECT_NAME} PRIVATE
 		src/core/application.cpp
 		src/core/engine.cpp
 		src/core/texture.cpp
@@ -93,7 +107,7 @@ if (WIN32)
 		COMMAND_EXPAND_LISTS)
 endif()
 
-#copy ifc files for InetlliSense
+#copy ifc files for IntelliSense
 install (
 	DIRECTORY $(CMAKE_CURRENT_BINARY_DIR)/CMakeFiles/thyme.dir
 	DESTINATION $(CMAKE_CURRENT_BINARY_DIR)/ifc

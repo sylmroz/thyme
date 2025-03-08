@@ -11,9 +11,9 @@ namespace Thyme {
 class Texture {
 public:
     explicit Texture(const std::filesystem::path& file);
-    Texture(const int mipLevel, const Resolution resolution, const std::vector<uint8_t>& data)
+    Texture(const uint32_t mipLevel, const Resolution resolution, const std::vector<uint8_t>& data)
         : m_mipLevels{ mipLevel }, m_resolution{ resolution }, m_data{ data } {}
-    [[nodiscard]] auto getMipLevels() const noexcept -> int {
+    [[nodiscard]] auto getMipLevels() const noexcept -> uint32_t {
         return m_mipLevels;
     }
 
@@ -26,7 +26,7 @@ public:
     }
 
 private:
-    int m_mipLevels;
+    uint32_t m_mipLevels;
     Resolution m_resolution;
     std::vector<uint8_t> m_data;
 };

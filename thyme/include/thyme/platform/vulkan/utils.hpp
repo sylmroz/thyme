@@ -213,8 +213,8 @@ private:
 };
 
 [[nodiscard]] auto createRenderPass(const vk::UniqueDevice& logicalDevice, const vk::Format colorFormat,
-                                    const vk::Format depthFormat,
-                                    const vk::SampleCountFlagBits samples) -> vk::UniqueRenderPass;
+                                    const vk::Format depthFormat, const vk::SampleCountFlagBits samples)
+        -> vk::UniqueRenderPass;
 
 struct GraphicPipelineCreateInfo {
     const vk::UniqueDevice& logicalDevice;
@@ -224,18 +224,18 @@ struct GraphicPipelineCreateInfo {
     const std::vector<vk::PipelineShaderStageCreateInfo>& shaderStages;
 };
 
-[[nodiscard]] auto
-        createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipelineCreateInfo) -> vk::UniquePipeline;
+[[nodiscard]] auto createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipelineCreateInfo)
+        -> vk::UniquePipeline;
 
-[[nodiscard]] inline auto
-        createDescriptorPool(const vk::UniqueDevice& device,
-                             const std::vector<vk::DescriptorPoolSize>& descriptorSizes) -> vk::UniqueDescriptorPool {
-    const uint32_t maxSet = std::accumulate(std::begin(descriptorSizes),
-                                            std::end(descriptorSizes),
-                                            0,
-                                            [](const uint32_t sum, const vk::DescriptorPoolSize& descriptorPoolSize) {
-                                                return sum + descriptorPoolSize.descriptorCount;
-                                            });
+[[nodiscard]] inline auto createDescriptorPool(const vk::UniqueDevice& device,
+                                               const std::vector<vk::DescriptorPoolSize>& descriptorSizes)
+        -> vk::UniqueDescriptorPool {
+    const auto maxSet = std::accumulate(std::begin(descriptorSizes),
+                                        std::end(descriptorSizes),
+                                        uint32_t{ 0 },
+                                        [](const uint32_t sum, const vk::DescriptorPoolSize& descriptorPoolSize) {
+                                            return sum + descriptorPoolSize.descriptorCount;
+                                        });
 
     return device->createDescriptorPoolUnique(
             vk::DescriptorPoolCreateInfo(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
@@ -246,8 +246,8 @@ struct GraphicPipelineCreateInfo {
 // TODO - can it be done much better??
 template <typename F, typename... Args>
     requires(std::invocable<F, const vk::UniqueCommandBuffer&, Args...>)
-void singleTimeCommand(const vk::UniqueCommandBuffer& commandBuffer, const vk::UniqueCommandPool& commandPool,
-                       const vk::Queue& graphicQueue, F fun, Args... args) {
+void singleTimeCommand(const vk::UniqueCommandBuffer& commandBuffer, const vk::Queue& graphicQueue, F fun,
+                       Args... args) {
     commandBuffer->begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
     fun(commandBuffer, args...);
     commandBuffer->end();
@@ -263,7 +263,7 @@ void singleTimeCommand(const vk::UniqueDevice& device, const vk::UniqueCommandPo
             device->allocateCommandBuffersUnique(
                           vk::CommandBufferAllocateInfo(commandPool.get(), vk::CommandBufferLevel::ePrimary, 1))
                     .front());
-    singleTimeCommand(commandBuffer, commandPool, graphicQueue, fun, args...);
+    singleTimeCommand(commandBuffer, graphicQueue, fun, args...);
 }
 
 template <typename F, typename... Args>
@@ -275,7 +275,7 @@ void singleTimeCommand(const Device& device, const vk::UniqueCommandPool& comman
                                                    commandPool.get(), vk::CommandBufferLevel::ePrimary, 1))
                                            .front());
     const auto graphicQueue = device.getGraphicQueue();
-    singleTimeCommand(commandBuffer, commandPool, graphicQueue, fun, args...);
+    singleTimeCommand(commandBuffer, graphicQueue, fun, args...);
 }
 
 struct Vertex {
@@ -309,7 +309,7 @@ struct Vertex {
 
 inline void copyBuffer(const vk::UniqueDevice& device, const vk::UniqueCommandPool& commandPool,
                        const vk::Queue& graphicQueue, const vk::UniqueBuffer& srcBuffer,
-                       const vk::UniqueBuffer& dstBuffer, const uint32_t size) {
+                       const vk::UniqueBuffer& dstBuffer, const size_t size) {
     singleTimeCommand(device, commandPool, graphicQueue, [&](const vk::UniqueCommandBuffer& commandBuffer) {
         commandBuffer->copyBuffer(*srcBuffer, *dstBuffer, { vk::BufferCopy(0, 0, size) });
     });
@@ -321,8 +321,7 @@ struct BufferMemory {
     vk::UniqueDeviceMemory memory;
 };
 
-[[nodiscard]] inline auto createBufferMemory(const Device& device, const uint32_t size,
-                                             const vk::BufferUsageFlags usage,
+[[nodiscard]] inline auto createBufferMemory(const Device& device, const size_t size, const vk::BufferUsageFlags usage,
                                              const vk::MemoryPropertyFlags properties) -> BufferMemory {
     auto buffer = device.logicalDevice->createBufferUnique(
             vk::BufferCreateInfo(vk::BufferCreateFlagBits(), size, usage, vk::SharingMode::eExclusive));
@@ -412,8 +411,8 @@ inline void copyBufferToImage(const Device& device, const vk::UniqueCommandPool&
 }
 
 [[nodiscard]] inline auto createImageView(const vk::Device& device, const vk::Image& image, const vk::Format format,
-                                          const vk::ImageAspectFlags aspectFlag,
-                                          uint32_t mipLevels = 1) noexcept -> vk::UniqueImageView {
+                                          const vk::ImageAspectFlags aspectFlag, uint32_t mipLevels = 1) noexcept
+        -> vk::UniqueImageView {
     return device.createImageViewUnique(
             vk::ImageViewCreateInfo(vk::ImageViewCreateFlags(),
                                     image,
@@ -478,7 +477,7 @@ inline void generateMipmaps(const Device& device, const vk::UniqueCommandPool& c
                     vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, mipLevel, 1, 0, 1));
         };
         const auto getImageBlit =
-                [&resolution](const uint32_t mipLevel, const int mipWidth, const int mipHeight) -> vk::ImageBlit {
+                [](const uint32_t mipLevel, const int mipWidth, const int mipHeight) -> vk::ImageBlit {
             return vk::ImageBlit(
                     vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, mipLevel, 0, 1),
                     std::array{ vk::Offset3D{ 0, 0, 0 }, vk::Offset3D{ mipWidth, mipHeight, 1 } },
@@ -564,8 +563,8 @@ inline void generateMipmaps(const Device& device, const vk::UniqueCommandPool& c
     return imageMemory;
 }
 
-[[nodiscard]] inline auto createImageSampler(const Device& device,
-                                             const uint32_t mipLevels) noexcept -> vk::UniqueSampler {
+[[nodiscard]] inline auto createImageSampler(const Device& device, const uint32_t mipLevels) noexcept
+        -> vk::UniqueSampler {
     return device.logicalDevice->createSamplerUnique(
             vk::SamplerCreateInfo(vk::SamplerCreateFlags(),
                                   vk::Filter::eLinear,

@@ -101,8 +101,8 @@ public:
     }
 
 private:
-    std::vector<std::pair<event_fn, int>> m_handlers;
     int m_handlerId{ 0 };
+    std::vector<std::pair<event_fn, int>> m_handlers;
 };
 
 template <typename Event>

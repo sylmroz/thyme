@@ -30,7 +30,7 @@ VKAPI_ATTR void VKAPI_CALL vkDestroyDebugUtilsMessengerEXT(VkInstance instance,
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(const vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                                     const vk::DebugUtilsMessageTypeFlagBitsEXT messageType,
                                                     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-                                                    void* pUserData) {
+                                                    void*) {
     static std::map<vk::DebugUtilsMessageTypeFlagBitsEXT, std::string_view> messageTypeStringMap = {
         { vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral, "General" },
         { vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance, "Performance" },
@@ -65,7 +65,7 @@ vk::DebugUtilsMessengerCreateInfoEXT createDebugUtilsMessengerCreateInfo() {
 
 #endif
 
-static constexpr auto deviceExtensions = { vk::KHRSwapchainExtensionName };
+static constexpr auto deviceExtensions = std::array{ vk::KHRSwapchainExtensionName };
 
 bool deviceHasAllRequiredExtensions(const vk::PhysicalDevice& physicalDevice) {
     const auto& availableDeviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
@@ -85,7 +85,7 @@ UniqueInstance::UniqueInstance(const UniqueInstanceConfig& config) {
     enabledExtensions.emplace_back(vk::KHRPortabilityEnumerationExtensionName);
 #if !defined(NDEBUG)
     enabledExtensions.emplace_back(vk::EXTDebugUtilsExtensionName);
-    constexpr auto validationLayers = { "VK_LAYER_KHRONOS_validation" };
+    constexpr auto validationLayers = std::array{ "VK_LAYER_KHRONOS_validation" };
 
     const vk::StructureChain instanceCreateInfo(
             vk::InstanceCreateInfo{ vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR,
@@ -288,7 +288,7 @@ SwapChainData::SwapChainData(const Device& device,
 
     swapChain = logicalDevice->createSwapchainKHRUnique(swapChainCreateInfo);
     swapChainFrame = logicalDevice->getSwapchainImagesKHR(*swapChain)
-                     | std::views::transform([&](const vk::Image& image) -> SwapChainFrame {
+                     | std::views::transform([&](vk::Image& image) -> SwapChainFrame {
                            auto imageView = createImageView(
                                    *logicalDevice, image, surfaceFormat.format, vk::ImageAspectFlagBits::eColor);
                            const auto attachments = std::array{ *colorImageView, *depthImageView, *imageView };
@@ -363,7 +363,7 @@ auto Vulkan::createRenderPass(const vk::UniqueDevice& logicalDevice, const vk::F
 
 auto Vulkan::createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipelineCreateInfo) -> vk::UniquePipeline {
     const auto& [logicalDevice, renderPass, pipelineLayout, samples, shaderStages] = graphicPipelineCreateInfo;
-    constexpr auto dynamicStates = { vk::DynamicState::eViewport, vk::DynamicState::eScissor };
+    constexpr auto dynamicStates = std::array{ vk::DynamicState::eViewport, vk::DynamicState::eScissor };
     const auto dynamicStateCreateInfo =
             vk::PipelineDynamicStateCreateInfo(vk::PipelineDynamicStateCreateFlagBits(), dynamicStates);
     constexpr auto bindingDescription = Vertex::getBindingDescription();

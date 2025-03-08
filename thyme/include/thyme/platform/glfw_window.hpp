@@ -40,7 +40,7 @@ public:
     }
 
 private:
-    WindowHWND m_window; 
+    WindowHWND m_window;
 };
 
 class THYME_API VulkanGlfwWindow final: public GlfwWindow {
@@ -56,7 +56,7 @@ public:
             throw std::runtime_error(
                     fmt::format("GLFW cannot create VkSurface! Error: {}", static_cast<uint32_t>(result)));
         }
-        return vk::UniqueSurfaceKHR{ surface, *instance };
+        return vk::UniqueSurfaceKHR(surface, *instance);
     }
 };
 
