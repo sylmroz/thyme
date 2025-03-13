@@ -10,7 +10,7 @@
 #include <thyme/core/common_structs.hpp>
 #include <thyme/platform/glfw_window.hpp>
 
-namespace Thyme::Vulkan {
+namespace th::vulkan {
 
 struct UniqueInstanceConfig {
     std::string_view engineName;
@@ -251,7 +251,7 @@ void singleTimeCommand(const vk::UniqueCommandBuffer& commandBuffer, const vk::Q
     commandBuffer->begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
     fun(commandBuffer, args...);
     commandBuffer->end();
-    graphicQueue.submit(vk::SubmitInfo(0, nullptr, nullptr, 1, &(commandBuffer.get())), nullptr);
+    graphicQueue.submit(vk::SubmitInfo({}, {}, { commandBuffer.get() }), nullptr);
     graphicQueue.waitIdle();
 }
 

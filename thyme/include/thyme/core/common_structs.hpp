@@ -4,7 +4,7 @@
 
 #include <stdint.h>
 
-namespace Thyme {
+namespace th {
 
 struct THYME_API Resolution {
     uint32_t width;

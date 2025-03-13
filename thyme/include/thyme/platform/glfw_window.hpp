@@ -11,7 +11,7 @@
 #include <functional>
 #include <memory>
 
-namespace Thyme {
+namespace th {
 
 class GlfwWindow: public Window {
     using WindowHWND = std::unique_ptr<GLFWwindow, std::function<void(GLFWwindow*)>>;

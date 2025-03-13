@@ -4,7 +4,7 @@
 
 #include <GLFW/glfw3.h>
 
-using namespace Thyme;
+using namespace th;
 
 GlfwWindow::GlfwWindow(const WindowConfig& config) : Window{ config } {
     TH_API_LOG_DEBUG("Create window with parameters: width = {}, height = {}, name = {}",
@@ -61,7 +61,7 @@ GlfwWindow::GlfwWindow(const WindowConfig& config) : Window{ config } {
     });
 }
 
-std::vector<std::string> Thyme::VulkanGlfwWindow::getRequiredInstanceExtensions() noexcept {
+std::vector<std::string> th::VulkanGlfwWindow::getRequiredInstanceExtensions() noexcept {
     uint32_t instanceExtensionCount{ 0 };
     auto* instanceExtensionBuffer = glfwGetRequiredInstanceExtensions(&instanceExtensionCount);
     std::vector<std::string> instanceExtension;

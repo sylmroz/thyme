@@ -12,7 +12,7 @@
 
 #include <thyme/platform/glfw_window.hpp>
 
-namespace Thyme::Vulkan {
+namespace th::vulkan {
 
 class VulkanRenderer final: public Renderer {
 public:

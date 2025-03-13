@@ -8,11 +8,11 @@
 
 #include <spdlog/spdlog.h>
 
-using namespace Thyme;
+using namespace th;
 
 template <typename... Context>
 // requires(std::is_base_of_v<PlatformContext, Context>)
-Engine createEngine(const EngineConfig& config, Vulkan::VulkanLayerStack& layers) {
+Engine createEngine(const EngineConfig& config, vulkan::VulkanLayerStack& layers) {
     [[maybe_unused]] static std::tuple<Context...> ctx;
     return Engine(config, layers);
 }

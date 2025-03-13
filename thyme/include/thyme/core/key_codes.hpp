@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-namespace Thyme {
+namespace th {
 // from glfw3.h
 enum class KeyCode : int16_t {
     space = 32,

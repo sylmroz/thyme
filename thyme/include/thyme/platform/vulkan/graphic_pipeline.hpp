@@ -1,13 +1,13 @@
 #pragma once
 
-#include <vulkan/vulkan.hpp>
-
 #include <thyme/platform/vulkan/texture.hpp>
 #include <thyme/platform/vulkan/uniform_buffer_object.hpp>
 #include <thyme/platform/vulkan/utils.hpp>
+#include <thyme/renderer/structs.hpp>
 
+#include <vulkan/vulkan.hpp>
 
-namespace Thyme::Vulkan {
+namespace th::vulkan {
 
 class GraphicPipeline {
 public:

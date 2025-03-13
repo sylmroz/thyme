@@ -8,8 +8,8 @@
 #include <vulkan/vulkan.hpp>
 
 
-using namespace Thyme;
-using namespace Thyme::Vulkan;
+using namespace th;
+using namespace th::vulkan;
 
 #if !defined(NDEBUG)
 PFN_vkCreateDebugUtilsMessengerEXT pfnVkCreateDebugUtilsMessengerEXT;
@@ -200,7 +200,7 @@ auto getMaxUsableSampleCount(const vk::PhysicalDevice& device) -> vk::SampleCoun
     return vk::SampleCountFlagBits::e1;
 }
 
-std::vector<PhysicalDevice> Vulkan::getPhysicalDevices(const vk::UniqueInstance& instance,
+std::vector<PhysicalDevice> vulkan::getPhysicalDevices(const vk::UniqueInstance& instance,
                                                        const vk::UniqueSurfaceKHR& surface) {
     static std::map<vk::PhysicalDeviceType, uint32_t> priorities = {
         { vk::PhysicalDeviceType::eOther, 0 },       { vk::PhysicalDeviceType::eCpu, 1 },
@@ -235,7 +235,7 @@ std::vector<PhysicalDevice> Vulkan::getPhysicalDevices(const vk::UniqueInstance&
     return physicalDevices;
 }
 
-[[nodiscard]] vk::UniqueDevice Thyme::Vulkan::PhysicalDevice::createLogicalDevice() const {
+[[nodiscard]] vk::UniqueDevice th::vulkan::PhysicalDevice::createLogicalDevice() const {
     const std::set indices = { queueFamilyIndices.graphicFamily.value(), queueFamilyIndices.presentFamily.value() };
     std::vector<vk::DeviceQueueCreateInfo> deviceQueueCreateInfos;
     for (const auto ind : indices) {
@@ -305,7 +305,7 @@ SwapChainData::SwapChainData(const Device& device,
 }
 
 
-auto Vulkan::createRenderPass(const vk::UniqueDevice& logicalDevice, const vk::Format colorFormat,
+auto vulkan::createRenderPass(const vk::UniqueDevice& logicalDevice, const vk::Format colorFormat,
                               const vk::Format depthFormat,
                               const vk::SampleCountFlagBits samples) -> vk::UniqueRenderPass {
 
@@ -361,7 +361,7 @@ auto Vulkan::createRenderPass(const vk::UniqueDevice& logicalDevice, const vk::F
             vk::RenderPassCreateFlagBits(), attachments, { subpassDescription }, { subpassDependency }));
 }
 
-auto Vulkan::createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipelineCreateInfo) -> vk::UniquePipeline {
+auto vulkan::createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipelineCreateInfo) -> vk::UniquePipeline {
     const auto& [logicalDevice, renderPass, pipelineLayout, samples, shaderStages] = graphicPipelineCreateInfo;
     constexpr auto dynamicStates = std::array{ vk::DynamicState::eViewport, vk::DynamicState::eScissor };
     const auto dynamicStateCreateInfo =

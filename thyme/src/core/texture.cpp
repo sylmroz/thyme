@@ -3,7 +3,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-namespace Thyme {
+namespace th {
 
 Texture::Texture(const std::filesystem::path& file) {
     if (!std::filesystem::exists(file) || !std::filesystem::is_regular_file(file)) {

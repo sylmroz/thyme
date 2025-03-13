@@ -7,7 +7,7 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
-namespace Thyme {
+namespace th {
 
 class THYME_API Logger {
 public:
@@ -48,18 +48,18 @@ private:
     inline static std::unique_ptr<Logger> s_logger{ nullptr };
 };
 
-#define TH_API_LOG_TRACE(...) SPDLOG_LOGGER_TRACE(::Thyme::ThymeLogger::getLogger()->logger, __VA_ARGS__);
-#define TH_API_LOG_DEBUG(...) SPDLOG_LOGGER_DEBUG(::Thyme::ThymeLogger::getLogger()->logger, __VA_ARGS__);
-#define TH_API_LOG_INFO(...) SPDLOG_LOGGER_INFO(::Thyme::ThymeLogger::getLogger()->logger, __VA_ARGS__);
-#define TH_API_LOG_WARN(...) SPDLOG_LOGGER_WARN(::Thyme::ThymeLogger::getLogger()->logger, __VA_ARGS__);
-#define TH_API_LOG_ERROR(...) SPDLOG_LOGGER_ERROR(::Thyme::ThymeLogger::getLogger()->logger, __VA_ARGS__);
-#define TH_API_LOG_CRITICAL(...) SPDLOG_LOGGER_CRITICAL(::Thyme::ThymeLogger::getLogger()->logger, __VA_ARGS__);
+#define TH_API_LOG_TRACE(...) SPDLOG_LOGGER_TRACE(::th::ThymeLogger::getLogger()->logger, __VA_ARGS__);
+#define TH_API_LOG_DEBUG(...) SPDLOG_LOGGER_DEBUG(::th::ThymeLogger::getLogger()->logger, __VA_ARGS__);
+#define TH_API_LOG_INFO(...) SPDLOG_LOGGER_INFO(::th::ThymeLogger::getLogger()->logger, __VA_ARGS__);
+#define TH_API_LOG_WARN(...) SPDLOG_LOGGER_WARN(::th::ThymeLogger::getLogger()->logger, __VA_ARGS__);
+#define TH_API_LOG_ERROR(...) SPDLOG_LOGGER_ERROR(::th::ThymeLogger::getLogger()->logger, __VA_ARGS__);
+#define TH_API_LOG_CRITICAL(...) SPDLOG_LOGGER_CRITICAL(::th::ThymeLogger::getLogger()->logger, __VA_ARGS__);
 
-#define TH_APP_LOG_TRACE(...) SPDLOG_LOGGER_TRACE(::Thyme::AppLogger::getLogger()->logger, __VA_ARGS__);
-#define TH_APP_LOG_DEBUG(...) SPDLOG_LOGGER_DEBUG(::Thyme::AppLogger::getLogger()->logger, __VA_ARGS__);
-#define TH_APP_LOG_INFO(...) SPDLOG_LOGGER_INFO(::Thyme::AppLogger::getLogger()->logger, __VA_ARGS__);
-#define TH_APP_LOG_WARN(...) SPDLOG_LOGGER_WARN(::Thyme::AppLogger::getLogger()->logger, __VA_ARGS__);
-#define TH_APP_LOG_ERROR(...) SPDLOG_LOGGER_ERROR(::Thyme::AppLogger::getLogger()->logger, __VA_ARGS__);
-#define TH_APP_LOG_CRITICAL(...) SPDLOG_LOGGER_CRITICAL(::Thyme::AppLogger::getLogger()->logger, __VA_ARGS__);
+#define TH_APP_LOG_TRACE(...) SPDLOG_LOGGER_TRACE(::th::AppLogger::getLogger()->logger, __VA_ARGS__);
+#define TH_APP_LOG_DEBUG(...) SPDLOG_LOGGER_DEBUG(::th::AppLogger::getLogger()->logger, __VA_ARGS__);
+#define TH_APP_LOG_INFO(...) SPDLOG_LOGGER_INFO(::th::AppLogger::getLogger()->logger, __VA_ARGS__);
+#define TH_APP_LOG_WARN(...) SPDLOG_LOGGER_WARN(::th::AppLogger::getLogger()->logger, __VA_ARGS__);
+#define TH_APP_LOG_ERROR(...) SPDLOG_LOGGER_ERROR(::th::AppLogger::getLogger()->logger, __VA_ARGS__);
+#define TH_APP_LOG_CRITICAL(...) SPDLOG_LOGGER_CRITICAL(::th::AppLogger::getLogger()->logger, __VA_ARGS__);
 
 }// namespace Thyme

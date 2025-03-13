@@ -12,7 +12,7 @@
 #include <thyme/core/mouse_codes.hpp>
 #include <thyme/core/utils.hpp>
 
-namespace Thyme {
+namespace th {
 
 struct THYME_API WindowResize {
     int width;

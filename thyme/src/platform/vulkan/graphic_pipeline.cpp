@@ -2,8 +2,6 @@
 #include <thyme/core/texture.hpp>
 #include <thyme/core/utils.hpp>
 #include <thyme/platform/vulkan/graphic_pipeline.hpp>
-#include <thyme/platform/vulkan/uniform_buffer_object.hpp>
-#include <thyme/renderer/models.hpp>
 
 #include <chrono>
 #include <filesystem>
@@ -15,7 +13,7 @@
 #include <vulkan/vulkan.hpp>
 
 
-using namespace Thyme::Vulkan;
+using namespace th::vulkan;
 TriangleGraphicPipeline::TriangleGraphicPipeline(const Device& device, const vk::UniqueRenderPass& renderPass,
                                                  const vk::UniqueCommandPool& commandPool)
     : GraphicPipeline(), m_uniformBufferObject(device), m_uniformBufferObject2(device),

@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-namespace Thyme {
+namespace th {
 // from glfw3.h
 enum class MouseButton : uint8_t {
     button_1 = 0,

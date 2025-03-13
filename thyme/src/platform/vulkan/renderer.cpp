@@ -4,7 +4,7 @@
 #include <imgui_impl_vulkan.h>
 #include <vulkan/vulkan.hpp>
 
-using namespace Thyme::Vulkan;
+using namespace th::vulkan;
 
 VulkanRenderer::VulkanRenderer(const VulkanGlfwWindow& window, const Device& device,
                                const vk::UniqueSurfaceKHR& surface) noexcept

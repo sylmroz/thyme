@@ -14,10 +14,10 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
 
-Thyme::Engine::Engine(const EngineConfig& engineConfig, Vulkan::VulkanLayerStack& layers)
+th::Engine::Engine(const EngineConfig& engineConfig, vulkan::VulkanLayerStack& layers)
     : m_engineConfig{ engineConfig }, m_layers{ layers } {}
 
-void Thyme::Engine::run() const {
+void th::Engine::run() const {
     TH_API_LOG_INFO("Start {} engine", m_engineConfig.engineName);
 
     EventSubject windowEvents;
@@ -36,17 +36,17 @@ void Thyme::Engine::run() const {
     // clang-format on
 
     const auto instance =
-            Vulkan::UniqueInstance(Vulkan::UniqueInstanceConfig{ .engineName = m_engineConfig.engineName,
+            vulkan::UniqueInstance(vulkan::UniqueInstanceConfig{ .engineName = m_engineConfig.engineName,
                                                                  .appName = m_engineConfig.appName,
                                                                  .instanceExtension = enabledExtensions });
     const auto surface = window.getSurface(instance.instance);
 
-    const auto devices = Vulkan::getPhysicalDevices(instance.instance, surface);
-    const Vulkan::PhysicalDevicesManager physicalDevicesManager(devices);
+    const auto devices = vulkan::getPhysicalDevices(instance.instance, surface);
+    const vulkan::PhysicalDevicesManager physicalDevicesManager(devices);
 
     const auto& device = physicalDevicesManager.getSelectedDevice();
 
-    Vulkan::VulkanRenderer renderer(window, device, surface);
+    vulkan::VulkanRenderer renderer(window, device, surface);
 
     // ImGui implementation is temporary.
     // It will have to be adjusted with vulkan and renderer to be more concise together
@@ -60,7 +60,7 @@ void Thyme::Engine::run() const {
     const auto pipelineCache = device.logicalDevice->createPipelineCacheUnique(vk::PipelineCacheCreateInfo());
     initInfo.PipelineCache = pipelineCache.get();
     const auto descriptorPool =
-            Vulkan::createDescriptorPool(device.logicalDevice,
+            vulkan::createDescriptorPool(device.logicalDevice,
                                          { vk::DescriptorPoolSize(vk::DescriptorType::eSampler, 2),
                                            vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, 2),
                                            vk::DescriptorPoolSize(vk::DescriptorType::eSampledImage, 2),
@@ -75,8 +75,8 @@ void Thyme::Engine::run() const {
     initInfo.DescriptorPool = descriptorPool.get();
     initInfo.RenderPass = renderer.m_renderPass.get();
     initInfo.Subpass = 0;
-    initInfo.MinImageCount = Vulkan::VulkanRenderer::maxFramesInFlight;
-    initInfo.ImageCount = Vulkan::VulkanRenderer::maxFramesInFlight;
+    initInfo.MinImageCount = vulkan::VulkanRenderer::maxFramesInFlight;
+    initInfo.ImageCount = vulkan::VulkanRenderer::maxFramesInFlight;
     initInfo.MSAASamples = static_cast<VkSampleCountFlagBits>(device.maxMsaaSamples);
     initInfo.Allocator = nullptr;
     initInfo.CheckVkResultFn = [](const auto vkResult) {

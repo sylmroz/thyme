@@ -1,13 +1,10 @@
 #pragma once
 
 #include <thyme/platform/vulkan/utils.hpp>
-#include <thyme/renderer/models.hpp>
 
-#include <array>
-#include <ranges>
 #include <utility>
 
-namespace Thyme::Vulkan {
+namespace th::vulkan {
 
 /*template <typename T, size_t Frames>
 class UniformBufferObject final: NoCopyable {

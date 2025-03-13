@@ -6,7 +6,7 @@
 
 #include <thyme/platform/vulkan/vulkan_layer.hpp>
 
-namespace Thyme {
+namespace th {
 
 struct THYME_API EngineConfig {
     std::string engineName{ "Thyme" };
@@ -17,13 +17,13 @@ struct THYME_API EngineConfig {
 
 class THYME_API Engine final {
 public:
-    explicit Engine(const EngineConfig& engineConfig, Vulkan::VulkanLayerStack& layers);
+    explicit Engine(const EngineConfig& engineConfig, vulkan::VulkanLayerStack& layers);
 
     void run() const;
 
 private:
     EngineConfig m_engineConfig;
-    Vulkan::VulkanLayerStack& m_layers;
+    vulkan::VulkanLayerStack& m_layers;
 };
 
 }// namespace Thyme

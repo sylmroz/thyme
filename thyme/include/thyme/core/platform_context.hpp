@@ -2,7 +2,7 @@
 
 #include <functional>
 
-namespace Thyme {
+namespace th {
 
 struct PlatformContextArguments {
     std::function<void(void)> initializer;

@@ -6,7 +6,7 @@
 
 #include <thyme/platform/vulkan/vulkan_layer.hpp>
 
-namespace Thyme {
+namespace th {
 
 class THYME_API Application {
 public:
@@ -14,7 +14,7 @@ public:
     std::string name{ "Thyme" };
     void run();
 
-    Vulkan::VulkanLayerStack layers;
+    vulkan::VulkanLayerStack layers;
 };
 
 }// namespace Thyme

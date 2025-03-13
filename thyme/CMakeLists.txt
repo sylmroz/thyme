@@ -18,7 +18,7 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	target_compile_options(${PROJECT_NAME} PRIVATE
 			$<$<CONFIG:Debug>:/Wall /EHsc /ZI /MP>
-			$<$<CONFIG:Release>:/GL /MP>
+			$<$<CONFIG:Release>:/GL /MP /O3>
 			$<$<CONFIG:RelWithDebInfo>:>
 			$<$<CONFIG:MinSizeRel>:>
 	)

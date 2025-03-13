@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <vector>
 
-namespace Thyme {
+namespace th {
 
 [[nodiscard]] std::vector<char> readFile(const std::filesystem::path& filePath);
 

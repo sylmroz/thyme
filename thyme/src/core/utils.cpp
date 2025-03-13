@@ -5,7 +5,7 @@
 #include <fstream>
 
 
-std::vector<char> Thyme::readFile(const std::filesystem::path& filePath) {
+std::vector<char> th::readFile(const std::filesystem::path& filePath) {
     const auto fileName = filePath.filename().string();
     TH_API_LOG_INFO("Reading from file {}", fileName);
     std::ifstream file(filePath, std::ios::binary | std::ios::ate);

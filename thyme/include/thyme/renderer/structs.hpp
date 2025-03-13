@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-namespace Thyme {
+namespace th {
 
 struct MVP {
     glm::mat4 model;

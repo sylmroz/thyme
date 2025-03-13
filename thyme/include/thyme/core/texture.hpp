@@ -6,7 +6,7 @@
 #include <mdspan>
 #include <vector>
 
-namespace Thyme {
+namespace th {
 
 class Texture {
 public:

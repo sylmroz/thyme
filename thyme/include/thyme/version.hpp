@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Thyme::Version {
+namespace th::Version {
 
 constexpr static int major{ 0 };
 constexpr static int minor{ 0 };

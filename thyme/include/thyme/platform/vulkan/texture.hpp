@@ -5,7 +5,7 @@
 
 #include <vulkan/vulkan.hpp>
 
-namespace Thyme::Vulkan {
+namespace th::vulkan {
 
 class VulkanTexture {
 public:

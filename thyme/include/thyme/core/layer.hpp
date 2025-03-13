@@ -6,7 +6,7 @@
 
 #include <stdint.h>
 
-namespace Thyme {
+namespace th {
 
 enum class LayerType : uint8_t {
     overlay,

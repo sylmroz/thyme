@@ -5,7 +5,7 @@
 
 #include <thyme/platform/vulkan/utils.hpp>
 
-namespace Thyme::Vulkan {
+namespace th::vulkan {
 
 // TODO - read from config the last selected device
 class PhysicalDevicesManager {

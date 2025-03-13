@@ -1,6 +1,6 @@
 #include <thyme/platform/vulkan/texture.hpp>
 
-Thyme::Vulkan::VulkanTexture::VulkanTexture(const Device& device, const vk::UniqueCommandPool& commandPool,
+th::vulkan::VulkanTexture::VulkanTexture(const Device& device, const vk::UniqueCommandPool& commandPool,
                                             const Texture& texture)
     : imageMemory(createImageMemory(device,
                                       commandPool,

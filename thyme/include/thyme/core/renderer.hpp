@@ -4,7 +4,7 @@
 
 #include <thyme/core/utils.hpp>
 
-namespace Thyme {
+namespace th {
 
 class THYME_API Renderer: public NoCopyable {
 public:

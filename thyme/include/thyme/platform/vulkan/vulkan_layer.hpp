@@ -5,7 +5,7 @@
 #include <thyme/core/layer.hpp>
 #include <thyme/core/layer_stack.hpp>
 
-namespace Thyme::Vulkan {
+namespace th::vulkan {
 
 using VulkanLayer = Layer<vk::UniqueCommandBuffer>;
 using VulkanOverlayLayer = OverlayLayer<vk::UniqueCommandBuffer>;

@@ -9,12 +9,12 @@
 #include <thyme/core/core.hpp>
 #include <thyme/platform/vulkan/vulkan_layer.hpp>
 
-class ExampleLayer final: public Thyme::Vulkan::VulkanOverlayLayer {
-    struct MyEventDispatcher final: Thyme::EventDispatcher<Thyme::WindowResize, Thyme::MousePosition> {
-        void operator()(const Thyme::WindowResize& event) override {
+class ExampleLayer final: public th::vulkan::VulkanOverlayLayer {
+    struct MyEventDispatcher final: th::EventDispatcher<th::WindowResize, th::MousePosition> {
+        void operator()(const th::WindowResize& event) override {
             // TH_APP_LOG_INFO("Example Layer::onEvent {}", event.toString());
         }
-        void operator()(const Thyme::MousePosition& event) override {
+        void operator()(const th::MousePosition& event) override {
             // TH_APP_LOG_INFO("Example Layer::onEvent {}", event.toString());
         }
         using EventDispatcher::operator();
@@ -25,12 +25,12 @@ public:
     void draw(vk::UniqueCommandBuffer&&) override {}
     void onAttach() override {}
     void onDetach() override {}
-    void onEvent(const Thyme::Event& event) override {
+    void onEvent(const th::Event& event) override {
         std::visit(MyEventDispatcher{}, event);
     }
 };
 
-class ExampleApp: public Thyme::Application {
+class ExampleApp: public th::Application {
 public:
     ExampleApp() {
         layers.pushLayer(&exampleLayer);
@@ -41,7 +41,7 @@ private:
 };
 
 int main() {
-    Thyme::AppLogger::init(spdlog::level::info);
+    th::AppLogger::init(spdlog::level::info);
     TH_APP_LOG_INFO("Hello from app");
     ExampleApp app;
     app.name = "AppThyme";

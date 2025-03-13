@@ -11,7 +11,7 @@
 
 #include <thyme/core/platform_context.hpp>
 
-namespace Thyme {
+namespace th {
 
 class THYME_API GlfwVulkanPlatformContext: public PlatformContext {
 public:

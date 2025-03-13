@@ -4,7 +4,7 @@
 
 #include <thyme/core/layer.hpp>
 
-namespace Thyme {
+namespace th {
 
 template <typename... Args>
 class THYME_API LayerStack {

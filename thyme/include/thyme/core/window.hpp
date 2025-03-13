@@ -8,7 +8,7 @@
 #include <thyme/core/engine.hpp>
 #include <thyme/core/event.hpp>
 
-namespace Thyme {
+namespace th {
 
 struct THYME_API WindowConfig {
     WindowConfig() = default;
