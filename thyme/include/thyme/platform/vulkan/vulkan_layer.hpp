@@ -13,4 +13,4 @@ using VulkanNonOverlayLayer = NonOverlayLayer<vk::UniqueCommandBuffer>;
 
 using VulkanLayerStack = LayerStack<vk::UniqueCommandBuffer>;
 
-}// namespace Thyme::Vulkan
+}// namespace th::vulkan

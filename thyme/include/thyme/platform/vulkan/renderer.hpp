@@ -79,4 +79,4 @@ private:
 private:
     std::vector<std::unique_ptr<GraphicPipeline>> m_pipelines;
 };
-}// namespace Thyme::Vulkan
+}// namespace th::vulkan

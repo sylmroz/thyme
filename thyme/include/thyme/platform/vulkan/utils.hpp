@@ -613,4 +613,4 @@ inline void generateMipmaps(const Device& device, const vk::UniqueCommandPool& c
     return format == vk::Format::eD24UnormS8Uint || format == vk::Format::eD32SfloatS8Uint;
 }
 
-}// namespace Thyme::Vulkan
+}// namespace th::vulkan

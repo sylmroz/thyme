@@ -21,4 +21,5 @@ Texture::Texture(const std::filesystem::path& file) {
     stbi_image_free(pixels);
 }
 
+
 }// namespace Thyme

@@ -48,7 +48,6 @@ private:
     BufferMemory m_indexMemoryBuffer;
 
     vk::UniqueDescriptorSetLayout m_descriptorSetLayout;
-    // 2 = max frames in flight
     UniformBufferObject<MVP> m_uniformBufferObject;
     UniformBufferObject<MVP> m_uniformBufferObject2;
 
@@ -71,6 +70,6 @@ private:
     static constexpr std::array<uint16_t, 6> indices = { 0, 1, 2, 2, 3, 0 };
 
     void updateUBO(const vk::Extent2D& extend) const;
-};// namespace Thyme::Vulkan
+};
 
-}// namespace Thyme::Vulkan
+}// namespace th::vulkan

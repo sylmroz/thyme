@@ -86,7 +86,7 @@ target_precompile_headers(${PROJECT_NAME}
 
 find_package(spdlog REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
-find_package(Vulkan REQUIRED COMPONENTS shaderc_combined)
+find_package(Vulkan REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(Stb REQUIRED)
 
@@ -96,7 +96,6 @@ target_link_libraries(${PROJECT_NAME}
         glfw
         Vulkan::Vulkan
         Vulkan::Headers
-		Vulkan::shaderc_combined
 		imgui::imgui
 )
 

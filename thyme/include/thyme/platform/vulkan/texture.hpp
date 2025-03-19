@@ -15,4 +15,4 @@ public:
     vk::UniqueSampler sampler;
 };
 
-}// namespace Thyme::Vulkan
+}// namespace th::vulkan

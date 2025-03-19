@@ -306,8 +306,8 @@ SwapChainData::SwapChainData(const Device& device,
 
 
 auto vulkan::createRenderPass(const vk::UniqueDevice& logicalDevice, const vk::Format colorFormat,
-                              const vk::Format depthFormat,
-                              const vk::SampleCountFlagBits samples) -> vk::UniqueRenderPass {
+                              const vk::Format depthFormat, const vk::SampleCountFlagBits samples)
+        -> vk::UniqueRenderPass {
 
     constexpr auto colorAttachmentRef = vk::AttachmentReference(0, vk::ImageLayout::eColorAttachmentOptimal);
     constexpr auto depthAttachmentRef = vk::AttachmentReference(1, vk::ImageLayout::eDepthStencilAttachmentOptimal);

@@ -10,4 +10,4 @@ struct MVP {
     glm::mat4 proj;
 };
 
-}// namespace Thyme
+}// namespace th

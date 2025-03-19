@@ -11,7 +11,8 @@
     },
     "spdlog",
     "glm",
-    "stb"
+    "stb",
+    "vulkan-sdk-components"
   ],
   "version": "0.0.1",
   "name": "thyme"

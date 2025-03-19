@@ -37,4 +37,4 @@ private:
     std::vector<PhysicalDevice> m_physicalDevices;
     std::vector<PhysicalDevice>::iterator m_selectedDevice;
 };
-}// namespace Thyme::Vulkan
+}// namespace th::vulkan
