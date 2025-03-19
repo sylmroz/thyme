@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-namespace th {
+namespace th::renderer {
 
 struct MVP {
     glm::mat4 model;
@@ -10,4 +10,10 @@ struct MVP {
     glm::mat4 proj;
 };
 
-}// namespace th
+struct Vertex {
+    glm::vec3 pos;
+    glm::vec3 color;
+    glm::vec2 texCoord;
+};
+
+}// namespace th::renderer

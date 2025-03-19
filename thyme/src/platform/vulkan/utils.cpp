@@ -77,7 +77,7 @@ bool deviceHasAllRequiredExtensions(const vk::PhysicalDevice& physicalDevice) {
 }
 
 UniqueInstance::UniqueInstance(const UniqueInstanceConfig& config) {
-    constexpr auto appVersion = vk::makeApiVersion(0, Version::major, Version::minor, Version::patch);
+    constexpr auto appVersion = vk::makeApiVersion(0, version::major, version::minor, version::patch);
     const vk::ApplicationInfo applicationInfo(
             config.appName.data(), appVersion, config.engineName.data(), appVersion, vk::HeaderVersionComplete);
 
@@ -366,8 +366,8 @@ auto vulkan::createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipe
     constexpr auto dynamicStates = std::array{ vk::DynamicState::eViewport, vk::DynamicState::eScissor };
     const auto dynamicStateCreateInfo =
             vk::PipelineDynamicStateCreateInfo(vk::PipelineDynamicStateCreateFlagBits(), dynamicStates);
-    constexpr auto bindingDescription = Vertex::getBindingDescription();
-    constexpr auto attributeDescriptions = Vertex::getAttributeDescriptions();
+    constexpr auto bindingDescription = getBindingDescription();
+    constexpr auto attributeDescriptions = getAttributeDescriptions();
     const auto vertexInputStateCreateInfo = vk::PipelineVertexInputStateCreateInfo(
             vk::PipelineVertexInputStateCreateFlagBits(), { bindingDescription }, attributeDescriptions);
     constexpr auto inputAssemblyStateCreateInfo = vk::PipelineInputAssemblyStateCreateInfo(

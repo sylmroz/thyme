@@ -2,6 +2,7 @@
 #include <thyme/core/texture.hpp>
 #include <thyme/core/utils.hpp>
 #include <thyme/platform/vulkan/graphic_pipeline.hpp>
+#include <thyme/renderer/model.hpp>
 
 #include <chrono>
 #include <filesystem>
@@ -91,15 +92,17 @@ void TriangleGraphicPipeline::updateUBO(const vk::Extent2D& extend) const {
     auto proj = glm::perspective(
             glm::radians(45.0f), static_cast<float>(extend.width) / static_cast<float>(extend.height), 0.1f, 10.0f);
     proj[1][1] *= -1.0f;
-    const auto ubo =
-            MVP{ .model = glm::rotate(glm::mat4(1.0f), deltaTime * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
-                 .view = view,
-                 .proj = proj };
+    const auto ubo = renderer::MVP{
+        .model = glm::rotate(glm::mat4(1.0f), deltaTime * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+        .view = view,
+        .proj = proj
+    };
     m_uniformBufferObject.update(ubo);
 
-    const auto ubo2 =
-            MVP{ .model = glm::rotate(glm::mat4(1.0f), -deltaTime * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
-                 .view = view,
-                 .proj = proj };
+    const auto ubo2 = renderer::MVP{
+        .model = glm::rotate(glm::mat4(1.0f), -deltaTime * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+        .view = view,
+        .proj = proj
+    };
     m_uniformBufferObject2.update(ubo2);
 }

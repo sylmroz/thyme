@@ -48,8 +48,8 @@ private:
     BufferMemory m_indexMemoryBuffer;
 
     vk::UniqueDescriptorSetLayout m_descriptorSetLayout;
-    UniformBufferObject<MVP> m_uniformBufferObject;
-    UniformBufferObject<MVP> m_uniformBufferObject2;
+    UniformBufferObject<renderer::MVP> m_uniformBufferObject;
+    UniformBufferObject<renderer::MVP> m_uniformBufferObject2;
 
     vk::UniqueDescriptorPool m_descriptorPool;
     std::vector<vk::DescriptorSet> m_descriptorSets;
@@ -57,15 +57,19 @@ private:
     VulkanTexture m_texture;
     VulkanTexture m_texture2;
 
-    static constexpr std::array vertices1 = { Vertex{ { -0.5f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
-                                              Vertex{ { 0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
-                                              Vertex{ { 0.5f, 0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },
-                                              Vertex{ { -0.5f, 0.5f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } } };
+    static constexpr std::array vertices1 = {
+        renderer::Vertex{ { -0.5f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
+        renderer::Vertex{ { 0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
+        renderer::Vertex{ { 0.5f, 0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },
+        renderer::Vertex{ { -0.5f, 0.5f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } }
+    };
 
-    static constexpr std::array vertices2 = { Vertex{ { -0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
-                                              Vertex{ { 0.5f, -0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
-                                              Vertex{ { 0.5f, 0.5f, -0.5f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },
-                                              Vertex{ { -0.5f, 0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } } };
+    static constexpr std::array vertices2 = {
+        renderer::Vertex{ { -0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
+        renderer::Vertex{ { 0.5f, -0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
+        renderer::Vertex{ { 0.5f, 0.5f, -0.5f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },
+        renderer::Vertex{ { -0.5f, 0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } }
+    };
 
     static constexpr std::array<uint16_t, 6> indices = { 0, 1, 2, 2, 3, 0 };
 

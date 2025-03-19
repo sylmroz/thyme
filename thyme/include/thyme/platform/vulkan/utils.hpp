@@ -9,6 +9,7 @@
 
 #include <thyme/core/common_structs.hpp>
 #include <thyme/platform/glfw_window.hpp>
+#include <thyme/renderer/structs.hpp>
 
 namespace th::vulkan {
 
@@ -278,23 +279,19 @@ void singleTimeCommand(const Device& device, const vk::UniqueCommandPool& comman
     singleTimeCommand(commandBuffer, graphicQueue, fun, args...);
 }
 
-struct Vertex {
-    glm::vec3 pos;
-    glm::vec3 color;
-    glm::vec2 texCoord;
+static constexpr auto getBindingDescription() -> vk::VertexInputBindingDescription {
+    return vk::VertexInputBindingDescription(0, sizeof(th::renderer::Vertex), vk::VertexInputRate::eVertex);
+}
 
-    static constexpr auto getBindingDescription() -> vk::VertexInputBindingDescription {
-        return vk::VertexInputBindingDescription(0, sizeof(Vertex), vk::VertexInputRate::eVertex);
-    }
+static constexpr auto getAttributeDescriptions() -> std::array<vk::VertexInputAttributeDescription, 3> {
+    using namespace th::renderer;
+    return std::array{
+        vk::VertexInputAttributeDescription(0, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, pos)),
+        vk::VertexInputAttributeDescription(1, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, color)),
+        vk::VertexInputAttributeDescription(2, 0, vk::Format::eR32G32Sfloat, offsetof(Vertex, texCoord)),
+    };
+}
 
-    static constexpr auto getAttributeDescriptions() -> std::array<vk::VertexInputAttributeDescription, 3> {
-        return std::array{
-            vk::VertexInputAttributeDescription(0, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, pos)),
-            vk::VertexInputAttributeDescription(1, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, color)),
-            vk::VertexInputAttributeDescription(2, 0, vk::Format::eR32G32Sfloat, offsetof(Vertex, texCoord)),
-        };
-    }
-};
 
 [[nodiscard]] inline uint32_t findMemoryType(const vk::PhysicalDevice& device, const uint32_t typeFilter,
                                              const vk::MemoryPropertyFlags properties) {
