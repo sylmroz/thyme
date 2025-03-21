@@ -28,7 +28,7 @@ public:
     explicit TriangleGraphicPipeline(const Device& device, const vk::UniqueRenderPass& renderPass,
                                      const vk::UniqueCommandPool& commandPool);
 
-    inline virtual void draw(const vk::UniqueCommandBuffer& commandBuffer, const vk::Extent2D& extend) const override {
+    virtual void draw(const vk::UniqueCommandBuffer& commandBuffer, const vk::Extent2D& extend) const override {
         commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, *m_pipeline);
         updateUBO(extend);
 
