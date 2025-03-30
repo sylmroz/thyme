@@ -1,9 +1,9 @@
 #pragma once
 
 #include <thyme/core/logger.hpp>
-#include <thyme/core/texture.hpp>
 #include <thyme/export_macros.hpp>
 #include <thyme/renderer/structs.hpp>
+#include <thyme/scene/texture.hpp>
 #include <thyme/scene/transformation.hpp>
 
 #include <fmt/format.h>

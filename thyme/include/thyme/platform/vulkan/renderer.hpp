@@ -1,7 +1,7 @@
 #pragma once
 
 #include <thyme/core/logger.hpp>
-#include <thyme/core/renderer.hpp>
+#include <thyme/renderer/renderer.hpp>
 #include <thyme/platform/glfw_window.hpp>
 #include <thyme/platform/vulkan/graphic_pipeline.hpp>
 #include <thyme/platform/vulkan/utils.hpp>
@@ -13,7 +13,7 @@
 
 namespace th::vulkan {
 
-class VulkanRenderer final: public Renderer {
+class VulkanRenderer final: public renderer::Renderer {
 public:
     explicit VulkanRenderer(const VulkanGlfwWindow& window, const Device& device, const vk::UniqueSurfaceKHR& surface,
                             scene::ModelStorage& modelStorage, scene::Camera& camera) noexcept;

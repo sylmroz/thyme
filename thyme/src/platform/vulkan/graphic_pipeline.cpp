@@ -1,5 +1,4 @@
 #include <thyme/core/common_structs.hpp>
-#include <thyme/core/texture.hpp>
 #include <thyme/core/utils.hpp>
 #include <thyme/platform/vulkan/graphic_pipeline.hpp>
 #include <thyme/scene/model.hpp>

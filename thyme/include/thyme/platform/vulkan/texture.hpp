@@ -1,6 +1,6 @@
 #pragma once
 
-#include <thyme/core/texture.hpp>
+#include <thyme/scene/texture.hpp>
 #include <thyme/platform/vulkan/utils.hpp>
 
 #include <vulkan/vulkan.hpp>

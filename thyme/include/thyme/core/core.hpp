@@ -8,6 +8,5 @@
 #include <thyme/core/layer_stack.hpp>
 #include <thyme/core/mouse_codes.hpp>
 #include <thyme/core/platform_context.hpp>
-#include <thyme/core/renderer.hpp>
 #include <thyme/core/utils.hpp>
 #include <thyme/core/window.hpp>

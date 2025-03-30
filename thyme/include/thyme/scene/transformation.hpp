@@ -8,7 +8,7 @@ namespace th::scene {
 class Transformation {
 public:
     inline void translate(const glm::vec3 offset) noexcept {
-        originPoint += glm::vec4(offset, 0.0f);
+        centerPoint += glm::vec4(offset, 0.0f);
         transformMatrix = glm::translate(transformMatrix, offset);
     }
 
@@ -24,12 +24,12 @@ public:
         return transformMatrix;
     }
     
-    [[nodiscard]] inline glm::vec4 getOriginPoint() const noexcept {
-        return originPoint;
+    [[nodiscard]] inline glm::vec4 getCenterPoint() const noexcept {
+        return centerPoint;
     }
 
 private:
-    glm::vec4 originPoint = glm::vec4(0.0f);
+    glm::vec4 centerPoint = glm::vec4(0.0f);
     glm::mat4 transformMatrix = glm::mat4(1.0f);
 };
 
