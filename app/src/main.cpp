@@ -34,6 +34,26 @@ class ExampleApp: public th::Application {
 public:
     ExampleApp() {
         layers.pushLayer(&exampleLayer);
+        modelStorage.addModel(th::scene::Model{
+                .name = "Grumpy 1",
+                .mesh =
+                        th::scene::Mesh{
+                                .vertices = { { { -0.5f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
+                                              { { 0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
+                                              { { 0.5f, 0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },
+                                              { { -0.5f, 0.5f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } } },
+                                .indices = { 0, 1, 2, 2, 3, 0 } },
+                .texture = th::Texture("C:\\Users\\sylwek\\Desktop\\grumpy.jpg") });
+        modelStorage.addModel(th::scene::Model{
+                .name = "Grumpy 1",
+                .mesh =
+                        th::scene::Mesh{
+                                .vertices = { { { -0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
+                                              { { 0.5f, -0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
+                                              { { 0.5f, 0.5f, -0.5f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },
+                                              { { -0.5f, 0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } } },
+                                .indices = { 0, 1, 2, 2, 3, 0 } },
+                .texture = th::Texture("C:\\Users\\sylwek\\Desktop\\grumpy2.jpg") });
     }
 
 private:

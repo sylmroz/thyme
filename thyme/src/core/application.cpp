@@ -12,9 +12,9 @@ using namespace th;
 
 template <typename... Context>
 // requires(std::is_base_of_v<PlatformContext, Context>)
-Engine createEngine(const EngineConfig& config, vulkan::VulkanLayerStack& layers) {
+Engine createEngine(const EngineConfig& config, vulkan::VulkanLayerStack& layers, scene::ModelStorage& modelStorage) {
     [[maybe_unused]] static std::tuple<Context...> ctx;
-    return Engine(config, layers);
+    return Engine(config, layers, modelStorage);
 }
 
 Application::Application() {
@@ -24,8 +24,8 @@ Application::Application() {
 void Application::run() {
     TH_API_LOG_INFO("Start {} app", name);
     try {
-        const auto engine =
-                createEngine<GlfwVulkanPlatformContext, ImGuiContext>(EngineConfig{ .appName = name }, layers);
+        auto engine = createEngine<GlfwVulkanPlatformContext, ImGuiContext>(
+                EngineConfig{ .appName = name }, layers, modelStorage);
         engine.run();
     } catch (const std::exception& e) {
         TH_API_LOG_ERROR(e.what());

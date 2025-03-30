@@ -30,6 +30,8 @@ target_sources(${PROJECT_NAME} PRIVATE
 		src/core/engine.cpp
 		src/core/texture.cpp
 		src/core/utils.cpp
+		src/scene/transformation.cpp
+		src/scene/model.cpp
 
 		src/platform/glfw_window.cpp
 

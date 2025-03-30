@@ -1,10 +1,11 @@
 #pragma once
 
 #include <thyme/export_macros.hpp>
+#include <thyme/platform/vulkan/vulkan_layer.hpp>
+#include <thyme/scene/camera.hpp>
+#include <thyme/scene/model.hpp>
 
 #include <string>
-
-#include <thyme/platform/vulkan/vulkan_layer.hpp>
 
 namespace th {
 
@@ -17,13 +18,16 @@ struct THYME_API EngineConfig {
 
 class THYME_API Engine final {
 public:
-    explicit Engine(const EngineConfig& engineConfig, vulkan::VulkanLayerStack& layers);
+    explicit Engine(const EngineConfig& engineConfig, vulkan::VulkanLayerStack& layers,
+                    scene::ModelStorage& modelStorage);
 
-    void run() const;
+    void run();
 
 private:
     EngineConfig m_engineConfig;
+    scene::Camera m_camera;
     vulkan::VulkanLayerStack& m_layers;
+    scene::ModelStorage& m_modelStorage;
 };
 
-}// namespace Thyme
+}// namespace th

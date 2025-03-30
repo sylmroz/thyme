@@ -7,7 +7,7 @@
 namespace th::vulkan {
 
 template <typename T>
-class UniformBufferObject final: NoCopyable {
+class UniformBufferObject final {
 public:
     explicit UniformBufferObject(const Device& device) : m_device{ device } {
         constexpr auto ubSize = sizeof(T);
@@ -20,6 +20,11 @@ public:
                 *m_uniformMemoryBuffer.memory, 0, ubSize, vk::MemoryMapFlags(), &m_mappedMemoryBuffer);
     }
 
+    explicit UniformBufferObject(const UniformBufferObject&) = delete;
+    explicit UniformBufferObject(UniformBufferObject&&) = default;
+    UniformBufferObject& operator=(const UniformBufferObject&) = delete;
+    UniformBufferObject& operator=(UniformBufferObject&&) = default;
+
     [[nodiscard]] auto getDescriptorBufferInfos() const noexcept -> vk::DescriptorBufferInfo {
         return vk::DescriptorBufferInfo(*m_uniformMemoryBuffer.buffer, 0, sizeof(T));
     }
@@ -28,8 +33,10 @@ public:
         memcpy(m_mappedMemoryBuffer, &obj, sizeof(obj));
     }
 
-    ~UniformBufferObject() override {
-        m_device.logicalDevice->unmapMemory(*m_uniformMemoryBuffer.memory);
+    ~UniformBufferObject() {
+        if (m_uniformMemoryBuffer.memory.get() != nullptr) {
+            m_device.logicalDevice->unmapMemory(*m_uniformMemoryBuffer.memory);
+        }
     }
 
 private:

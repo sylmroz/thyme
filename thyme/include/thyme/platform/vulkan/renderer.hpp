@@ -1,23 +1,22 @@
 #pragma once
 
 #include <thyme/core/logger.hpp>
+#include <thyme/core/renderer.hpp>
+#include <thyme/platform/glfw_window.hpp>
+#include <thyme/platform/vulkan/graphic_pipeline.hpp>
+#include <thyme/platform/vulkan/utils.hpp>
+#include <thyme/scene/camera.hpp>
+#include <thyme/scene/model.hpp>
 
 #include <imgui_impl_vulkan.h>
 #include <vulkan/vulkan.hpp>
-
-#include <thyme/platform/vulkan/graphic_pipeline.hpp>
-#include <thyme/platform/vulkan/utils.hpp>
-
-#include <thyme/core/renderer.hpp>
-
-#include <thyme/platform/glfw_window.hpp>
 
 namespace th::vulkan {
 
 class VulkanRenderer final: public Renderer {
 public:
-    explicit VulkanRenderer(const VulkanGlfwWindow& window, const Device& device,
-                            const vk::UniqueSurfaceKHR& surface) noexcept;
+    explicit VulkanRenderer(const VulkanGlfwWindow& window, const Device& device, const vk::UniqueSurfaceKHR& surface,
+                            scene::ModelStorage& modelStorage, scene::Camera& camera) noexcept;
 
     void draw() override;
 
@@ -37,6 +36,7 @@ public:
     const vk::UniqueRenderPass m_renderPass;
     FrameDataList m_frameDataList;
     SwapChainData m_swapChainData;
+    scene::Camera& m_camera;
 
     static constexpr uint32_t maxFramesInFlight{ 2 };
 
@@ -71,6 +71,7 @@ private:
                                         m_colorImageMemory.imageView,
                                         m_depthImage.imageView,
                                         m_swapChainData.swapChain.get());
+        m_camera.setResolution(glm::vec2{ resolution.width, resolution.height });
     }
     inline void recreateSwapChain() {
         recreateSwapChain(m_window.getFrameBufferSize());

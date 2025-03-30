@@ -14,10 +14,21 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
 
-th::Engine::Engine(const EngineConfig& engineConfig, vulkan::VulkanLayerStack& layers)
-    : m_engineConfig{ engineConfig }, m_layers{ layers } {}
+namespace th {
 
-void th::Engine::run() const {
+Engine::Engine(const EngineConfig& engineConfig, vulkan::VulkanLayerStack& layers, scene::ModelStorage& modelStorage)
+    : m_engineConfig{ engineConfig },
+      m_camera{ scene::CameraArguments{ .fov = 45.0f,
+                                        .zNear = 0.1f,
+                                        .zFar = 100.0f,
+                                        .resolution = { engineConfig.width, engineConfig.height },
+                                        .eye = { 2.0f, 2.0f, 2.0f },
+                                        .center = { 0.0f, 0.0f, 0.0f },
+                                        .up = { 0.0f, 0.0f, 1.0f } } },
+      m_layers{ layers }, m_modelStorage{ modelStorage } {
+}
+
+void Engine::run() {
     TH_API_LOG_INFO("Start {} engine", m_engineConfig.engineName);
 
     EventSubject windowEvents;
@@ -46,7 +57,7 @@ void th::Engine::run() const {
 
     const auto& device = physicalDevicesManager.getSelectedDevice();
 
-    vulkan::VulkanRenderer renderer(window, device, surface);
+    vulkan::VulkanRenderer renderer(window, device, surface, m_modelStorage, m_camera);
 
     // ImGui implementation is temporary.
     // It will have to be adjusted with vulkan and renderer to be more concise together
@@ -104,3 +115,5 @@ void th::Engine::run() const {
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
 }
+
+}// namespace th

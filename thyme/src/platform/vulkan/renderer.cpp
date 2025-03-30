@@ -7,7 +7,8 @@
 using namespace th::vulkan;
 
 VulkanRenderer::VulkanRenderer(const VulkanGlfwWindow& window, const Device& device,
-                               const vk::UniqueSurfaceKHR& surface) noexcept
+                               const vk::UniqueSurfaceKHR& surface, scene::ModelStorage& modelStorage,
+                               scene::Camera& camera) noexcept
     : m_device{ device }, m_window{ window }, m_surface{ surface },
       m_commandPool{ device.logicalDevice->createCommandPoolUnique(
               vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
@@ -28,8 +29,10 @@ VulkanRenderer::VulkanRenderer(const VulkanGlfwWindow& window, const Device& dev
       m_frameDataList{ FrameDataList(device.logicalDevice, m_commandPool, maxFramesInFlight) },
       m_swapChainData{ SwapChainData(m_device, m_swapChainSettings, m_swapChainExtent, m_renderPass, m_surface,
                                      m_colorImageMemory.imageView, m_depthImage.imageView,
-                                     m_swapChainData.swapChain.get()) } {
-    m_pipelines.emplace_back(std::make_unique<TriangleGraphicPipeline>(device, m_renderPass, m_commandPool));
+                                     m_swapChainData.swapChain.get()) },
+      m_camera(camera) {
+    m_pipelines.emplace_back(
+            std::make_unique<TriangleGraphicPipeline>(device, m_renderPass, m_commandPool, modelStorage, camera));
 }
 
 void VulkanRenderer::draw() {
@@ -87,9 +90,9 @@ void VulkanRenderer::draw() {
     ImGui::ShowDemoWindow(&showDemoWindow);
     ImGui::Render();
 
-    for (const auto& pipeline : m_pipelines) {
-        pipeline->draw(commandBuffer, m_swapChainExtent);
-    }
+     for (const auto& pipeline : m_pipelines) {
+         pipeline->draw(commandBuffer, m_swapChainExtent);
+     }
 
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer.get());
 

@@ -4,17 +4,36 @@
 #include <thyme/platform/vulkan/uniform_buffer_object.hpp>
 #include <thyme/platform/vulkan/utils.hpp>
 
-#include <thyme/renderer/model.hpp>
+#include <thyme/scene/model.hpp>
 
 namespace th::vulkan {
+
 class VulkanModel {
 public:
-    explicit VulkanModel(const renderer::Model& model, const Device& device, const vk::UniqueCommandPool& commandPool);
+    VulkanModel(const scene::Model& model, const Device& device, const vk::UniqueCommandPool& commandPool);
+
+    [[nodiscard]] auto getVertexMemoryBuffer() const noexcept -> const BufferMemory& {
+        return m_vertexMemoryBuffer;
+    }
+    [[nodiscard]] auto getIndexMemoryBuffer() const noexcept -> const BufferMemory& {
+        return m_indexMemoryBuffer;
+    }
+    [[nodiscard]] auto getUniformBufferObject() const noexcept -> const UniformBufferObject<renderer::MVP>& {
+        return m_uniformBufferObject;
+    }
+    [[nodiscard]] auto getTexture() const noexcept -> const VulkanTexture& {
+        return m_texture;
+    }
+    [[nodiscard]] uint32_t getIndicesSize() const noexcept {
+        return indicesSize;
+    }
 
 private:
     BufferMemory m_vertexMemoryBuffer;
     BufferMemory m_indexMemoryBuffer;
     UniformBufferObject<renderer::MVP> m_uniformBufferObject;
     VulkanTexture m_texture;
+    uint32_t indicesSize;
 };
+
 }// namespace th::vulkan

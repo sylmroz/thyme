@@ -1,10 +1,10 @@
 #pragma once
 
 #include <thyme/export_macros.hpp>
+#include <thyme/scene/model.hpp>
+#include <thyme/platform/vulkan/vulkan_layer.hpp>
 
 #include <string>
-
-#include <thyme/platform/vulkan/vulkan_layer.hpp>
 
 namespace th {
 
@@ -15,6 +15,7 @@ public:
     void run();
 
     vulkan::VulkanLayerStack layers;
+    scene::ModelStorage modelStorage;
 };
 
-}// namespace Thyme
+}// namespace th
