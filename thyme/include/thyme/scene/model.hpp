@@ -36,17 +36,25 @@ public:
                         model.name,
                         model.mesh.vertices.size(),
                         model.mesh.indices.size());
+        if (std::find_if(m_models.begin(), m_models.end(), [&model](const Model& m) { return m.name == model.name; })
+            != m_models.end()) {
+            const auto msg = fmt::format("Model with name {} already exists", model.name);
+            TH_API_LOG_WARN(msg);
+            throw std::runtime_error(msg);
+        }
         m_models.emplace_back(model);
     }
-    // inline inline void deleteModel(const Model& model) {
-    //     m_models.erase(std::remove(m_models.begin(), m_models.end(), model), m_models.end());
-    // }
-    // inline void deleteModel(const std::string_view name) {
-    //     const auto it = std::ranges::find_if(m_models, [name](const Model& model) { return model.name == name; });
-    //     if (it != m_models.end()) {
-    //         m_models.erase(it);
-    //     }
-    // }
+
+    inline void deleteModel(const std::string_view name) {
+        const auto it = std::ranges::find_if(m_models, [name](const Model& model) { return model.name == name; });
+        if (it != m_models.end()) {
+            m_models.erase(it);
+        }
+    }
+
+    inline inline void deleteModel(const Model& model) {
+        deleteModel(model.name);
+    }
 
     [[nodiscard]] inline auto begin() noexcept {
         return m_models.begin();
@@ -86,6 +94,7 @@ public:
                 return model;
             }
         }
+        TH_API_LOG_ERROR("Model with name {} not found", name);
         throw std::runtime_error(fmt::format("Model with name {} not found", name));
     }
 
@@ -95,6 +104,7 @@ public:
                 return model;
             }
         }
+        TH_API_LOG_ERROR("Model with name {} not found", name);
         throw std::runtime_error(fmt::format("Model with name {} not found", name));
     }
 

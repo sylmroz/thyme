@@ -7,10 +7,6 @@
 #include <set>
 #include <vulkan/vulkan.hpp>
 
-
-using namespace th;
-using namespace th::vulkan;
-
 #if !defined(NDEBUG)
 PFN_vkCreateDebugUtilsMessengerEXT pfnVkCreateDebugUtilsMessengerEXT;
 PFN_vkDestroyDebugUtilsMessengerEXT pfnVkDestroyDebugUtilsMessengerEXT;
@@ -64,6 +60,8 @@ vk::DebugUtilsMessengerCreateInfoEXT createDebugUtilsMessengerCreateInfo() {
 }
 
 #endif
+
+namespace th::vulkan {
 
 static constexpr auto deviceExtensions = std::array{ vk::KHRSwapchainExtensionName };
 
@@ -200,8 +198,8 @@ auto getMaxUsableSampleCount(const vk::PhysicalDevice& device) -> vk::SampleCoun
     return vk::SampleCountFlagBits::e1;
 }
 
-std::vector<PhysicalDevice> vulkan::getPhysicalDevices(const vk::UniqueInstance& instance,
-                                                       const vk::UniqueSurfaceKHR& surface) {
+std::vector<PhysicalDevice> getPhysicalDevices(const vk::UniqueInstance& instance,
+                                               const vk::UniqueSurfaceKHR& surface) {
     static std::map<vk::PhysicalDeviceType, uint32_t> priorities = {
         { vk::PhysicalDeviceType::eOther, 0 },       { vk::PhysicalDeviceType::eCpu, 1 },
         { vk::PhysicalDeviceType::eVirtualGpu, 2 },  { vk::PhysicalDeviceType::eIntegratedGpu, 3 },
@@ -235,7 +233,7 @@ std::vector<PhysicalDevice> vulkan::getPhysicalDevices(const vk::UniqueInstance&
     return physicalDevices;
 }
 
-[[nodiscard]] vk::UniqueDevice th::vulkan::PhysicalDevice::createLogicalDevice() const {
+[[nodiscard]] vk::UniqueDevice PhysicalDevice::createLogicalDevice() const {
     const std::set indices = { queueFamilyIndices.graphicFamily.value(), queueFamilyIndices.presentFamily.value() };
     std::vector<vk::DeviceQueueCreateInfo> deviceQueueCreateInfos;
     for (const auto ind : indices) {
@@ -289,8 +287,13 @@ SwapChainData::SwapChainData(const Device& device,
     swapChain = logicalDevice->createSwapchainKHRUnique(swapChainCreateInfo);
     swapChainFrame = logicalDevice->getSwapchainImagesKHR(*swapChain)
                      | std::views::transform([&](vk::Image& image) -> SwapChainFrame {
-                           auto imageView = createImageView(
-                                   *logicalDevice, image, surfaceFormat.format, vk::ImageAspectFlagBits::eColor);
+                           auto imageView = logicalDevice->createImageViewUnique(vk::ImageViewCreateInfo(
+                                   vk::ImageViewCreateFlags(),
+                                   image,
+                                   vk::ImageViewType::e2D,
+                                   surfaceFormat.format,
+                                   vk::ComponentMapping(),
+                                   vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1)));
                            const auto attachments = std::array{ *colorImageView, *depthImageView, *imageView };
                            auto frameBuffer = logicalDevice->createFramebufferUnique(
                                    vk::FramebufferCreateInfo(vk::FramebufferCreateFlagBits(),
@@ -305,9 +308,8 @@ SwapChainData::SwapChainData(const Device& device,
 }
 
 
-auto vulkan::createRenderPass(const vk::UniqueDevice& logicalDevice, const vk::Format colorFormat,
-                              const vk::Format depthFormat, const vk::SampleCountFlagBits samples)
-        -> vk::UniqueRenderPass {
+auto createRenderPass(const vk::UniqueDevice& logicalDevice, const vk::Format colorFormat, const vk::Format depthFormat,
+                      const vk::SampleCountFlagBits samples) -> vk::UniqueRenderPass {
 
     constexpr auto colorAttachmentRef = vk::AttachmentReference(0, vk::ImageLayout::eColorAttachmentOptimal);
     constexpr auto depthAttachmentRef = vk::AttachmentReference(1, vk::ImageLayout::eDepthStencilAttachmentOptimal);
@@ -361,7 +363,7 @@ auto vulkan::createRenderPass(const vk::UniqueDevice& logicalDevice, const vk::F
             vk::RenderPassCreateFlagBits(), attachments, { subpassDescription }, { subpassDependency }));
 }
 
-auto vulkan::createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipelineCreateInfo) -> vk::UniquePipeline {
+auto createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipelineCreateInfo) -> vk::UniquePipeline {
     const auto& [logicalDevice, renderPass, pipelineLayout, samples, shaderStages] = graphicPipelineCreateInfo;
     constexpr auto dynamicStates = std::array{ vk::DynamicState::eViewport, vk::DynamicState::eScissor };
     const auto dynamicStateCreateInfo =
@@ -432,3 +434,201 @@ auto vulkan::createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipe
                                                                           0))
             .value;
 }
+
+th::vulkan::BufferMemory::BufferMemory(const Device& device, const size_t size, const vk::BufferUsageFlags usage,
+                                       const vk::MemoryPropertyFlags properties) {
+    buffer = device.logicalDevice->createBufferUnique(
+            vk::BufferCreateInfo(vk::BufferCreateFlagBits(), size, usage, vk::SharingMode::eExclusive));
+
+    vk::MemoryRequirements memoryRequirements;
+    device.logicalDevice->getBufferMemoryRequirements(*buffer, &memoryRequirements);
+
+    memory = device.logicalDevice->allocateMemoryUnique(vk::MemoryAllocateInfo(
+            memoryRequirements.size,
+            findMemoryType(device.physicalDevice, memoryRequirements.memoryTypeBits, properties)));
+
+    device.logicalDevice->bindBufferMemory(*buffer, *memory, 0);
+}
+
+void transitImageLayout(const Device& device, const vk::UniqueCommandPool& commandPool, const vk::UniqueImage& image,
+                        const vk::ImageLayout oldLayout, const vk::ImageLayout newLayout, const uint32_t mipLevels) {
+    singleTimeCommand(device, commandPool, [&](const vk::UniqueCommandBuffer& commandBuffer) {
+        const auto [barrier, srcPipelineStage, dstPipelineStage] = [&] {
+            const auto createBarrier = [&](const vk::AccessFlags srcAccessFlag, const vk::AccessFlags dstAccessFlag) {
+                return vk::ImageMemoryBarrier(
+                        srcAccessFlag,
+                        dstAccessFlag,
+                        oldLayout,
+                        newLayout,
+                        vk::QueueFamilyIgnored,
+                        vk::QueueFamilyIgnored,
+                        *image,
+                        vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, mipLevels, 0, 1));
+            };
+
+            if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal) {
+                return std::tuple(createBarrier(vk::AccessFlags(), vk::AccessFlagBits::eTransferWrite),
+                                  vk::PipelineStageFlagBits::eTopOfPipe,
+                                  vk::PipelineStageFlagBits::eTransfer);
+            }
+            if (oldLayout == vk::ImageLayout::eTransferDstOptimal
+                && newLayout == vk::ImageLayout::eShaderReadOnlyOptimal) {
+                return std::tuple(createBarrier(vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eShaderRead),
+                                  vk::PipelineStageFlagBits::eTransfer,
+                                  vk::PipelineStageFlagBits::eFragmentShader);
+            }
+            throw std::runtime_error("failed to transit image layout!");
+        }();
+        commandBuffer->pipelineBarrier(
+                srcPipelineStage, dstPipelineStage, vk::DependencyFlags(), 0, nullptr, 0, nullptr, 1, &barrier);
+    });
+}
+
+ImageMemory::ImageMemory(const Device& device, const Resolution& resolution, const vk::Format format,
+                         const vk::ImageUsageFlags imageUsageFlags, const vk::MemoryPropertyFlags memoryPropertyFlags,
+                         const vk::ImageAspectFlags aspectFlags, const vk::SampleCountFlagBits msaa,
+                         const uint32_t mipLevels) {
+    m_image = device.logicalDevice->createImageUnique(
+            vk::ImageCreateInfo(vk::ImageCreateFlags(),
+                                vk::ImageType::e2D,
+                                format,
+                                vk::Extent3D(resolution.width, resolution.height, 1),
+                                mipLevels,
+                                1,
+                                msaa,
+                                vk::ImageTiling::eOptimal,
+                                imageUsageFlags,
+                                vk::SharingMode::eExclusive));
+    vk::MemoryRequirements memoryRequirements;
+    device.logicalDevice->getImageMemoryRequirements(*m_image, &memoryRequirements);
+    m_memory = device.logicalDevice->allocateMemoryUnique(vk::MemoryAllocateInfo(
+            memoryRequirements.size,
+            findMemoryType(device.physicalDevice, memoryRequirements.memoryTypeBits, memoryPropertyFlags)));
+    device.logicalDevice->bindImageMemory(*m_image, *m_memory, 0);
+    m_imageView = device.logicalDevice->createImageViewUnique(
+            vk::ImageViewCreateInfo(vk::ImageViewCreateFlags(),
+                                    *m_image,
+                                    vk::ImageViewType::e2D,
+                                    format,
+                                    vk::ComponentMapping(),
+                                    vk::ImageSubresourceRange(aspectFlags, 0, mipLevels, 0, 1)));
+}
+
+void generateMipmaps(const Device& device, const vk::UniqueCommandPool& commandPool, const vk::UniqueImage& image,
+                     const vk::Format format, const Resolution& resolution, const uint32_t mipLevels) {
+    if (!(device.physicalDevice.getFormatProperties(format).optimalTilingFeatures
+          & vk::FormatFeatureFlagBits::eSampledImageFilterLinear)) {
+        throw std::runtime_error("Failed to generate mipmaps! Unsupported linear filtering!");
+    }
+    singleTimeCommand(device, commandPool, [&](const vk::UniqueCommandBuffer& commandBuffer) {
+        const auto getImageBarrier = [&image](const uint32_t mipLevel) -> vk::ImageMemoryBarrier {
+            return vk::ImageMemoryBarrier(
+                    vk::AccessFlagBits::eTransferWrite,
+                    vk::AccessFlagBits::eTransferRead,
+                    vk::ImageLayout::eTransferDstOptimal,
+                    vk::ImageLayout::eTransferSrcOptimal,
+                    vk::QueueFamilyIgnored,
+                    vk::QueueFamilyIgnored,
+                    *image,
+                    vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, mipLevel, 1, 0, 1));
+        };
+        const auto getImageBlit =
+                [](const uint32_t mipLevel, const int mipWidth, const int mipHeight) -> vk::ImageBlit {
+            return vk::ImageBlit(
+                    vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, mipLevel, 0, 1),
+                    std::array{ vk::Offset3D{ 0, 0, 0 }, vk::Offset3D{ mipWidth, mipHeight, 1 } },
+                    vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, mipLevel + 1, 0, 1),
+                    std::array{
+                            vk::Offset3D{ 0, 0, 0 },
+                            vk::Offset3D{ mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 } });
+        };
+        int mipWidth = static_cast<int>(resolution.width), mipHeight = static_cast<int>(resolution.height);
+        for (uint32_t mipLevel = 0; mipLevel < mipLevels - 1; ++mipLevel, mipWidth /= 2, mipHeight /= 2) {
+            auto barrier = getImageBarrier(mipLevel);
+            commandBuffer->pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
+                                           vk::PipelineStageFlagBits::eTransfer,
+                                           vk::DependencyFlags(),
+                                           {},
+                                           {},
+                                           { barrier });
+
+            const auto blit = getImageBlit(mipLevel, mipWidth, mipHeight);
+            commandBuffer->blitImage(*image,
+                                     vk::ImageLayout::eTransferSrcOptimal,
+                                     *image,
+                                     vk::ImageLayout::eTransferDstOptimal,
+                                     { blit },
+                                     vk::Filter::eLinear);
+            barrier.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
+            barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+            barrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
+            barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+            commandBuffer->pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
+                                           vk::PipelineStageFlagBits::eFragmentShader,
+                                           vk::DependencyFlags(),
+                                           {},
+                                           {},
+                                           { barrier });
+        }
+        auto barrier = getImageBarrier(mipLevels - 1);
+        barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+        barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+        barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+        barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+        commandBuffer->pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
+                                       vk::PipelineStageFlagBits::eFragmentShader,
+                                       vk::DependencyFlags(),
+                                       {},
+                                       {},
+                                       { barrier });
+    });
+}
+
+ImageMemory::ImageMemory(const Device& device, const vk::UniqueCommandPool& commandPool,
+                         const std::span<const uint8_t> data, const Resolution& resolution,
+                         const vk::SampleCountFlagBits msaa, const uint32_t mipLevels)
+    : ImageMemory(device,
+                  resolution,
+                  vk::Format::eR8G8B8A8Srgb,
+                  vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst
+                          | vk::ImageUsageFlagBits::eSampled,
+                  vk::MemoryPropertyFlagBits::eDeviceLocal,
+                  vk::ImageAspectFlagBits::eColor,
+                  msaa,
+                  mipLevels) {
+    const auto stagingMemoryBuffer =
+            BufferMemory(device,
+                         data.size(),
+                         vk::BufferUsageFlagBits::eTransferSrc,
+                         vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+    void* mappedMemory = nullptr;
+    [[maybe_unused]] const auto result = device.logicalDevice->mapMemory(
+            *stagingMemoryBuffer.getMemory(), 0, data.size(), vk::MemoryMapFlags(), &mappedMemory);
+    memcpy(mappedMemory, data.data(), data.size());
+    device.logicalDevice->unmapMemory(*stagingMemoryBuffer.getMemory());
+
+    transitImageLayout(device,
+                       commandPool,
+                       getImage(),
+                       vk::ImageLayout::eUndefined,
+                       vk::ImageLayout::eTransferDstOptimal,
+                       mipLevels);
+    copyBufferToImage(device, commandPool, stagingMemoryBuffer.getBuffer(), getImage(), resolution);
+    generateMipmaps(device, commandPool, getImage(), vk::Format::eR8G8B8A8Srgb, resolution, mipLevels);
+}
+
+auto findSupportedImageFormat(const vk::PhysicalDevice& device, const std::span<const vk::Format> formats,
+                              const vk::ImageTiling imageTiling, const vk::FormatFeatureFlags features) -> vk::Format {
+    for (const auto format : formats) {
+        const auto properties = device.getFormatProperties(format);
+        if (imageTiling == vk::ImageTiling::eLinear && (properties.linearTilingFeatures & features) == features) {
+            return format;
+        }
+        if (imageTiling == vk::ImageTiling::eOptimal && (properties.optimalTilingFeatures & features) == features) {
+            return format;
+        }
+    }
+    throw std::runtime_error("failed to find image format");
+}
+
+}// namespace th::vulkan

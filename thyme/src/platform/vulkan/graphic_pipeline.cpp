@@ -18,7 +18,7 @@ namespace th::vulkan {
 TriangleGraphicPipeline::TriangleGraphicPipeline(const Device& device, const vk::UniqueRenderPass& renderPass,
                                                  const vk::UniqueCommandPool& commandPool,
                                                  scene::ModelStorage& modelStorage, scene::Camera& camera)
-    : GraphicPipeline(), m_camera(camera) {
+    : GraphicPipeline{}, m_camera{ camera } {
 
     for (const auto& model : modelStorage) {
         m_models.emplace_back(model, device, commandPool);
@@ -68,7 +68,7 @@ TriangleGraphicPipeline::TriangleGraphicPipeline(const Device& device, const vk:
     for (const auto [descriptorSet, model] : std::views::zip(m_descriptorSets, m_models)) {
         const auto descriptorBufferInfo = model.getUniformBufferObject().getDescriptorBufferInfos();
         const auto descriptorImageInfo = vk::DescriptorImageInfo(model.getTexture().sampler.get(),
-                                                                 model.getTexture().imageMemory.imageView.get(),
+                                                                 model.getTexture().imageMemory.getImageView().get(),
                                                                  vk::ImageLayout::eShaderReadOnlyOptimal);
         const auto writeDescriptorSets = std::array{
             vk::WriteDescriptorSet(

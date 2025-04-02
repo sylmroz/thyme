@@ -46,7 +46,7 @@ private:
         const auto swapChainSupportDetails = SwapChainSupportDetails(m_device.physicalDevice, m_surface);
         m_swapChainExtent = swapChainSupportDetails.getSwapExtent(resolution);
         m_swapChainSettings = SwapChainSupportDetails(m_device.physicalDevice, m_surface).getBestSwapChainSettings();
-        m_colorImageMemory = createImageMemory(m_device,
+        m_colorImageMemory = ImageMemory(m_device,
                                                Resolution{ m_swapChainExtent.width, m_swapChainExtent.height },
                                                m_swapChainSettings.surfaceFormat.format,
                                                vk::ImageUsageFlagBits::eTransientAttachment
@@ -55,7 +55,7 @@ private:
                                                vk::ImageAspectFlagBits::eColor,
                                                m_device.maxMsaaSamples,
                                                1);
-        m_depthImage = createImageMemory(m_device,
+        m_depthImage = ImageMemory(m_device,
                                          Resolution{ m_swapChainExtent.width, m_swapChainExtent.height },
                                          findDepthFormat(m_device.physicalDevice),
                                          vk::ImageUsageFlagBits::eDepthStencilAttachment,
@@ -68,8 +68,8 @@ private:
                                         m_swapChainExtent,
                                         m_renderPass,
                                         m_surface,
-                                        m_colorImageMemory.imageView,
-                                        m_depthImage.imageView,
+                                        m_colorImageMemory.getImageView(),
+                                        m_depthImage.getImageView(),
                                         m_swapChainData.swapChain.get());
         m_camera.setResolution(glm::vec2{ resolution.width, resolution.height });
     }

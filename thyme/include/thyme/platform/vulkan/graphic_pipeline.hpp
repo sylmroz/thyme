@@ -38,8 +38,8 @@ public:
         for (const auto& [model, descriptor] : std::views::zip(m_models, m_descriptorSets)) {
             commandBuffer->bindDescriptorSets(
                     vk::PipelineBindPoint::eGraphics, m_pipelineLayout.get(), 0, { descriptor }, {});
-            commandBuffer->bindVertexBuffers(0, { model.getVertexMemoryBuffer().buffer.get() }, { 0 });
-            commandBuffer->bindIndexBuffer(model.getIndexMemoryBuffer().buffer.get(), 0, vk::IndexType::eUint32);
+            commandBuffer->bindVertexBuffers(0, { model.getVertexMemoryBuffer().getBuffer().get() }, { 0 });
+            commandBuffer->bindIndexBuffer(model.getIndexMemoryBuffer().getBuffer().get(), 0, vk::IndexType::eUint32);
             commandBuffer->drawIndexed(model.getIndicesSize(), 1, 0, 0, 0);
         }
     }
