@@ -28,6 +28,8 @@ public:
         return indicesSize;
     }
 
+    void draw(const vk::CommandBuffer commandBuffer) const noexcept;
+
 private:
     BufferMemory m_vertexMemoryBuffer;
     BufferMemory m_indexMemoryBuffer;

@@ -15,7 +15,7 @@
 
 namespace th::vulkan {
 
-TriangleGraphicPipeline::TriangleGraphicPipeline(const Device& device, const vk::UniqueRenderPass& renderPass,
+ScenePipeline::ScenePipeline(const Device& device, const vk::UniqueRenderPass& renderPass,
                                                  const vk::UniqueCommandPool& commandPool,
                                                  scene::ModelStorage& modelStorage, scene::Camera& camera)
     : GraphicPipeline{}, m_camera{ camera } {
@@ -28,6 +28,7 @@ TriangleGraphicPipeline::TriangleGraphicPipeline(const Device& device, const vk:
     constexpr auto samplerLayoutBinding = vk::DescriptorSetLayoutBinding(
             1, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eFragment);
     constexpr auto bindings = std::array{ uboBinding, samplerLayoutBinding };
+
     m_descriptorSetLayout = device.logicalDevice->createDescriptorSetLayoutUnique(
             vk::DescriptorSetLayoutCreateInfo(vk::DescriptorSetLayoutCreateFlags{}, bindings));
     m_pipelineLayout = device.logicalDevice->createPipelineLayoutUnique(
@@ -36,9 +37,10 @@ TriangleGraphicPipeline::TriangleGraphicPipeline(const Device& device, const vk:
             device.logicalDevice,
             { vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, m_models.size()),
               vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, m_models.size()) });
-    const auto m_descriptorSetLayouts = std::array{ *m_descriptorSetLayout, *m_descriptorSetLayout };
+
+    const auto descriptorSetLayouts = std::vector{ m_models.size(), *m_descriptorSetLayout };
     m_descriptorSets = device.logicalDevice->allocateDescriptorSets(
-            vk::DescriptorSetAllocateInfo(*m_descriptorPool, m_descriptorSetLayouts));
+            vk::DescriptorSetAllocateInfo(*m_descriptorPool, descriptorSetLayouts));
 
     const auto currentDir = std::filesystem::current_path();
     const auto shaderPath = currentDir / "../../../../thyme/include/thyme/platform/shaders/spv";
@@ -67,8 +69,8 @@ TriangleGraphicPipeline::TriangleGraphicPipeline(const Device& device, const vk:
 
     for (const auto [descriptorSet, model] : std::views::zip(m_descriptorSets, m_models)) {
         const auto descriptorBufferInfo = model.getUniformBufferObject().getDescriptorBufferInfos();
-        const auto descriptorImageInfo = vk::DescriptorImageInfo(model.getTexture().sampler.get(),
-                                                                 model.getTexture().imageMemory.getImageView().get(),
+        const auto descriptorImageInfo = vk::DescriptorImageInfo(model.getTexture().getSampler().get(),
+                                                                 model.getTexture().getImageView().get(),
                                                                  vk::ImageLayout::eShaderReadOnlyOptimal);
         const auto writeDescriptorSets = std::array{
             vk::WriteDescriptorSet(
@@ -80,7 +82,18 @@ TriangleGraphicPipeline::TriangleGraphicPipeline(const Device& device, const vk:
     }
 }
 
-void TriangleGraphicPipeline::updateUBO() const {
+void ScenePipeline::draw(const vk::UniqueCommandBuffer& commandBuffer) const {
+    updateUBO();
+
+    commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, *m_pipeline);
+    for (const auto& [model, descriptor] : std::views::zip(m_models, m_descriptorSets)) {
+        commandBuffer->bindDescriptorSets(
+                vk::PipelineBindPoint::eGraphics, m_pipelineLayout.get(), 0, { descriptor }, {});
+        model.draw(*commandBuffer);
+    }
+}
+
+void ScenePipeline::updateUBO() const {
     using namespace std::chrono;
     static const auto startTime = high_resolution_clock::now();
     const auto currentTime = high_resolution_clock::now();

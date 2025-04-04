@@ -335,20 +335,20 @@ public:
         [[maybe_unused]] const auto result = device.logicalDevice->mapMemory(
                 *stagingMemoryBuffer.getMemory(), 0, size, vk::MemoryMapFlags(), &mappedMemory);
         memcpy(mappedMemory, data.data(), size);
-        device.logicalDevice->unmapMemory(*stagingMemoryBuffer.memory);
+        device.logicalDevice->unmapMemory(stagingMemoryBuffer.getMemory().get());
         const auto& graphicQueue = device.logicalDevice->getQueue(device.queueFamilyIndices.graphicFamily.value(), 0);
-        copyBuffer(device.logicalDevice, commandPool, graphicQueue, stagingMemoryBuffer.getBuffer(), buffer, size);
+        copyBuffer(device.logicalDevice, commandPool, graphicQueue, stagingMemoryBuffer.getBuffer(), m_buffer, size);
     }
     [[nodiscard]] auto getBuffer() const noexcept -> const vk::UniqueBuffer& {
-        return buffer;
+        return m_buffer;
     }
     [[nodiscard]] auto getMemory() const noexcept -> const vk::UniqueDeviceMemory& {
-        return memory;
+        return m_memory;
     }
 
 private:
-    vk::UniqueBuffer buffer;
-    vk::UniqueDeviceMemory memory;
+    vk::UniqueBuffer m_buffer;
+    vk::UniqueDeviceMemory m_memory;
 };
 
 inline void transitImageLayout(const Device& device, const vk::UniqueCommandPool& commandPool,

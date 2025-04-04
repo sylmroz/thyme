@@ -41,38 +41,8 @@ public:
     static constexpr uint32_t maxFramesInFlight{ 2 };
 
 private:
-    inline void recreateSwapChain(const Resolution& resolution) {
-        m_device.logicalDevice->waitIdle();
-        const auto swapChainSupportDetails = SwapChainSupportDetails(m_device.physicalDevice, m_surface);
-        m_swapChainExtent = swapChainSupportDetails.getSwapExtent(resolution);
-        m_swapChainSettings = SwapChainSupportDetails(m_device.physicalDevice, m_surface).getBestSwapChainSettings();
-        m_colorImageMemory = ImageMemory(m_device,
-                                               Resolution{ m_swapChainExtent.width, m_swapChainExtent.height },
-                                               m_swapChainSettings.surfaceFormat.format,
-                                               vk::ImageUsageFlagBits::eTransientAttachment
-                                                       | vk::ImageUsageFlagBits::eColorAttachment,
-                                               vk::MemoryPropertyFlagBits::eDeviceLocal,
-                                               vk::ImageAspectFlagBits::eColor,
-                                               m_device.maxMsaaSamples,
-                                               1);
-        m_depthImage = ImageMemory(m_device,
-                                         Resolution{ m_swapChainExtent.width, m_swapChainExtent.height },
-                                         findDepthFormat(m_device.physicalDevice),
-                                         vk::ImageUsageFlagBits::eDepthStencilAttachment,
-                                         vk::MemoryPropertyFlagBits::eDeviceLocal,
-                                         vk::ImageAspectFlagBits::eDepth,
-                                         m_device.maxMsaaSamples,
-                                         1);
-        m_swapChainData = SwapChainData(m_device,
-                                        m_swapChainSettings,
-                                        m_swapChainExtent,
-                                        m_renderPass,
-                                        m_surface,
-                                        m_colorImageMemory.getImageView(),
-                                        m_depthImage.getImageView(),
-                                        m_swapChainData.swapChain.get());
-        m_camera.setResolution(glm::vec2{ resolution.width, resolution.height });
-    }
+    inline void recreateSwapChain(const Resolution& resolution);
+    
     inline void recreateSwapChain() {
         recreateSwapChain(m_window.getFrameBufferSize());
     }

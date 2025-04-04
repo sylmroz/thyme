@@ -4,7 +4,7 @@
 #include <imgui_impl_vulkan.h>
 #include <vulkan/vulkan.hpp>
 
-using namespace th::vulkan;
+namespace th::vulkan {
 
 VulkanRenderer::VulkanRenderer(const VulkanGlfwWindow& window, const Device& device,
                                const vk::UniqueSurfaceKHR& surface, scene::ModelStorage& modelStorage,
@@ -20,19 +20,19 @@ VulkanRenderer::VulkanRenderer(const VulkanGlfwWindow& window, const Device& dev
               m_swapChainSettings.surfaceFormat.format,
               vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment,
               vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor, m_device.maxMsaaSamples, 1)),
-      m_depthImage(ImageMemory(
-              device, Resolution{ m_swapChainExtent.width, m_swapChainExtent.height },
-              findDepthFormat(device.physicalDevice), vk::ImageUsageFlagBits::eDepthStencilAttachment,
-              vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eDepth, m_device.maxMsaaSamples, 1)),
+      m_depthImage(ImageMemory(device, Resolution{ m_swapChainExtent.width, m_swapChainExtent.height },
+                               findDepthFormat(device.physicalDevice), vk::ImageUsageFlagBits::eDepthStencilAttachment,
+                               vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eDepth,
+                               m_device.maxMsaaSamples, 1)),
       m_renderPass{ createRenderPass(device.logicalDevice, m_swapChainSettings.surfaceFormat.format,
                                      findDepthFormat(device.physicalDevice), device.maxMsaaSamples) },
       m_frameDataList{ FrameDataList(device.logicalDevice, m_commandPool, maxFramesInFlight) },
       m_swapChainData{ SwapChainData(m_device, m_swapChainSettings, m_swapChainExtent, m_renderPass, m_surface,
                                      m_colorImageMemory.getImageView(), m_depthImage.getImageView(),
                                      m_swapChainData.swapChain.get()) },
-      m_camera(camera) {
+      m_camera{ camera } {
     m_pipelines.emplace_back(
-            std::make_unique<TriangleGraphicPipeline>(device, m_renderPass, m_commandPool, modelStorage, camera));
+            std::make_unique<ScenePipeline>(device, m_renderPass, m_commandPool, modelStorage, camera));
 }
 
 void VulkanRenderer::draw() {
@@ -43,7 +43,7 @@ void VulkanRenderer::draw() {
             m_frameDataList.getNext();
     const auto& logicalDevice = m_device.logicalDevice;
     const auto& queueFamilyIndices = m_device.queueFamilyIndices;
-    if (logicalDevice->waitForFences({ *fence }, vk::True, std::numeric_limits<uint64_t>::max())
+    if (logicalDevice->waitForFences({ fence.get() }, vk::True, std::numeric_limits<uint64_t>::max())
         != vk::Result::eSuccess) {
         TH_API_LOG_ERROR("Failed to wait for a complete fence");
         throw std::runtime_error("Failed to wait for a complete fence");
@@ -90,9 +90,9 @@ void VulkanRenderer::draw() {
     ImGui::ShowDemoWindow(&showDemoWindow);
     ImGui::Render();
 
-     for (const auto& pipeline : m_pipelines) {
-         pipeline->draw(commandBuffer, m_swapChainExtent);
-     }
+    for (const auto& pipeline : m_pipelines) {
+        pipeline->draw(commandBuffer);
+    }
 
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer.get());
 
@@ -128,3 +128,38 @@ void VulkanRenderer::draw() {
         recreateSwapChain();
     }
 }
+
+inline void VulkanRenderer::recreateSwapChain(const Resolution& resolution) {
+    m_device.logicalDevice->waitIdle();
+    const auto swapChainSupportDetails = SwapChainSupportDetails(m_device.physicalDevice, m_surface);
+    m_swapChainExtent = swapChainSupportDetails.getSwapExtent(resolution);
+    m_swapChainSettings = SwapChainSupportDetails(m_device.physicalDevice, m_surface).getBestSwapChainSettings();
+    m_colorImageMemory =
+            ImageMemory(m_device,
+                        Resolution{ m_swapChainExtent.width, m_swapChainExtent.height },
+                        m_swapChainSettings.surfaceFormat.format,
+                        vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment,
+                        vk::MemoryPropertyFlagBits::eDeviceLocal,
+                        vk::ImageAspectFlagBits::eColor,
+                        m_device.maxMsaaSamples,
+                        1);
+    m_depthImage = ImageMemory(m_device,
+                               Resolution{ m_swapChainExtent.width, m_swapChainExtent.height },
+                               findDepthFormat(m_device.physicalDevice),
+                               vk::ImageUsageFlagBits::eDepthStencilAttachment,
+                               vk::MemoryPropertyFlagBits::eDeviceLocal,
+                               vk::ImageAspectFlagBits::eDepth,
+                               m_device.maxMsaaSamples,
+                               1);
+    m_swapChainData = SwapChainData(m_device,
+                                    m_swapChainSettings,
+                                    m_swapChainExtent,
+                                    m_renderPass,
+                                    m_surface,
+                                    m_colorImageMemory.getImageView(),
+                                    m_depthImage.getImageView(),
+                                    m_swapChainData.swapChain.get());
+    m_camera.setResolution(glm::vec2{ resolution.width, resolution.height });
+}
+
+}// namespace th::vulkan

@@ -35,6 +35,7 @@ public:
 
 private:
     std::vector<PhysicalDevice> m_physicalDevices;
-    std::vector<PhysicalDevice>::iterator m_selectedDevice;
+    decltype(m_physicalDevices)::iterator m_selectedDevice;
 };
+
 }// namespace th::vulkan

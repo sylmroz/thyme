@@ -21,28 +21,17 @@ public:
     GraphicPipeline& operator=(const GraphicPipeline&) = delete;
     GraphicPipeline& operator=(GraphicPipeline&&) = delete;
 
-    virtual void draw(const vk::UniqueCommandBuffer& commandBuffer, const vk::Extent2D& extend) const = 0;
+    virtual void draw(const vk::UniqueCommandBuffer& commandBuffer) const = 0;
     virtual ~GraphicPipeline() = default;
 };
 
-class TriangleGraphicPipeline final: public GraphicPipeline {
+class ScenePipeline final: public GraphicPipeline {
 public:
-    explicit TriangleGraphicPipeline(const Device& device, const vk::UniqueRenderPass& renderPass,
+    explicit ScenePipeline(const Device& device, const vk::UniqueRenderPass& renderPass,
                                      const vk::UniqueCommandPool& commandPool, scene::ModelStorage& modelStorage,
                                      scene::Camera& camera);
 
-    virtual void draw(const vk::UniqueCommandBuffer& commandBuffer, const vk::Extent2D& extend) const override {
-        updateUBO();
-
-        commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, *m_pipeline);
-        for (const auto& [model, descriptor] : std::views::zip(m_models, m_descriptorSets)) {
-            commandBuffer->bindDescriptorSets(
-                    vk::PipelineBindPoint::eGraphics, m_pipelineLayout.get(), 0, { descriptor }, {});
-            commandBuffer->bindVertexBuffers(0, { model.getVertexMemoryBuffer().getBuffer().get() }, { 0 });
-            commandBuffer->bindIndexBuffer(model.getIndexMemoryBuffer().getBuffer().get(), 0, vk::IndexType::eUint32);
-            commandBuffer->drawIndexed(model.getIndicesSize(), 1, 0, 0, 0);
-        }
-    }
+    virtual void draw(const vk::UniqueCommandBuffer& commandBuffer) const override;
 
 private:
     vk::UniquePipeline m_pipeline;

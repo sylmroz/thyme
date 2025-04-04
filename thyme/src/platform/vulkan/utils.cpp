@@ -435,19 +435,19 @@ auto createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipelineCrea
             .value;
 }
 
-th::vulkan::BufferMemory::BufferMemory(const Device& device, const size_t size, const vk::BufferUsageFlags usage,
+BufferMemory::BufferMemory(const Device& device, const size_t size, const vk::BufferUsageFlags usage,
                                        const vk::MemoryPropertyFlags properties) {
-    buffer = device.logicalDevice->createBufferUnique(
+    m_buffer = device.logicalDevice->createBufferUnique(
             vk::BufferCreateInfo(vk::BufferCreateFlagBits(), size, usage, vk::SharingMode::eExclusive));
 
     vk::MemoryRequirements memoryRequirements;
-    device.logicalDevice->getBufferMemoryRequirements(*buffer, &memoryRequirements);
+    device.logicalDevice->getBufferMemoryRequirements(*m_buffer, &memoryRequirements);
 
-    memory = device.logicalDevice->allocateMemoryUnique(vk::MemoryAllocateInfo(
+    m_memory = device.logicalDevice->allocateMemoryUnique(vk::MemoryAllocateInfo(
             memoryRequirements.size,
             findMemoryType(device.physicalDevice, memoryRequirements.memoryTypeBits, properties)));
 
-    device.logicalDevice->bindBufferMemory(*buffer, *memory, 0);
+    device.logicalDevice->bindBufferMemory(*m_buffer, *m_memory, 0);
 }
 
 void transitImageLayout(const Device& device, const vk::UniqueCommandPool& commandPool, const vk::UniqueImage& image,

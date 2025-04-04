@@ -4,8 +4,9 @@
 #include <filesystem>
 #include <fstream>
 
+namespace th {
 
-std::vector<char> th::readFile(const std::filesystem::path& filePath) {
+std::vector<char> readFile(const std::filesystem::path& filePath) {
     const auto fileName = filePath.filename().string();
     TH_API_LOG_INFO("Reading from file {}", fileName);
     std::ifstream file(filePath, std::ios::binary | std::ios::ate);
@@ -20,3 +21,5 @@ std::vector<char> th::readFile(const std::filesystem::path& filePath) {
     file.close();
     return buffer;
 }
+
+}// namespace th

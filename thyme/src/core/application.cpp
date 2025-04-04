@@ -8,7 +8,7 @@
 
 #include <spdlog/spdlog.h>
 
-using namespace th;
+namespace th {
 
 template <typename... Context>
 // requires(std::is_base_of_v<PlatformContext, Context>)
@@ -33,3 +33,5 @@ void Application::run() {
         TH_API_LOG_ERROR("Unknown exception thrown");
     }
 }
+
+}// namespace th
