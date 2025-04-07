@@ -9,7 +9,7 @@ namespace th::vulkan {
 
 class VulkanTexture {
 public:
-    VulkanTexture(const Device& device, const vk::UniqueCommandPool& commandPool, const Texture& texture);
+    VulkanTexture(const Device& device, const vk::CommandPool commandPool, const Texture& texture);
 
     [[nodiscard]] auto getImage() const noexcept -> const vk::UniqueImage& {
         return m_imageMemory.getImage();

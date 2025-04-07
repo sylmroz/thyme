@@ -10,7 +10,7 @@ namespace th::vulkan {
 
 class VulkanModel {
 public:
-    VulkanModel(const scene::Model& model, const Device& device, const vk::UniqueCommandPool& commandPool);
+    VulkanModel(const scene::Model& model, const Device& device, const vk::CommandPool commandPool);
 
     [[nodiscard]] auto getVertexMemoryBuffer() const noexcept -> const BufferMemory& {
         return m_vertexMemoryBuffer;

@@ -21,17 +21,16 @@ public:
     GraphicPipeline& operator=(const GraphicPipeline&) = delete;
     GraphicPipeline& operator=(GraphicPipeline&&) = delete;
 
-    virtual void draw(const vk::UniqueCommandBuffer& commandBuffer) const = 0;
+    virtual void draw(const vk::CommandBuffer commandBuffer) const = 0;
     virtual ~GraphicPipeline() = default;
 };
 
 class ScenePipeline final: public GraphicPipeline {
 public:
-    explicit ScenePipeline(const Device& device, const vk::UniqueRenderPass& renderPass,
-                                     const vk::UniqueCommandPool& commandPool, scene::ModelStorage& modelStorage,
-                                     scene::Camera& camera);
+    explicit ScenePipeline(const Device& device, const vk::RenderPass renderPass, const vk::CommandPool commandPool,
+                           scene::ModelStorage& modelStorage, scene::Camera& camera);
 
-    virtual void draw(const vk::UniqueCommandBuffer& commandBuffer) const override;
+    virtual void draw(const vk::CommandBuffer commandBuffer) const override;
 
 private:
     vk::UniquePipeline m_pipeline;

@@ -2,7 +2,7 @@
 
 namespace th::vulkan {
 
-VulkanTexture::VulkanTexture(const Device& device, const vk::UniqueCommandPool& commandPool, const Texture& texture)
+VulkanTexture::VulkanTexture(const Device& device, const vk::CommandPool commandPool, const Texture& texture)
     : m_imageMemory{ ImageMemory(device,
                                commandPool,
                                texture.getData(),

@@ -15,9 +15,8 @@
 
 namespace th::vulkan {
 
-ScenePipeline::ScenePipeline(const Device& device, const vk::UniqueRenderPass& renderPass,
-                                                 const vk::UniqueCommandPool& commandPool,
-                                                 scene::ModelStorage& modelStorage, scene::Camera& camera)
+ScenePipeline::ScenePipeline(const Device& device, const vk::RenderPass renderPass, const vk::CommandPool commandPool,
+                             scene::ModelStorage& modelStorage, scene::Camera& camera)
     : GraphicPipeline{}, m_camera{ camera } {
 
     for (const auto& model : modelStorage) {
@@ -32,15 +31,15 @@ ScenePipeline::ScenePipeline(const Device& device, const vk::UniqueRenderPass& r
     m_descriptorSetLayout = device.logicalDevice->createDescriptorSetLayoutUnique(
             vk::DescriptorSetLayoutCreateInfo(vk::DescriptorSetLayoutCreateFlags{}, bindings));
     m_pipelineLayout = device.logicalDevice->createPipelineLayoutUnique(
-            vk::PipelineLayoutCreateInfo(vk::PipelineLayoutCreateFlags(), 1, &(*m_descriptorSetLayout)));
+            vk::PipelineLayoutCreateInfo(vk::PipelineLayoutCreateFlags(), 1, &(m_descriptorSetLayout.get())));
     m_descriptorPool = createDescriptorPool(
-            device.logicalDevice,
+            device.logicalDevice.get(),
             { vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, m_models.size()),
               vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, m_models.size()) });
 
-    const auto descriptorSetLayouts = std::vector{ m_models.size(), *m_descriptorSetLayout };
+    const auto descriptorSetLayouts = std::vector{ m_models.size(), m_descriptorSetLayout.get() };
     m_descriptorSets = device.logicalDevice->allocateDescriptorSets(
-            vk::DescriptorSetAllocateInfo(*m_descriptorPool, descriptorSetLayouts));
+            vk::DescriptorSetAllocateInfo(m_descriptorPool.get(), descriptorSetLayouts));
 
     const auto currentDir = std::filesystem::current_path();
     const auto shaderPath = currentDir / "../../../../thyme/include/thyme/platform/shaders/spv";
@@ -61,9 +60,9 @@ ScenePipeline::ScenePipeline(const Device& device, const vk::UniqueRenderPass& r
                                                                            "main");
     const auto shaderStages = std::vector{ vertexShaderStageInfo, fragmentShaderStageInfo };
 
-    m_pipeline = createGraphicsPipeline(GraphicPipelineCreateInfo{ .logicalDevice = device.logicalDevice,
+    m_pipeline = createGraphicsPipeline(GraphicPipelineCreateInfo{ .logicalDevice = device.logicalDevice.get(),
                                                                    .renderPass = renderPass,
-                                                                   .pipelineLayout = m_pipelineLayout,
+                                                                   .pipelineLayout = m_pipelineLayout.get(),
                                                                    .samples = device.maxMsaaSamples,
                                                                    .shaderStages = shaderStages });
 
@@ -82,14 +81,14 @@ ScenePipeline::ScenePipeline(const Device& device, const vk::UniqueRenderPass& r
     }
 }
 
-void ScenePipeline::draw(const vk::UniqueCommandBuffer& commandBuffer) const {
+void ScenePipeline::draw(const vk::CommandBuffer commandBuffer) const {
     updateUBO();
 
-    commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, *m_pipeline);
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline.get());
     for (const auto& [model, descriptor] : std::views::zip(m_models, m_descriptorSets)) {
-        commandBuffer->bindDescriptorSets(
+        commandBuffer.bindDescriptorSets(
                 vk::PipelineBindPoint::eGraphics, m_pipelineLayout.get(), 0, { descriptor }, {});
-        model.draw(*commandBuffer);
+        model.draw(commandBuffer);
     }
 }
 

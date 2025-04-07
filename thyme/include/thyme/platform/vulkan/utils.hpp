@@ -34,7 +34,7 @@ private:
 
 // TODO - the class should support more queue family flags like eSparseBinding
 struct QueueFamilyIndices {
-    explicit QueueFamilyIndices(const vk::PhysicalDevice& device, const vk::SurfaceKHR& surface) noexcept;
+    explicit QueueFamilyIndices(const vk::PhysicalDevice& device, const vk::SurfaceKHR surface) noexcept;
 
     std::optional<uint32_t> graphicFamily;
     std::optional<uint32_t> presentFamily;
@@ -52,7 +52,7 @@ struct SwapChainSettings {
 
 class SwapChainSupportDetails {
 public:
-    explicit SwapChainSupportDetails(const vk::PhysicalDevice& device, const vk::UniqueSurfaceKHR& surface);
+    explicit SwapChainSupportDetails(const vk::PhysicalDevice& device, const vk::SurfaceKHR surface);
 
     vk::SurfaceCapabilitiesKHR capabilities;
     std::vector<vk::SurfaceFormatKHR> formats;
@@ -142,7 +142,7 @@ struct Device {
     }
 };
 
-std::vector<PhysicalDevice> getPhysicalDevices(const vk::UniqueInstance& instance, const vk::UniqueSurfaceKHR& surface);
+std::vector<PhysicalDevice> getPhysicalDevices(const vk::UniqueInstance& instance, const vk::SurfaceKHR surface);
 
 struct SwapChainFrame {
     vk::Image image;
@@ -153,9 +153,9 @@ struct SwapChainFrame {
 class SwapChainData {
 public:
     explicit SwapChainData(const Device& device, const SwapChainSettings& swapChainSettings,
-                           const vk::Extent2D& swapChainExtent, const vk::UniqueRenderPass& renderPass,
-                           const vk::UniqueSurfaceKHR& surface, const vk::UniqueImageView& colorImageView,
-                           const vk::UniqueImageView& depthImageView, const vk::SwapchainKHR& oldSwapChain = {});
+                           const vk::Extent2D& swapChainExtent, const vk::RenderPass renderPass,
+                           const vk::SurfaceKHR surface, const vk::ImageView colorImageView,
+                           const vk::ImageView depthImageView, const vk::SwapchainKHR oldSwapChain = {});
 
     vk::UniqueSwapchainKHR swapChain;
     std::vector<SwapChainFrame> swapChainFrame;
@@ -169,32 +169,10 @@ struct FrameData {
     uint32_t currentFrame;
 };
 
-[[nodiscard]] inline auto createFrameDataList(const vk::UniqueDevice& logicalDevice,
-                                              const vk::UniqueCommandPool& commandPool,
-                                              const uint32_t maxFrames) noexcept -> std::vector<FrameData> {
-    std::vector<FrameData> frameDataList;
-    frameDataList.reserve(maxFrames);
-    for (uint32_t i = 0; i < maxFrames; i++) {
-        frameDataList.emplace_back(FrameData{
-                .commandBuffer = std::move(logicalDevice
-                                                   ->allocateCommandBuffersUnique(vk::CommandBufferAllocateInfo(
-                                                           *commandPool, vk::CommandBufferLevel::ePrimary, 1))
-                                                   .front()),
-                .imageAvailableSemaphore = logicalDevice->createSemaphoreUnique(vk::SemaphoreCreateInfo()),
-                .renderFinishedSemaphore = logicalDevice->createSemaphoreUnique(vk::SemaphoreCreateInfo()),
-                .fence = logicalDevice->createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled)),
-                .currentFrame = i,
-        });
-    }
-    return frameDataList;
-}
-
 class FrameDataList {
 public:
-    explicit FrameDataList(const vk::UniqueDevice& logicalDevice, const vk::UniqueCommandPool& commandPool,
-                           const uint32_t maxFrames) noexcept {
-        m_frameDataList = createFrameDataList(logicalDevice, commandPool, maxFrames);
-    }
+    explicit FrameDataList(const vk::Device logicalDevice, const vk::CommandPool commandPool,
+                           const uint32_t maxFrames) noexcept;
 
     [[nodiscard]] auto getNext() noexcept -> const FrameData& {
         const auto index = getNextFrameIndex();
@@ -213,14 +191,14 @@ private:
     };
 };
 
-[[nodiscard]] auto createRenderPass(const vk::UniqueDevice& logicalDevice, const vk::Format colorFormat,
+[[nodiscard]] auto createRenderPass(const vk::Device logicalDevice, const vk::Format colorFormat,
                                     const vk::Format depthFormat, const vk::SampleCountFlagBits samples)
         -> vk::UniqueRenderPass;
 
 struct GraphicPipelineCreateInfo {
-    const vk::UniqueDevice& logicalDevice;
-    const vk::UniqueRenderPass& renderPass;
-    const vk::UniquePipelineLayout& pipelineLayout;
+    vk::Device logicalDevice;
+    vk::RenderPass renderPass;
+    vk::PipelineLayout pipelineLayout;
     vk::SampleCountFlagBits samples;
     const std::vector<vk::PipelineShaderStageCreateInfo>& shaderStages;
 };
@@ -228,7 +206,7 @@ struct GraphicPipelineCreateInfo {
 [[nodiscard]] auto createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipelineCreateInfo)
         -> vk::UniquePipeline;
 
-[[nodiscard]] inline auto createDescriptorPool(const vk::UniqueDevice& device,
+[[nodiscard]] inline auto createDescriptorPool(const vk::Device& device,
                                                const std::vector<vk::DescriptorPoolSize>& descriptorSizes)
         -> vk::UniqueDescriptorPool {
     const auto maxSet = std::accumulate(std::begin(descriptorSizes),
@@ -238,45 +216,45 @@ struct GraphicPipelineCreateInfo {
                                             return sum + descriptorPoolSize.descriptorCount;
                                         });
 
-    return device->createDescriptorPoolUnique(
+    return device.createDescriptorPoolUnique(
             vk::DescriptorPoolCreateInfo(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
                                          maxSet,
                                          static_cast<uint32_t>(descriptorSizes.size()),
                                          descriptorSizes.data()));
 }
+
 // TODO - can it be done much better??
 template <typename F, typename... Args>
-    requires(std::invocable<F, const vk::UniqueCommandBuffer&, Args...>)
-void singleTimeCommand(const vk::UniqueCommandBuffer& commandBuffer, const vk::Queue& graphicQueue, F fun,
-                       Args... args) {
-    commandBuffer->begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
+    requires(std::invocable<F, const vk::CommandBuffer, Args...>)
+void singleTimeCommand(const vk::CommandBuffer commandBuffer, const vk::Queue graphicQueue, F fun, Args... args) {
+    commandBuffer.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
     fun(commandBuffer, args...);
-    commandBuffer->end();
-    graphicQueue.submit(vk::SubmitInfo({}, {}, { commandBuffer.get() }), nullptr);
+    commandBuffer.end();
+    graphicQueue.submit(vk::SubmitInfo({}, {}, { commandBuffer }), nullptr);
     graphicQueue.waitIdle();
 }
 
 template <typename F, typename... Args>
-    requires(std::invocable<F, const vk::UniqueCommandBuffer&, Args...>)
-void singleTimeCommand(const vk::UniqueDevice& device, const vk::UniqueCommandPool& commandPool,
-                       const vk::Queue& graphicQueue, F fun, Args... args) {
-    auto commandBuffer = std::move(
-            device->allocateCommandBuffersUnique(
-                          vk::CommandBufferAllocateInfo(commandPool.get(), vk::CommandBufferLevel::ePrimary, 1))
-                    .front());
-    singleTimeCommand(commandBuffer, graphicQueue, fun, args...);
+    requires(std::invocable<F, const vk::CommandBuffer, Args...>)
+void singleTimeCommand(const vk::Device& device, const vk::CommandPool commandPool, const vk::Queue graphicQueue, F fun,
+                       Args... args) {
+    const auto commandBuffer =
+            std::move(device.allocateCommandBuffersUnique(
+                                    vk::CommandBufferAllocateInfo(commandPool, vk::CommandBufferLevel::ePrimary, 1))
+                              .front());
+    singleTimeCommand(commandBuffer.get(), graphicQueue, fun, args...);
 }
 
 template <typename F, typename... Args>
-    requires(std::invocable<F, const vk::UniqueCommandBuffer&, Args...>)
-void singleTimeCommand(const Device& device, const vk::UniqueCommandPool& commandPool, F fun, Args... args) {
+    requires(std::invocable<F, const vk::CommandBuffer, Args...>)
+void singleTimeCommand(const Device& device, const vk::CommandPool commandPool, F fun, Args... args) {
 
-    auto commandBuffer = std::move(device.logicalDevice
-                                           ->allocateCommandBuffersUnique(vk::CommandBufferAllocateInfo(
-                                                   commandPool.get(), vk::CommandBufferLevel::ePrimary, 1))
-                                           .front());
+    const auto commandBuffer = std::move(device.logicalDevice
+                                                 ->allocateCommandBuffersUnique(vk::CommandBufferAllocateInfo(
+                                                         commandPool, vk::CommandBufferLevel::ePrimary, 1))
+                                                 .front());
     const auto graphicQueue = device.getGraphicQueue();
-    singleTimeCommand(commandBuffer, graphicQueue, fun, args...);
+    singleTimeCommand(commandBuffer.get(), graphicQueue, fun, args...);
 }
 
 static constexpr auto getBindingDescription() -> vk::VertexInputBindingDescription {
@@ -304,11 +282,10 @@ static constexpr auto getAttributeDescriptions() -> std::array<vk::VertexInputAt
     throw std::runtime_error("failed to find suitable memory type!");
 }
 
-inline void copyBuffer(const vk::UniqueDevice& device, const vk::UniqueCommandPool& commandPool,
-                       const vk::Queue& graphicQueue, const vk::UniqueBuffer& srcBuffer,
-                       const vk::UniqueBuffer& dstBuffer, const size_t size) {
-    singleTimeCommand(device, commandPool, graphicQueue, [&](const vk::UniqueCommandBuffer& commandBuffer) {
-        commandBuffer->copyBuffer(*srcBuffer, *dstBuffer, { vk::BufferCopy(0, 0, size) });
+inline void copyBuffer(const vk::Device device, const vk::CommandPool commandPool, const vk::Queue graphicQueue,
+                       const vk::Buffer srcBuffer, const vk::Buffer dstBuffer, const size_t size) {
+    singleTimeCommand(device, commandPool, graphicQueue, [&](const vk::CommandBuffer& commandBuffer) {
+        commandBuffer.copyBuffer(srcBuffer, dstBuffer, { vk::BufferCopy(0, 0, size) });
     });
 }
 
@@ -319,7 +296,7 @@ public:
                  const vk::MemoryPropertyFlags properties);
 
     template <typename Vec>
-    BufferMemory(const Device& device, const vk::UniqueCommandPool& commandPool, const Vec& data,
+    BufferMemory(const Device& device, const vk::CommandPool commandPool, const Vec& data,
                  const vk::BufferUsageFlags usage)
         : BufferMemory(device, data.size() * sizeof(data[0]), vk::BufferUsageFlagBits::eTransferDst | usage,
                        vk::MemoryPropertyFlagBits::eDeviceLocal) {
@@ -333,11 +310,11 @@ public:
 
         void* mappedMemory = nullptr;
         [[maybe_unused]] const auto result = device.logicalDevice->mapMemory(
-                *stagingMemoryBuffer.getMemory(), 0, size, vk::MemoryMapFlags(), &mappedMemory);
+                stagingMemoryBuffer.getMemory().get(), 0, size, vk::MemoryMapFlags(), &mappedMemory);
         memcpy(mappedMemory, data.data(), size);
         device.logicalDevice->unmapMemory(stagingMemoryBuffer.getMemory().get());
         const auto& graphicQueue = device.logicalDevice->getQueue(device.queueFamilyIndices.graphicFamily.value(), 0);
-        copyBuffer(device.logicalDevice, commandPool, graphicQueue, stagingMemoryBuffer.getBuffer(), m_buffer, size);
+        copyBuffer(device.logicalDevice.get(), commandPool, graphicQueue, stagingMemoryBuffer.getBuffer().get(), m_buffer.get(), size);
     }
     [[nodiscard]] auto getBuffer() const noexcept -> const vk::UniqueBuffer& {
         return m_buffer;
@@ -351,32 +328,31 @@ private:
     vk::UniqueDeviceMemory m_memory;
 };
 
-inline void transitImageLayout(const Device& device, const vk::UniqueCommandPool& commandPool,
-                               const vk::UniqueImage& image, const vk::ImageLayout oldLayout,
+inline void transitImageLayout(const Device& device, const vk::CommandPool commandPool,
+                               const vk::Image image, const vk::ImageLayout oldLayout,
                                const vk::ImageLayout newLayout, const uint32_t mipLevels);
 
-inline void copyBufferToImage(const Device& device, const vk::UniqueCommandPool& commandPool,
-                              const vk::UniqueBuffer& buffer, const vk::UniqueImage& image,
-                              const Resolution& resolution) {
-    singleTimeCommand(device, commandPool, [&](const vk::UniqueCommandBuffer& commandBuffer) {
+inline void copyBufferToImage(const Device& device, const vk::CommandPool commandPool, const vk::Buffer buffer,
+                              const vk::Image image, const Resolution resolution) {
+    singleTimeCommand(device, commandPool, [&](const vk::CommandBuffer commandBuffer) {
         const auto region = vk::BufferImageCopy(0,
                                                 0,
                                                 0,
                                                 vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1),
                                                 vk::Offset3D(0, 0, 0),
                                                 vk::Extent3D(resolution.width, resolution.height, 1));
-        commandBuffer->copyBufferToImage(*buffer, *image, vk::ImageLayout::eTransferDstOptimal, region);
+        commandBuffer.copyBufferToImage(buffer, image, vk::ImageLayout::eTransferDstOptimal, region);
     });
 }
 
 class ImageMemory {
 public:
-    ImageMemory(const Device& device, const Resolution& resolution, const vk::Format format,
+    ImageMemory(const Device& device, const Resolution resolution, const vk::Format format,
                 const vk::ImageUsageFlags imageUsageFlags, const vk::MemoryPropertyFlags memoryPropertyFlags,
                 const vk::ImageAspectFlags aspectFlags, const vk::SampleCountFlagBits msaa, const uint32_t mipLevels);
 
-    ImageMemory(const Device& device, const vk::UniqueCommandPool& commandPool, const std::span<const uint8_t> data,
-                const Resolution& resolution, const vk::SampleCountFlagBits msaa, const uint32_t mipLevels = 1);
+    ImageMemory(const Device& device, const vk::CommandPool commandPool, const std::span<const uint8_t> data,
+                const Resolution resolution, const vk::SampleCountFlagBits msaa, const uint32_t mipLevels = 1);
 
     [[nodiscard]] auto getImage() const noexcept -> const vk::UniqueImage& {
         return m_image;
@@ -396,8 +372,8 @@ private:
     vk::UniqueImageView m_imageView;
 };
 
-void generateMipmaps(const Device& device, const vk::UniqueCommandPool& commandPool, const vk::UniqueImage& image,
-                     const vk::Format format, const Resolution& resolution, const uint32_t mipLevels);
+void generateMipmaps(const Device& device, const vk::CommandPool commandPool, const vk::Image image,
+                     const vk::Format format, const Resolution resolution, const uint32_t mipLevels);
 
 [[nodiscard]] inline auto createImageSampler(const Device& device, const uint32_t mipLevels) noexcept
         -> vk::UniqueSampler {

@@ -147,7 +147,7 @@ void UniqueInstance::setupDebugMessenger(const std::vector<const char*>& extensi
 }
 #endif
 
-QueueFamilyIndices::QueueFamilyIndices(const vk::PhysicalDevice& device, const vk::SurfaceKHR& surface) noexcept {
+QueueFamilyIndices::QueueFamilyIndices(const vk::PhysicalDevice& device, const vk::SurfaceKHR surface) noexcept {
     const auto& queueFamilies = device.getQueueFamilyProperties2();
     for (uint32_t i{ 0 }; i < queueFamilies.size(); i++) {
         const auto& queueFamily = queueFamilies[i];
@@ -167,11 +167,10 @@ QueueFamilyIndices::QueueFamilyIndices(const vk::PhysicalDevice& device, const v
     }
 }
 
-SwapChainSupportDetails::SwapChainSupportDetails(const vk::PhysicalDevice& device,
-                                                 const vk::UniqueSurfaceKHR& surface) {
-    capabilities = device.getSurfaceCapabilitiesKHR(*surface);
-    formats = device.getSurfaceFormatsKHR(*surface);
-    presentModes = device.getSurfacePresentModesKHR(*surface);
+SwapChainSupportDetails::SwapChainSupportDetails(const vk::PhysicalDevice& device, const vk::SurfaceKHR surface) {
+    capabilities = device.getSurfaceCapabilitiesKHR(surface);
+    formats = device.getSurfaceFormatsKHR(surface);
+    presentModes = device.getSurfacePresentModesKHR(surface);
 }
 
 auto getMaxUsableSampleCount(const vk::PhysicalDevice& device) -> vk::SampleCountFlagBits {
@@ -198,8 +197,7 @@ auto getMaxUsableSampleCount(const vk::PhysicalDevice& device) -> vk::SampleCoun
     return vk::SampleCountFlagBits::e1;
 }
 
-std::vector<PhysicalDevice> getPhysicalDevices(const vk::UniqueInstance& instance,
-                                               const vk::UniqueSurfaceKHR& surface) {
+std::vector<PhysicalDevice> getPhysicalDevices(const vk::UniqueInstance& instance, const vk::SurfaceKHR surface) {
     static std::map<vk::PhysicalDeviceType, uint32_t> priorities = {
         { vk::PhysicalDeviceType::eOther, 0 },       { vk::PhysicalDeviceType::eCpu, 1 },
         { vk::PhysicalDeviceType::eVirtualGpu, 2 },  { vk::PhysicalDeviceType::eIntegratedGpu, 3 },
@@ -208,7 +206,7 @@ std::vector<PhysicalDevice> getPhysicalDevices(const vk::UniqueInstance& instanc
 
     std::vector<PhysicalDevice> physicalDevices;
     for (const auto& device : instance->enumeratePhysicalDevices()) {
-        const auto queueFamilyIndex = QueueFamilyIndices(device, *surface);
+        const auto queueFamilyIndex = QueueFamilyIndices(device, surface);
         const auto deviceSupportExtensions = deviceHasAllRequiredExtensions(device);
         const auto swapChainSupportDetails = SwapChainSupportDetails(device, surface);
         const auto maxMsaaSamples = getMaxUsableSampleCount(device);
@@ -249,11 +247,11 @@ std::vector<PhysicalDevice> getPhysicalDevices(const vk::UniqueInstance& instanc
 SwapChainData::SwapChainData(const Device& device,
                              const SwapChainSettings& swapChainSettings,
                              const vk::Extent2D& swapChainExtent,
-                             const vk::UniqueRenderPass& renderPass,
-                             const vk::UniqueSurfaceKHR& surface,
-                             const vk::UniqueImageView& colorImageView,
-                             const vk::UniqueImageView& depthImageView,
-                             const vk::SwapchainKHR& oldSwapChain) {
+                             const vk::RenderPass renderPass,
+                             const vk::SurfaceKHR surface,
+                             const vk::ImageView colorImageView,
+                             const vk::ImageView depthImageView,
+                             const vk::SwapchainKHR oldSwapChain) {
     const auto& [surfaceFormat, presetMode, imageCount] = swapChainSettings;
     [[maybe_unused]] const auto& [physicalDevice,
                                   logicalDevice,
@@ -262,7 +260,7 @@ SwapChainData::SwapChainData(const Device& device,
                                   maxMsaaSamples] = device;
     const auto swapChainCreateInfo = [&] {
         auto info = vk::SwapchainCreateInfoKHR(vk::SwapchainCreateFlagsKHR(),
-                                               *surface,
+                                               surface,
                                                imageCount,
                                                surfaceFormat.format,
                                                surfaceFormat.colorSpace,
@@ -273,8 +271,9 @@ SwapChainData::SwapChainData(const Device& device,
         info.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
         info.presentMode = presetMode;
         info.clipped = vk::True;
-        const auto indices = { queueFamilyIndices.graphicFamily.value(), queueFamilyIndices.presentFamily.value() };
         if (queueFamilyIndices.graphicFamily.value() != queueFamilyIndices.presentFamily.value()) {
+            const auto indices =
+                    std::array{ queueFamilyIndices.graphicFamily.value(), queueFamilyIndices.presentFamily.value() };
             info.imageSharingMode = vk::SharingMode::eConcurrent;
             info.setQueueFamilyIndices(indices);
         } else {
@@ -285,7 +284,7 @@ SwapChainData::SwapChainData(const Device& device,
     }();
 
     swapChain = logicalDevice->createSwapchainKHRUnique(swapChainCreateInfo);
-    swapChainFrame = logicalDevice->getSwapchainImagesKHR(*swapChain)
+    swapChainFrame = logicalDevice->getSwapchainImagesKHR(swapChain.get())
                      | std::views::transform([&](vk::Image& image) -> SwapChainFrame {
                            auto imageView = logicalDevice->createImageViewUnique(vk::ImageViewCreateInfo(
                                    vk::ImageViewCreateFlags(),
@@ -294,10 +293,10 @@ SwapChainData::SwapChainData(const Device& device,
                                    surfaceFormat.format,
                                    vk::ComponentMapping(),
                                    vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1)));
-                           const auto attachments = std::array{ *colorImageView, *depthImageView, *imageView };
+                           const auto attachments = std::array{ colorImageView, depthImageView, imageView.get() };
                            auto frameBuffer = logicalDevice->createFramebufferUnique(
                                    vk::FramebufferCreateInfo(vk::FramebufferCreateFlagBits(),
-                                                             *renderPass,
+                                                             renderPass,
                                                              attachments,
                                                              swapChainExtent.width,
                                                              swapChainExtent.height,
@@ -308,9 +307,25 @@ SwapChainData::SwapChainData(const Device& device,
 }
 
 
-auto createRenderPass(const vk::UniqueDevice& logicalDevice, const vk::Format colorFormat, const vk::Format depthFormat,
-                      const vk::SampleCountFlagBits samples) -> vk::UniqueRenderPass {
+FrameDataList::FrameDataList(const vk::Device logicalDevice, const vk::CommandPool commandPool,
+                             const uint32_t maxFrames) noexcept {
+    m_frameDataList.reserve(maxFrames);
+    for (uint32_t i = 0; i < maxFrames; i++) {
+        m_frameDataList.emplace_back(FrameData{
+                .commandBuffer = std::move(logicalDevice
+                                                   .allocateCommandBuffersUnique(vk::CommandBufferAllocateInfo(
+                                                           commandPool, vk::CommandBufferLevel::ePrimary, 1))
+                                                   .front()),
+                .imageAvailableSemaphore = logicalDevice.createSemaphoreUnique(vk::SemaphoreCreateInfo()),
+                .renderFinishedSemaphore = logicalDevice.createSemaphoreUnique(vk::SemaphoreCreateInfo()),
+                .fence = logicalDevice.createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled)),
+                .currentFrame = i,
+        });
+    }
+}
 
+auto createRenderPass(const vk::Device logicalDevice, const vk::Format colorFormat, const vk::Format depthFormat,
+                      const vk::SampleCountFlagBits samples) -> vk::UniqueRenderPass {
     constexpr auto colorAttachmentRef = vk::AttachmentReference(0, vk::ImageLayout::eColorAttachmentOptimal);
     constexpr auto depthAttachmentRef = vk::AttachmentReference(1, vk::ImageLayout::eDepthStencilAttachmentOptimal);
     constexpr auto colorAttachmentResolveRef = vk::AttachmentReference(2, vk::ImageLayout::eColorAttachmentOptimal);
@@ -359,7 +374,7 @@ auto createRenderPass(const vk::UniqueDevice& logicalDevice, const vk::Format co
                                                                   vk::ImageLayout::ePresentSrcKHR);
 
     const auto attachments = std::array{ colorAttachment, depthAttachment, colorAttachmentResolve };
-    return logicalDevice->createRenderPassUnique(vk::RenderPassCreateInfo(
+    return logicalDevice.createRenderPassUnique(vk::RenderPassCreateInfo(
             vk::RenderPassCreateFlagBits(), attachments, { subpassDescription }, { subpassDependency }));
 }
 
@@ -417,7 +432,7 @@ auto createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipelineCrea
                                                     0.0f,
                                                     1.0f);
     return logicalDevice
-            ->createGraphicsPipelineUnique({},
+            .createGraphicsPipelineUnique({},
                                            vk::GraphicsPipelineCreateInfo(vk::PipelineCreateFlagBits(),
                                                                           shaderStages,
                                                                           &vertexInputStateCreateInfo,
@@ -429,30 +444,30 @@ auto createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipelineCrea
                                                                           &deptStencilStateCreateInfo,
                                                                           &colorBlendStateCreateInfo,
                                                                           &dynamicStateCreateInfo,
-                                                                          *pipelineLayout,
-                                                                          *renderPass,
+                                                                          pipelineLayout,
+                                                                          renderPass,
                                                                           0))
             .value;
 }
 
 BufferMemory::BufferMemory(const Device& device, const size_t size, const vk::BufferUsageFlags usage,
-                                       const vk::MemoryPropertyFlags properties) {
+                           const vk::MemoryPropertyFlags properties) {
     m_buffer = device.logicalDevice->createBufferUnique(
             vk::BufferCreateInfo(vk::BufferCreateFlagBits(), size, usage, vk::SharingMode::eExclusive));
 
     vk::MemoryRequirements memoryRequirements;
-    device.logicalDevice->getBufferMemoryRequirements(*m_buffer, &memoryRequirements);
+    device.logicalDevice->getBufferMemoryRequirements(m_buffer.get(), &memoryRequirements);
 
     m_memory = device.logicalDevice->allocateMemoryUnique(vk::MemoryAllocateInfo(
             memoryRequirements.size,
             findMemoryType(device.physicalDevice, memoryRequirements.memoryTypeBits, properties)));
 
-    device.logicalDevice->bindBufferMemory(*m_buffer, *m_memory, 0);
+    device.logicalDevice->bindBufferMemory(m_buffer.get(), m_memory.get(), 0);
 }
 
-void transitImageLayout(const Device& device, const vk::UniqueCommandPool& commandPool, const vk::UniqueImage& image,
+void transitImageLayout(const Device& device, const vk::CommandPool commandPool, const vk::Image image,
                         const vk::ImageLayout oldLayout, const vk::ImageLayout newLayout, const uint32_t mipLevels) {
-    singleTimeCommand(device, commandPool, [&](const vk::UniqueCommandBuffer& commandBuffer) {
+    singleTimeCommand(device, commandPool, [&](const vk::CommandBuffer commandBuffer) {
         const auto [barrier, srcPipelineStage, dstPipelineStage] = [&] {
             const auto createBarrier = [&](const vk::AccessFlags srcAccessFlag, const vk::AccessFlags dstAccessFlag) {
                 return vk::ImageMemoryBarrier(
@@ -462,7 +477,7 @@ void transitImageLayout(const Device& device, const vk::UniqueCommandPool& comma
                         newLayout,
                         vk::QueueFamilyIgnored,
                         vk::QueueFamilyIgnored,
-                        *image,
+                        image,
                         vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, mipLevels, 0, 1));
             };
 
@@ -479,12 +494,12 @@ void transitImageLayout(const Device& device, const vk::UniqueCommandPool& comma
             }
             throw std::runtime_error("failed to transit image layout!");
         }();
-        commandBuffer->pipelineBarrier(
+        commandBuffer.pipelineBarrier(
                 srcPipelineStage, dstPipelineStage, vk::DependencyFlags(), 0, nullptr, 0, nullptr, 1, &barrier);
     });
 }
 
-ImageMemory::ImageMemory(const Device& device, const Resolution& resolution, const vk::Format format,
+ImageMemory::ImageMemory(const Device& device, const Resolution resolution, const vk::Format format,
                          const vk::ImageUsageFlags imageUsageFlags, const vk::MemoryPropertyFlags memoryPropertyFlags,
                          const vk::ImageAspectFlags aspectFlags, const vk::SampleCountFlagBits msaa,
                          const uint32_t mipLevels) {
@@ -500,27 +515,27 @@ ImageMemory::ImageMemory(const Device& device, const Resolution& resolution, con
                                 imageUsageFlags,
                                 vk::SharingMode::eExclusive));
     vk::MemoryRequirements memoryRequirements;
-    device.logicalDevice->getImageMemoryRequirements(*m_image, &memoryRequirements);
+    device.logicalDevice->getImageMemoryRequirements(m_image.get(), &memoryRequirements);
     m_memory = device.logicalDevice->allocateMemoryUnique(vk::MemoryAllocateInfo(
             memoryRequirements.size,
             findMemoryType(device.physicalDevice, memoryRequirements.memoryTypeBits, memoryPropertyFlags)));
-    device.logicalDevice->bindImageMemory(*m_image, *m_memory, 0);
+    device.logicalDevice->bindImageMemory(m_image.get(), m_memory.get(), 0);
     m_imageView = device.logicalDevice->createImageViewUnique(
             vk::ImageViewCreateInfo(vk::ImageViewCreateFlags(),
-                                    *m_image,
+                                    m_image.get(),
                                     vk::ImageViewType::e2D,
                                     format,
                                     vk::ComponentMapping(),
                                     vk::ImageSubresourceRange(aspectFlags, 0, mipLevels, 0, 1)));
 }
 
-void generateMipmaps(const Device& device, const vk::UniqueCommandPool& commandPool, const vk::UniqueImage& image,
-                     const vk::Format format, const Resolution& resolution, const uint32_t mipLevels) {
+void generateMipmaps(const Device& device, const vk::CommandPool commandPool, const vk::Image image,
+                     const vk::Format format, const Resolution resolution, const uint32_t mipLevels) {
     if (!(device.physicalDevice.getFormatProperties(format).optimalTilingFeatures
           & vk::FormatFeatureFlagBits::eSampledImageFilterLinear)) {
         throw std::runtime_error("Failed to generate mipmaps! Unsupported linear filtering!");
     }
-    singleTimeCommand(device, commandPool, [&](const vk::UniqueCommandBuffer& commandBuffer) {
+    singleTimeCommand(device, commandPool, [&](const vk::CommandBuffer& commandBuffer) {
         const auto getImageBarrier = [&image](const uint32_t mipLevel) -> vk::ImageMemoryBarrier {
             return vk::ImageMemoryBarrier(
                     vk::AccessFlagBits::eTransferWrite,
@@ -529,7 +544,7 @@ void generateMipmaps(const Device& device, const vk::UniqueCommandPool& commandP
                     vk::ImageLayout::eTransferSrcOptimal,
                     vk::QueueFamilyIgnored,
                     vk::QueueFamilyIgnored,
-                    *image,
+                    image,
                     vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, mipLevel, 1, 0, 1));
         };
         const auto getImageBlit =
@@ -545,7 +560,7 @@ void generateMipmaps(const Device& device, const vk::UniqueCommandPool& commandP
         int mipWidth = static_cast<int>(resolution.width), mipHeight = static_cast<int>(resolution.height);
         for (uint32_t mipLevel = 0; mipLevel < mipLevels - 1; ++mipLevel, mipWidth /= 2, mipHeight /= 2) {
             auto barrier = getImageBarrier(mipLevel);
-            commandBuffer->pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
+            commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
                                            vk::PipelineStageFlagBits::eTransfer,
                                            vk::DependencyFlags(),
                                            {},
@@ -553,9 +568,9 @@ void generateMipmaps(const Device& device, const vk::UniqueCommandPool& commandP
                                            { barrier });
 
             const auto blit = getImageBlit(mipLevel, mipWidth, mipHeight);
-            commandBuffer->blitImage(*image,
+            commandBuffer.blitImage(image,
                                      vk::ImageLayout::eTransferSrcOptimal,
-                                     *image,
+                                     image,
                                      vk::ImageLayout::eTransferDstOptimal,
                                      { blit },
                                      vk::Filter::eLinear);
@@ -563,7 +578,7 @@ void generateMipmaps(const Device& device, const vk::UniqueCommandPool& commandP
             barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
             barrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
             barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-            commandBuffer->pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
+            commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
                                            vk::PipelineStageFlagBits::eFragmentShader,
                                            vk::DependencyFlags(),
                                            {},
@@ -575,7 +590,7 @@ void generateMipmaps(const Device& device, const vk::UniqueCommandPool& commandP
         barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
         barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
         barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-        commandBuffer->pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
+        commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
                                        vk::PipelineStageFlagBits::eFragmentShader,
                                        vk::DependencyFlags(),
                                        {},
@@ -584,8 +599,8 @@ void generateMipmaps(const Device& device, const vk::UniqueCommandPool& commandP
     });
 }
 
-ImageMemory::ImageMemory(const Device& device, const vk::UniqueCommandPool& commandPool,
-                         const std::span<const uint8_t> data, const Resolution& resolution,
+ImageMemory::ImageMemory(const Device& device, const vk::CommandPool commandPool,
+                         const std::span<const uint8_t> data, const Resolution resolution,
                          const vk::SampleCountFlagBits msaa, const uint32_t mipLevels)
     : ImageMemory(device,
                   resolution,
@@ -603,18 +618,18 @@ ImageMemory::ImageMemory(const Device& device, const vk::UniqueCommandPool& comm
                          vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
     void* mappedMemory = nullptr;
     [[maybe_unused]] const auto result = device.logicalDevice->mapMemory(
-            *stagingMemoryBuffer.getMemory(), 0, data.size(), vk::MemoryMapFlags(), &mappedMemory);
+            stagingMemoryBuffer.getMemory().get(), 0, data.size(), vk::MemoryMapFlags(), &mappedMemory);
     memcpy(mappedMemory, data.data(), data.size());
-    device.logicalDevice->unmapMemory(*stagingMemoryBuffer.getMemory());
+    device.logicalDevice->unmapMemory(stagingMemoryBuffer.getMemory().get());
 
     transitImageLayout(device,
                        commandPool,
-                       getImage(),
+                       m_image.get(),
                        vk::ImageLayout::eUndefined,
                        vk::ImageLayout::eTransferDstOptimal,
                        mipLevels);
-    copyBufferToImage(device, commandPool, stagingMemoryBuffer.getBuffer(), getImage(), resolution);
-    generateMipmaps(device, commandPool, getImage(), vk::Format::eR8G8B8A8Srgb, resolution, mipLevels);
+    copyBufferToImage(device, commandPool, stagingMemoryBuffer.getBuffer().get(), m_image.get(), resolution);
+    generateMipmaps(device, commandPool, m_image.get(), vk::Format::eR8G8B8A8Srgb, resolution, mipLevels);
 }
 
 auto findSupportedImageFormat(const vk::PhysicalDevice& device, const std::span<const vk::Format> formats,

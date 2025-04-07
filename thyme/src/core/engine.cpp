@@ -52,7 +52,7 @@ void Engine::run() {
                                                                  .instanceExtension = enabledExtensions });
     const auto surface = window.getSurface(instance.instance);
 
-    const auto devices = vulkan::getPhysicalDevices(instance.instance, surface);
+    const auto devices = vulkan::getPhysicalDevices(instance.instance, surface.get());
     const vulkan::PhysicalDevicesManager physicalDevicesManager(devices);
 
     const auto& device = physicalDevicesManager.getSelectedDevice();
@@ -71,7 +71,7 @@ void Engine::run() {
     const auto pipelineCache = device.logicalDevice->createPipelineCacheUnique(vk::PipelineCacheCreateInfo());
     initInfo.PipelineCache = pipelineCache.get();
     const auto descriptorPool =
-            vulkan::createDescriptorPool(device.logicalDevice,
+            vulkan::createDescriptorPool(device.logicalDevice.get(),
                                          { vk::DescriptorPoolSize(vk::DescriptorType::eSampler, 2),
                                            vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, 2),
                                            vk::DescriptorPoolSize(vk::DescriptorType::eSampledImage, 2),
