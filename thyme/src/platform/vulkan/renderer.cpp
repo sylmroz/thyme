@@ -29,7 +29,7 @@ VulkanRenderer::VulkanRenderer(const VulkanGlfwWindow& window, const Device& dev
       m_frameDataList{ FrameDataList(device.logicalDevice.get(), m_commandPool.get(), maxFramesInFlight) },
       m_swapChainData{ SwapChainData(m_device, m_swapChainSettings, m_swapChainExtent, m_renderPass.get(),
                                      m_surface.get(), m_colorImageMemory.getImageView().get(),
-                                     m_depthImage.getImageView().get(), m_swapChainData.swapChain.get()) },
+                                     m_depthImage.getImageView().get()) },
       m_camera{ camera } {
     m_pipelines.emplace_back(
             std::make_unique<ScenePipeline>(device, m_renderPass.get(), m_commandPool.get(), modelStorage, camera));

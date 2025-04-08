@@ -63,7 +63,8 @@ vk::DebugUtilsMessengerCreateInfoEXT createDebugUtilsMessengerCreateInfo() {
 
 namespace th::vulkan {
 
-static constexpr auto deviceExtensions = std::array{ vk::KHRSwapchainExtensionName };
+static constexpr auto deviceExtensions =
+        std::array{ vk::KHRSwapchainExtensionName, vk::KHRDynamicRenderingExtensionName };
 
 bool deviceHasAllRequiredExtensions(const vk::PhysicalDevice& physicalDevice) {
     const auto& availableDeviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
@@ -285,7 +286,7 @@ SwapChainData::SwapChainData(const Device& device,
 
     swapChain = logicalDevice->createSwapchainKHRUnique(swapChainCreateInfo);
     swapChainFrame = logicalDevice->getSwapchainImagesKHR(swapChain.get())
-                     | std::views::transform([&](vk::Image& image) -> SwapChainFrame {
+                     | std::views::transform([&](vk::Image image) -> SwapChainFrame {
                            auto imageView = logicalDevice->createImageViewUnique(vk::ImageViewCreateInfo(
                                    vk::ImageViewCreateFlags(),
                                    image,
@@ -433,20 +434,20 @@ auto createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipelineCrea
                                                     1.0f);
     return logicalDevice
             .createGraphicsPipelineUnique({},
-                                           vk::GraphicsPipelineCreateInfo(vk::PipelineCreateFlagBits(),
-                                                                          shaderStages,
-                                                                          &vertexInputStateCreateInfo,
-                                                                          &inputAssemblyStateCreateInfo,
-                                                                          nullptr,
-                                                                          &viewportState,
-                                                                          &rasterizer,
-                                                                          &multisampling,
-                                                                          &deptStencilStateCreateInfo,
-                                                                          &colorBlendStateCreateInfo,
-                                                                          &dynamicStateCreateInfo,
-                                                                          pipelineLayout,
-                                                                          renderPass,
-                                                                          0))
+                                          vk::GraphicsPipelineCreateInfo(vk::PipelineCreateFlagBits(),
+                                                                         shaderStages,
+                                                                         &vertexInputStateCreateInfo,
+                                                                         &inputAssemblyStateCreateInfo,
+                                                                         nullptr,
+                                                                         &viewportState,
+                                                                         &rasterizer,
+                                                                         &multisampling,
+                                                                         &deptStencilStateCreateInfo,
+                                                                         &colorBlendStateCreateInfo,
+                                                                         &dynamicStateCreateInfo,
+                                                                         pipelineLayout,
+                                                                         renderPass,
+                                                                         0))
             .value;
 }
 
@@ -561,29 +562,29 @@ void generateMipmaps(const Device& device, const vk::CommandPool commandPool, co
         for (uint32_t mipLevel = 0; mipLevel < mipLevels - 1; ++mipLevel, mipWidth /= 2, mipHeight /= 2) {
             auto barrier = getImageBarrier(mipLevel);
             commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
-                                           vk::PipelineStageFlagBits::eTransfer,
-                                           vk::DependencyFlags(),
-                                           {},
-                                           {},
-                                           { barrier });
+                                          vk::PipelineStageFlagBits::eTransfer,
+                                          vk::DependencyFlags(),
+                                          {},
+                                          {},
+                                          { barrier });
 
             const auto blit = getImageBlit(mipLevel, mipWidth, mipHeight);
             commandBuffer.blitImage(image,
-                                     vk::ImageLayout::eTransferSrcOptimal,
-                                     image,
-                                     vk::ImageLayout::eTransferDstOptimal,
-                                     { blit },
-                                     vk::Filter::eLinear);
+                                    vk::ImageLayout::eTransferSrcOptimal,
+                                    image,
+                                    vk::ImageLayout::eTransferDstOptimal,
+                                    { blit },
+                                    vk::Filter::eLinear);
             barrier.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
             barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
             barrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
             barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
             commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
-                                           vk::PipelineStageFlagBits::eFragmentShader,
-                                           vk::DependencyFlags(),
-                                           {},
-                                           {},
-                                           { barrier });
+                                          vk::PipelineStageFlagBits::eFragmentShader,
+                                          vk::DependencyFlags(),
+                                          {},
+                                          {},
+                                          { barrier });
         }
         auto barrier = getImageBarrier(mipLevels - 1);
         barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
@@ -591,17 +592,16 @@ void generateMipmaps(const Device& device, const vk::CommandPool commandPool, co
         barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
         barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
         commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
-                                       vk::PipelineStageFlagBits::eFragmentShader,
-                                       vk::DependencyFlags(),
-                                       {},
-                                       {},
-                                       { barrier });
+                                      vk::PipelineStageFlagBits::eFragmentShader,
+                                      vk::DependencyFlags(),
+                                      {},
+                                      {},
+                                      { barrier });
     });
 }
 
-ImageMemory::ImageMemory(const Device& device, const vk::CommandPool commandPool,
-                         const std::span<const uint8_t> data, const Resolution resolution,
-                         const vk::SampleCountFlagBits msaa, const uint32_t mipLevels)
+ImageMemory::ImageMemory(const Device& device, const vk::CommandPool commandPool, const std::span<const uint8_t> data,
+                         const Resolution resolution, const vk::SampleCountFlagBits msaa, const uint32_t mipLevels)
     : ImageMemory(device,
                   resolution,
                   vk::Format::eR8G8B8A8Srgb,
