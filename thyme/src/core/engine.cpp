@@ -89,6 +89,9 @@ void Engine::run() {
     initInfo.MinImageCount = vulkan::VulkanRenderer::maxFramesInFlight;
     initInfo.ImageCount = vulkan::VulkanRenderer::maxFramesInFlight;
     initInfo.MSAASamples = static_cast<VkSampleCountFlagBits>(device.maxMsaaSamples);
+    initInfo.UseDynamicRendering = true;
+    initInfo.PipelineRenderingCreateInfo = vk::PipelineRenderingCreateInfo(
+            0, { renderer.m_swapChainSettings.surfaceFormat.format }, th::vulkan::findDepthFormat(device.physicalDevice));
     initInfo.Allocator = nullptr;
     initInfo.CheckVkResultFn = [](const auto vkResult) {
         if (vkResult == VK_SUCCESS) {
@@ -100,10 +103,6 @@ void Engine::run() {
 
     while (!window.shouldClose()) {
         window.poolEvents();
-
-        ImGui_ImplVulkan_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-
         for (const auto& layer : m_layers) {
             // layer->draw();
         }

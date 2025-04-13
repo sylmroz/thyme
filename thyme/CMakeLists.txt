@@ -39,6 +39,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 		src/platform/vulkan/model.cpp
 		src/platform/vulkan/renderer.cpp
 		#src/platform/vulkan/shader.cpp #for now there are problems with integrating shaderc from google
+		src/platform/vulkan/swapchain.cpp
 		src/platform/vulkan/texture.cpp
 		src/platform/vulkan/utils.cpp
 )

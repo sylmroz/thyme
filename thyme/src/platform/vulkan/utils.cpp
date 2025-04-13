@@ -241,72 +241,13 @@ std::vector<PhysicalDevice> getPhysicalDevices(const vk::UniqueInstance& instanc
     }
 
     const auto features = physicalDevice.getFeatures();
-    return physicalDevice.createDeviceUnique(vk::DeviceCreateInfo(
-            vk::DeviceCreateFlags(), deviceQueueCreateInfos, nullptr, deviceExtensions, &features));
+    const auto dynamicRenderingFeatures = vk::PhysicalDeviceDynamicRenderingFeaturesKHR(true);
+    const vk::StructureChain deviceCreateInfo(
+            vk::DeviceCreateInfo(vk::DeviceCreateFlags(), deviceQueueCreateInfos, nullptr, deviceExtensions, &features),
+            dynamicRenderingFeatures);
+
+    return physicalDevice.createDeviceUnique(deviceCreateInfo.get<vk::DeviceCreateInfo>());
 }
-
-SwapChainData::SwapChainData(const Device& device,
-                             const SwapChainSettings& swapChainSettings,
-                             const vk::Extent2D& swapChainExtent,
-                             const vk::RenderPass renderPass,
-                             const vk::SurfaceKHR surface,
-                             const vk::ImageView colorImageView,
-                             const vk::ImageView depthImageView,
-                             const vk::SwapchainKHR oldSwapChain) {
-    const auto& [surfaceFormat, presetMode, imageCount] = swapChainSettings;
-    [[maybe_unused]] const auto& [physicalDevice,
-                                  logicalDevice,
-                                  queueFamilyIndices,
-                                  swapChainSupportDetails,
-                                  maxMsaaSamples] = device;
-    const auto swapChainCreateInfo = [&] {
-        auto info = vk::SwapchainCreateInfoKHR(vk::SwapchainCreateFlagsKHR(),
-                                               surface,
-                                               imageCount,
-                                               surfaceFormat.format,
-                                               surfaceFormat.colorSpace,
-                                               swapChainExtent,
-                                               1,
-                                               vk::ImageUsageFlagBits::eColorAttachment);
-        info.preTransform = swapChainSupportDetails.capabilities.currentTransform;
-        info.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
-        info.presentMode = presetMode;
-        info.clipped = vk::True;
-        if (queueFamilyIndices.graphicFamily.value() != queueFamilyIndices.presentFamily.value()) {
-            const auto indices =
-                    std::array{ queueFamilyIndices.graphicFamily.value(), queueFamilyIndices.presentFamily.value() };
-            info.imageSharingMode = vk::SharingMode::eConcurrent;
-            info.setQueueFamilyIndices(indices);
-        } else {
-            info.imageSharingMode = vk::SharingMode::eExclusive;
-        }
-        info.oldSwapchain = oldSwapChain;
-        return info;
-    }();
-
-    swapChain = logicalDevice->createSwapchainKHRUnique(swapChainCreateInfo);
-    swapChainFrame = logicalDevice->getSwapchainImagesKHR(swapChain.get())
-                     | std::views::transform([&](vk::Image image) -> SwapChainFrame {
-                           auto imageView = logicalDevice->createImageViewUnique(vk::ImageViewCreateInfo(
-                                   vk::ImageViewCreateFlags(),
-                                   image,
-                                   vk::ImageViewType::e2D,
-                                   surfaceFormat.format,
-                                   vk::ComponentMapping(),
-                                   vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1)));
-                           const auto attachments = std::array{ colorImageView, depthImageView, imageView.get() };
-                           auto frameBuffer = logicalDevice->createFramebufferUnique(
-                                   vk::FramebufferCreateInfo(vk::FramebufferCreateFlagBits(),
-                                                             renderPass,
-                                                             attachments,
-                                                             swapChainExtent.width,
-                                                             swapChainExtent.height,
-                                                             1));
-                           return SwapChainFrame{ std::move(image), std::move(imageView), std::move(frameBuffer) };
-                       })
-                     | std::ranges::to<decltype(swapChainFrame)>();
-}
-
 
 FrameDataList::FrameDataList(const vk::Device logicalDevice, const vk::CommandPool commandPool,
                              const uint32_t maxFrames) noexcept {
@@ -380,7 +321,8 @@ auto createRenderPass(const vk::Device logicalDevice, const vk::Format colorForm
 }
 
 auto createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipelineCreateInfo) -> vk::UniquePipeline {
-    const auto& [logicalDevice, renderPass, pipelineLayout, samples, shaderStages] = graphicPipelineCreateInfo;
+    const auto& [logicalDevice, renderPass, pipelineLayout, samples, pipelineRenderingCreateInfo, shaderStages] =
+            graphicPipelineCreateInfo;
     constexpr auto dynamicStates = std::array{ vk::DynamicState::eViewport, vk::DynamicState::eScissor };
     const auto dynamicStateCreateInfo =
             vk::PipelineDynamicStateCreateInfo(vk::PipelineDynamicStateCreateFlagBits(), dynamicStates);
@@ -432,6 +374,7 @@ auto createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipelineCrea
                                                     {},
                                                     0.0f,
                                                     1.0f);
+
     return logicalDevice
             .createGraphicsPipelineUnique({},
                                           vk::GraphicsPipelineCreateInfo(vk::PipelineCreateFlagBits(),
@@ -446,8 +389,11 @@ auto createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipelineCrea
                                                                          &colorBlendStateCreateInfo,
                                                                          &dynamicStateCreateInfo,
                                                                          pipelineLayout,
-                                                                         renderPass,
-                                                                         0))
+                                                                         {},
+                                                                         {},
+                                                                         {},
+                                                                         {},
+                                                                         &pipelineRenderingCreateInfo))
             .value;
 }
 
@@ -469,35 +415,58 @@ BufferMemory::BufferMemory(const Device& device, const size_t size, const vk::Bu
 void transitImageLayout(const Device& device, const vk::CommandPool commandPool, const vk::Image image,
                         const vk::ImageLayout oldLayout, const vk::ImageLayout newLayout, const uint32_t mipLevels) {
     singleTimeCommand(device, commandPool, [&](const vk::CommandBuffer commandBuffer) {
-        const auto [barrier, srcPipelineStage, dstPipelineStage] = [&] {
-            const auto createBarrier = [&](const vk::AccessFlags srcAccessFlag, const vk::AccessFlags dstAccessFlag) {
-                return vk::ImageMemoryBarrier(
-                        srcAccessFlag,
-                        dstAccessFlag,
-                        oldLayout,
-                        newLayout,
-                        vk::QueueFamilyIgnored,
-                        vk::QueueFamilyIgnored,
-                        image,
-                        vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, mipLevels, 0, 1));
-            };
-
-            if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal) {
-                return std::tuple(createBarrier(vk::AccessFlags(), vk::AccessFlagBits::eTransferWrite),
-                                  vk::PipelineStageFlagBits::eTopOfPipe,
-                                  vk::PipelineStageFlagBits::eTransfer);
-            }
-            if (oldLayout == vk::ImageLayout::eTransferDstOptimal
-                && newLayout == vk::ImageLayout::eShaderReadOnlyOptimal) {
-                return std::tuple(createBarrier(vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eShaderRead),
-                                  vk::PipelineStageFlagBits::eTransfer,
-                                  vk::PipelineStageFlagBits::eFragmentShader);
-            }
-            throw std::runtime_error("failed to transit image layout!");
-        }();
-        commandBuffer.pipelineBarrier(
-                srcPipelineStage, dstPipelineStage, vk::DependencyFlags(), 0, nullptr, 0, nullptr, 1, &barrier);
+        transitImageLayout(commandBuffer, image, oldLayout, newLayout, mipLevels);
     });
+}
+
+void transitImageLayout(const vk::CommandBuffer commandBuffer, const vk::Image image, const vk::ImageLayout oldLayout,
+                        const vk::ImageLayout newLayout, const uint32_t mipLevels) {
+    const auto [barrier, srcPipelineStage, dstPipelineStage] = [&] {
+        const auto createBarrier = [&](const vk::AccessFlags srcAccessFlag, const vk::AccessFlags dstAccessFlag) {
+            return vk::ImageMemoryBarrier(
+                    srcAccessFlag,
+                    dstAccessFlag,
+                    oldLayout,
+                    newLayout,
+                    vk::QueueFamilyIgnored,
+                    vk::QueueFamilyIgnored,
+                    image,
+                    vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, mipLevels, 0, 1));
+        };
+
+        if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal) {
+            return std::tuple(createBarrier(vk::AccessFlags(), vk::AccessFlagBits::eTransferWrite),
+                              vk::PipelineStageFlagBits::eTopOfPipe,
+                              vk::PipelineStageFlagBits::eTransfer);
+        }
+        if (oldLayout == vk::ImageLayout::eTransferDstOptimal && newLayout == vk::ImageLayout::eShaderReadOnlyOptimal) {
+            return std::tuple(createBarrier(vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eShaderRead),
+                              vk::PipelineStageFlagBits::eTransfer,
+                              vk::PipelineStageFlagBits::eFragmentShader);
+        }
+        if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eColorAttachmentOptimal) {
+            return std::tuple(
+                    createBarrier(vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eColorAttachmentRead),
+                    vk::PipelineStageFlagBits::eTransfer,
+                    vk::PipelineStageFlagBits::eColorAttachmentOutput);
+        }
+        ///// AI?
+        if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal) {
+            return std::tuple(createBarrier(vk::AccessFlags(), vk::AccessFlagBits::eDepthStencilAttachmentWrite),
+                              vk::PipelineStageFlagBits::eTopOfPipe,
+                              vk::PipelineStageFlagBits::eEarlyFragmentTests);
+        }
+        //////
+
+        if (oldLayout == vk::ImageLayout::eColorAttachmentOptimal && newLayout == vk::ImageLayout::ePresentSrcKHR) {
+            return std::tuple(createBarrier(vk::AccessFlagBits::eColorAttachmentWrite, vk::AccessFlagBits()),
+                              vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                              vk::PipelineStageFlagBits::eBottomOfPipe);
+        }
+        throw std::runtime_error("failed to transit image layout!");
+    }();
+    commandBuffer.pipelineBarrier(
+            srcPipelineStage, dstPipelineStage, vk::DependencyFlags(), 0, nullptr, 0, nullptr, 1, &barrier);
 }
 
 ImageMemory::ImageMemory(const Device& device, const Resolution resolution, const vk::Format format,

@@ -15,8 +15,9 @@
 
 namespace th::vulkan {
 
-ScenePipeline::ScenePipeline(const Device& device, const vk::RenderPass renderPass, const vk::CommandPool commandPool,
-                             scene::ModelStorage& modelStorage, scene::Camera& camera)
+ScenePipeline::ScenePipeline(const Device& device, const vk::PipelineRenderingCreateInfo pipelineRenderingCreateInfo,
+                             const vk::CommandPool commandPool, scene::ModelStorage& modelStorage,
+                             scene::Camera& camera)
     : GraphicPipeline{}, m_camera{ camera } {
 
     for (const auto& model : modelStorage) {
@@ -60,11 +61,12 @@ ScenePipeline::ScenePipeline(const Device& device, const vk::RenderPass renderPa
                                                                            "main");
     const auto shaderStages = std::vector{ vertexShaderStageInfo, fragmentShaderStageInfo };
 
-    m_pipeline = createGraphicsPipeline(GraphicPipelineCreateInfo{ .logicalDevice = device.logicalDevice.get(),
-                                                                   .renderPass = renderPass,
-                                                                   .pipelineLayout = m_pipelineLayout.get(),
-                                                                   .samples = device.maxMsaaSamples,
-                                                                   .shaderStages = shaderStages });
+    m_pipeline = createGraphicsPipeline(
+            GraphicPipelineCreateInfo{ .logicalDevice = device.logicalDevice.get(),
+                                       .pipelineLayout = m_pipelineLayout.get(),
+                                       .samples = device.maxMsaaSamples,
+                                       .pipelineRenderingCreateInfo = pipelineRenderingCreateInfo,
+                                       .shaderStages = shaderStages });
 
     for (const auto [descriptorSet, model] : std::views::zip(m_descriptorSets, m_models)) {
         const auto descriptorBufferInfo = model.getUniformBufferObject().getDescriptorBufferInfos();

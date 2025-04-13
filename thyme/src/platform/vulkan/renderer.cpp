@@ -1,6 +1,7 @@
 #include <thyme/core/logger.hpp>
 #include <thyme/platform/vulkan/renderer.hpp>
 
+#include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
 #include <vulkan/vulkan.hpp>
 
@@ -14,7 +15,7 @@ VulkanRenderer::VulkanRenderer(const VulkanGlfwWindow& window, const Device& dev
               vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
                                         device.queueFamilyIndices.graphicFamily.value())) },
       m_swapChainSettings{ device.swapChainSupportDetails.getBestSwapChainSettings() },
-      m_swapChainExtent{ m_device.swapChainSupportDetails.getSwapExtent(m_window.getFrameBufferSize()) },
+      m_swapChainExtent{ device.swapChainSupportDetails.getSwapExtent(m_window.getFrameBufferSize()) },
       m_colorImageMemory(ImageMemory(
               device, Resolution{ m_swapChainExtent.width, m_swapChainExtent.height },
               m_swapChainSettings.surfaceFormat.format,
@@ -24,15 +25,16 @@ VulkanRenderer::VulkanRenderer(const VulkanGlfwWindow& window, const Device& dev
                                findDepthFormat(device.physicalDevice), vk::ImageUsageFlagBits::eDepthStencilAttachment,
                                vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eDepth,
                                m_device.maxMsaaSamples, 1)),
-      m_renderPass{ createRenderPass(device.logicalDevice.get(), m_swapChainSettings.surfaceFormat.format,
-                                     findDepthFormat(device.physicalDevice), device.maxMsaaSamples) },
       m_frameDataList{ FrameDataList(device.logicalDevice.get(), m_commandPool.get(), maxFramesInFlight) },
-      m_swapChainData{ SwapChainData(m_device, m_swapChainSettings, m_swapChainExtent, m_renderPass.get(),
-                                     m_surface.get(), m_colorImageMemory.getImageView().get(),
-                                     m_depthImage.getImageView().get()) },
+      m_swapChainData{ SwapChainData(device, m_swapChainSettings, m_swapChainExtent, m_surface.get()) },
       m_camera{ camera } {
-    m_pipelines.emplace_back(
-            std::make_unique<ScenePipeline>(device, m_renderPass.get(), m_commandPool.get(), modelStorage, camera));
+    m_pipelines.emplace_back(std::make_unique<ScenePipeline>(
+            device,
+            vk::PipelineRenderingCreateInfo(
+                    0, { m_swapChainSettings.surfaceFormat.format }, findDepthFormat(device.physicalDevice)),
+            m_commandPool.get(),
+            modelStorage,
+            camera));
 }
 
 void VulkanRenderer::draw() {
@@ -50,8 +52,9 @@ void VulkanRenderer::draw() {
     }
     const auto imageIndexResult = [&] {
         try {
-            return logicalDevice->acquireNextImageKHR(
-                    m_swapChainData.swapChain.get(), std::numeric_limits<uint64_t>::max(), imageAvailableSemaphore.get());
+            return logicalDevice->acquireNextImageKHR(m_swapChainData.getSwapChain(),
+                                                      std::numeric_limits<uint64_t>::max(),
+                                                      imageAvailableSemaphore.get());
         } catch (const vk::OutOfDateKHRError&) {
             recreateSwapChain();
         }
@@ -69,13 +72,19 @@ void VulkanRenderer::draw() {
     commandBuffer->begin(vk::CommandBufferBeginInfo());
     constexpr auto clearColorValues = vk::ClearValue(vk::ClearColorValue(1.0f, 0.0f, 1.0f, 1.0f));
     constexpr auto depthClearValue = vk::ClearValue(vk::ClearDepthStencilValue(1.0f, 0));
-    constexpr auto clearValues = std::array{ clearColorValues, depthClearValue };
-    const auto renderPassBeginInfo =
-            vk::RenderPassBeginInfo(m_renderPass.get(),
-                                    m_swapChainData.swapChainFrame[imageIndex].frameBuffer.get(),
-                                    vk::Rect2D(vk::Offset2D(0, 0), m_swapChainExtent),
-                                    clearValues);
-    commandBuffer->beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
+
+    const auto& swapChainFrame = m_swapChainData.getSwapChainFrames()[imageIndex];
+    transitImageLayout(commandBuffer.get(),
+                       swapChainFrame.image,
+                       vk::ImageLayout::eUndefined,
+                       vk::ImageLayout::eColorAttachmentOptimal,
+                       1);
+
+    // transitImageLayout(commandBuffer.get(),
+    //                    m_depthImage.getImage().get(),
+    //                    vk::ImageLayout::eUndefined,
+    //                    vk::ImageLayout::eDepthAttachmentOptimal,
+    //                    1);
 
     commandBuffer->setViewport(0,
                                { vk::Viewport(0.0f,
@@ -85,26 +94,57 @@ void VulkanRenderer::draw() {
                                               0.0f,
                                               1.0f) });
     commandBuffer->setScissor(0, { vk::Rect2D(vk::Offset2D(0, 0), m_swapChainExtent) });
-    bool showDemoWindow = true;
-    ImGui::NewFrame();
 
-    ImGui::ShowDemoWindow(&showDemoWindow);
-    ImGui::Render();
+    const auto colorAttachment = vk::RenderingAttachmentInfo(m_colorImageMemory.getImageView().get(),
+                                                             vk::ImageLayout::eColorAttachmentOptimal,
+                                                             vk::ResolveModeFlagBits::eAverage,
+                                                             swapChainFrame.imageView.get(),
+                                                             vk::ImageLayout::eColorAttachmentOptimal,
+                                                             vk::AttachmentLoadOp::eClear,
+                                                             vk::AttachmentStoreOp::eStore,
+                                                             clearColorValues);
 
+    const auto depthAttachment = vk::RenderingAttachmentInfo(m_depthImage.getImageView().get(),
+                                                             vk::ImageLayout::eDepthAttachmentOptimal,
+                                                             vk::ResolveModeFlagBits::eNone,
+                                                             {},
+                                                             {},
+                                                             vk::AttachmentLoadOp::eClear,
+                                                             vk::AttachmentStoreOp::eDontCare,
+                                                             depthClearValue);
+
+    const auto renderingInfo = vk::RenderingInfo(vk::RenderingFlagBits{},
+                                                 vk::Rect2D(vk::Offset2D(0, 0), m_swapChainExtent),
+                                                 1,
+                                                 0,
+                                                 { colorAttachment },
+                                                 &depthAttachment);
+    commandBuffer->beginRendering(renderingInfo);
     for (const auto& pipeline : m_pipelines) {
         pipeline->draw(commandBuffer.get());
     }
 
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    bool showDemoWindow = true;
+    ImGui::NewFrame();
+    ImGui::ShowDemoWindow(&showDemoWindow);
+    ImGui::Render();
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer.get());
-
-    commandBuffer->endRenderPass();
-    commandBuffer->end();
-
     // Update and Render additional Platform Windows
     if (const auto io = ImGui::GetIO(); io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
     }
+
+    commandBuffer->endRendering();
+    transitImageLayout(commandBuffer.get(),
+                       swapChainFrame.image,
+                       vk::ImageLayout::eColorAttachmentOptimal,
+                       vk::ImageLayout::ePresentSrcKHR,
+                       1);
+
+    commandBuffer->end();
 
     constexpr vk::PipelineStageFlags f = vk::PipelineStageFlagBits::eColorAttachmentOutput;
     const auto submitInfo = vk::SubmitInfo(vk::SubmitInfo(
@@ -114,8 +154,9 @@ void VulkanRenderer::draw() {
     const auto& presentationQueue = logicalDevice->getQueue(queueFamilyIndices.presentFamily.value(), 0);
 
     try {
+        const auto swapChain = m_swapChainData.getSwapChain();
         const auto queuePresentResult = presentationQueue.presentKHR(
-                vk::PresentInfoKHR({ renderFinishedSemaphore.get() }, { m_swapChainData.swapChain.get() }, { imageIndex }));
+                vk::PresentInfoKHR({ renderFinishedSemaphore.get() }, { swapChain }, { imageIndex }));
         if (queuePresentResult == vk::Result::eErrorOutOfDateKHR || queuePresentResult == vk::Result::eSuboptimalKHR
             || m_window.frameBufferResized) {
             m_window.frameBufferResized = false;
@@ -155,11 +196,8 @@ inline void VulkanRenderer::recreateSwapChain(const Resolution& resolution) {
     m_swapChainData = SwapChainData(m_device,
                                     m_swapChainSettings,
                                     m_swapChainExtent,
-                                    m_renderPass.get(),
                                     m_surface.get(),
-                                    m_colorImageMemory.getImageView().get(),
-                                    m_depthImage.getImageView().get(),
-                                    m_swapChainData.swapChain.get());
+                                    m_swapChainData.getSwapChain());
     m_camera.setResolution(glm::vec2{ resolution.width, resolution.height });
 }
 

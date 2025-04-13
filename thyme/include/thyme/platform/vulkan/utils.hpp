@@ -144,23 +144,6 @@ struct Device {
 
 std::vector<PhysicalDevice> getPhysicalDevices(const vk::UniqueInstance& instance, const vk::SurfaceKHR surface);
 
-struct SwapChainFrame {
-    vk::Image image;
-    vk::UniqueImageView imageView;
-    vk::UniqueFramebuffer frameBuffer;
-};
-
-class SwapChainData {
-public:
-    explicit SwapChainData(const Device& device, const SwapChainSettings& swapChainSettings,
-                           const vk::Extent2D& swapChainExtent, const vk::RenderPass renderPass,
-                           const vk::SurfaceKHR surface, const vk::ImageView colorImageView,
-                           const vk::ImageView depthImageView, const vk::SwapchainKHR oldSwapChain = {});
-
-    vk::UniqueSwapchainKHR swapChain;
-    std::vector<SwapChainFrame> swapChainFrame;
-};
-
 struct FrameData {
     vk::UniqueCommandBuffer commandBuffer;
     vk::UniqueSemaphore imageAvailableSemaphore;
@@ -181,12 +164,11 @@ public:
 
 private:
     std::vector<FrameData> m_frameDataList;
-
-    uint32_t frameIndex{ 0 };
+    uint32_t m_frameIndex{ 0 };
 
     [[nodiscard]] uint32_t getNextFrameIndex() noexcept {
-        const auto currentFrameIndex = frameIndex;
-        frameIndex = (frameIndex + 1) % m_frameDataList.size();
+        const auto currentFrameIndex = m_frameIndex;
+        m_frameIndex = (m_frameIndex + 1) % m_frameDataList.size();
         return currentFrameIndex;
     };
 };
@@ -200,6 +182,7 @@ struct GraphicPipelineCreateInfo {
     vk::RenderPass renderPass;
     vk::PipelineLayout pipelineLayout;
     vk::SampleCountFlagBits samples;
+    vk::PipelineRenderingCreateInfo pipelineRenderingCreateInfo;
     const std::vector<vk::PipelineShaderStageCreateInfo>& shaderStages;
 };
 
@@ -331,6 +314,9 @@ private:
 inline void transitImageLayout(const Device& device, const vk::CommandPool commandPool,
                                const vk::Image image, const vk::ImageLayout oldLayout,
                                const vk::ImageLayout newLayout, const uint32_t mipLevels);
+
+void transitImageLayout(const vk::CommandBuffer commandBuffer, const vk::Image image,
+                        const vk::ImageLayout oldLayout, const vk::ImageLayout newLayout, const uint32_t mipLevels);
 
 inline void copyBufferToImage(const Device& device, const vk::CommandPool commandPool, const vk::Buffer buffer,
                               const vk::Image image, const Resolution resolution) {

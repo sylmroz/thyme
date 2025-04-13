@@ -66,6 +66,10 @@ Checks: '*,
 CheckOptions:
   - key: hicpp-special-member-functions.AllowSoleDefaultDtor
     value: 1
+  - key: readability-identifier-naming.ClassMemberCase
+    value: camelBack
+  - key: readability-identifier-naming.PrivateMemberPrefix
+    value: m_
 
 WarningsAsErrors: '*'
 

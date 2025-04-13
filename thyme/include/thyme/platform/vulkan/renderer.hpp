@@ -1,14 +1,13 @@
 #pragma once
 
-#include <thyme/core/logger.hpp>
 #include <thyme/renderer/renderer.hpp>
 #include <thyme/platform/glfw_window.hpp>
 #include <thyme/platform/vulkan/graphic_pipeline.hpp>
 #include <thyme/platform/vulkan/utils.hpp>
 #include <thyme/scene/camera.hpp>
 #include <thyme/scene/model.hpp>
+#include <thyme/platform/vulkan/swapchain.hpp>
 
-#include <imgui_impl_vulkan.h>
 #include <vulkan/vulkan.hpp>
 
 namespace th::vulkan {
