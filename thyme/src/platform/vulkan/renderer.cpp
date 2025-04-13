@@ -80,11 +80,7 @@ void VulkanRenderer::draw() {
                        vk::ImageLayout::eColorAttachmentOptimal,
                        1);
 
-    // transitImageLayout(commandBuffer.get(),
-    //                    m_depthImage.getImage().get(),
-    //                    vk::ImageLayout::eUndefined,
-    //                    vk::ImageLayout::eDepthAttachmentOptimal,
-    //                    1);
+    transitDepthImageLayout(commandBuffer.get());
 
     commandBuffer->setViewport(0,
                                { vk::Viewport(0.0f,

@@ -419,6 +419,25 @@ void transitImageLayout(const Device& device, const vk::CommandPool commandPool,
     });
 }
 
+void transitImageLayout(const vk::CommandBuffer commandBuffer, const vk::Image image,
+                        const ImageLayoutTransition layoutTransition,
+                        const ImagePipelineStageTransition stageTransition,
+                        const ImageAccessFlagsTransition accessFlagsTransition,
+                        const vk::ImageAspectFlags aspectFlags, const uint32_t mipLevels) {
+    const auto [srcAccessFlag, dstAccessFlag] = accessFlagsTransition;
+    const auto [oldLayout, newLayout] = layoutTransition;
+    const auto [srcStages, dstStages] = stageTransition;
+    const auto barrier = vk::ImageMemoryBarrier(srcAccessFlag,
+                                                dstAccessFlag,
+                                                oldLayout,
+                                                newLayout,
+                                                vk::QueueFamilyIgnored,
+                                                vk::QueueFamilyIgnored,
+                                                image,
+                                                vk::ImageSubresourceRange(aspectFlags, 0, mipLevels, 0, 1));
+    commandBuffer.pipelineBarrier(srcStages, dstStages, vk::DependencyFlags(), 0, nullptr, 0, nullptr, 1, &barrier);
+}
+
 void transitImageLayout(const vk::CommandBuffer commandBuffer, const vk::Image image, const vk::ImageLayout oldLayout,
                         const vk::ImageLayout newLayout, const uint32_t mipLevels) {
     const auto [barrier, srcPipelineStage, dstPipelineStage] = [&] {
@@ -450,14 +469,11 @@ void transitImageLayout(const vk::CommandBuffer commandBuffer, const vk::Image i
                     vk::PipelineStageFlagBits::eTransfer,
                     vk::PipelineStageFlagBits::eColorAttachmentOutput);
         }
-        ///// AI?
         if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal) {
             return std::tuple(createBarrier(vk::AccessFlags(), vk::AccessFlagBits::eDepthStencilAttachmentWrite),
                               vk::PipelineStageFlagBits::eTopOfPipe,
                               vk::PipelineStageFlagBits::eEarlyFragmentTests);
         }
-        //////
-
         if (oldLayout == vk::ImageLayout::eColorAttachmentOptimal && newLayout == vk::ImageLayout::ePresentSrcKHR) {
             return std::tuple(createBarrier(vk::AccessFlagBits::eColorAttachmentWrite, vk::AccessFlagBits()),
                               vk::PipelineStageFlagBits::eColorAttachmentOutput,

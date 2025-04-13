@@ -70,6 +70,10 @@ CheckOptions:
     value: camelBack
   - key: readability-identifier-naming.PrivateMemberPrefix
     value: m_
+  - key: readability-identifier-naming.FunctionCase
+    value: camelBack
+  - key: readability-identifier-naming.ParameterCase
+    value: camelBack
 
 WarningsAsErrors: '*'
 

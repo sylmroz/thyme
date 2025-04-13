@@ -297,7 +297,12 @@ public:
         memcpy(mappedMemory, data.data(), size);
         device.logicalDevice->unmapMemory(stagingMemoryBuffer.getMemory().get());
         const auto& graphicQueue = device.logicalDevice->getQueue(device.queueFamilyIndices.graphicFamily.value(), 0);
-        copyBuffer(device.logicalDevice.get(), commandPool, graphicQueue, stagingMemoryBuffer.getBuffer().get(), m_buffer.get(), size);
+        copyBuffer(device.logicalDevice.get(),
+                   commandPool,
+                   graphicQueue,
+                   stagingMemoryBuffer.getBuffer().get(),
+                   m_buffer.get(),
+                   size);
     }
     [[nodiscard]] auto getBuffer() const noexcept -> const vk::UniqueBuffer& {
         return m_buffer;
@@ -311,12 +316,33 @@ private:
     vk::UniqueDeviceMemory m_memory;
 };
 
-inline void transitImageLayout(const Device& device, const vk::CommandPool commandPool,
-                               const vk::Image image, const vk::ImageLayout oldLayout,
-                               const vk::ImageLayout newLayout, const uint32_t mipLevels);
+struct ImageLayoutTransition {
+    vk::ImageLayout oldLayout;
+    vk::ImageLayout newLayout;
+};
+
+struct ImagePipelineStageTransition {
+    vk::PipelineStageFlags oldStage;
+    vk::PipelineStageFlags newStage;
+};
+
+struct ImageAccessFlagsTransition {
+    vk::AccessFlags oldAccess;
+    vk::AccessFlags newAccess;
+};
+
+inline void transitImageLayout(const Device& device, const vk::CommandPool commandPool, const vk::Image image,
+                               const vk::ImageLayout oldLayout, const vk::ImageLayout newLayout,
+                               const uint32_t mipLevels);
+
+void transitImageLayout(const vk::CommandBuffer commandBuffer, const vk::Image image, const vk::ImageLayout oldLayout,
+                        const vk::ImageLayout newLayout, const uint32_t mipLevels);
 
 void transitImageLayout(const vk::CommandBuffer commandBuffer, const vk::Image image,
-                        const vk::ImageLayout oldLayout, const vk::ImageLayout newLayout, const uint32_t mipLevels);
+                        const ImageLayoutTransition layoutTransition,
+                        const ImagePipelineStageTransition stageTransition,
+                        const ImageAccessFlagsTransition accessFlagsTransition,
+                        const vk::ImageAspectFlags aspectFlags, const uint32_t mipLevels);
 
 inline void copyBufferToImage(const Device& device, const vk::CommandPool commandPool, const vk::Buffer buffer,
                               const vk::Image image, const Resolution resolution) {

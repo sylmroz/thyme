@@ -46,6 +46,25 @@ private:
         recreateSwapChain(m_window.getFrameBufferSize());
     }
 
+    inline void transitDepthImageLayout(const vk::CommandBuffer commandBuffer) const {
+        transitImageLayout(commandBuffer,
+                               m_depthImage.getImage().get(),
+                               ImageLayoutTransition{
+                                   .oldLayout =vk::ImageLayout::eUndefined,
+                                   .newLayout = vk::ImageLayout::eDepthAttachmentOptimal
+                               },
+                               ImagePipelineStageTransition {
+                                   .oldStage = vk::PipelineStageFlagBits::eEarlyFragmentTests | vk::PipelineStageFlagBits::eLateFragmentTests,
+                                   .newStage = vk::PipelineStageFlagBits::eEarlyFragmentTests | vk::PipelineStageFlagBits::eLateFragmentTests
+                               },
+                               ImageAccessFlagsTransition {
+                                   .oldAccess = vk::AccessFlags(),
+                                   .newAccess = vk::AccessFlagBits::eDepthStencilAttachmentWrite
+                               },
+                               vk::ImageAspectFlagBits::eDepth,
+                               1);
+    }
+
 private:
     std::vector<std::unique_ptr<GraphicPipeline>> m_pipelines;
 };
