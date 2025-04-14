@@ -1,15 +1,13 @@
 #include <thyme/core/logger.hpp>
 #include <thyme/platform/vulkan/renderer.hpp>
 
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_vulkan.h>
 #include <vulkan/vulkan.hpp>
 
 namespace th::vulkan {
 
 VulkanRenderer::VulkanRenderer(const VulkanGlfwWindow& window, const Device& device,
                                const vk::UniqueSurfaceKHR& surface, scene::ModelStorage& modelStorage,
-                               scene::Camera& camera) noexcept
+                               scene::Camera& camera, Gui& gui) noexcept
     : m_device{ device }, m_window{ window }, m_surface{ surface },
       m_commandPool{ device.logicalDevice->createCommandPoolUnique(
               vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
@@ -27,7 +25,8 @@ VulkanRenderer::VulkanRenderer(const VulkanGlfwWindow& window, const Device& dev
                                m_device.maxMsaaSamples, 1)),
       m_frameDataList{ FrameDataList(device.logicalDevice.get(), m_commandPool.get(), maxFramesInFlight) },
       m_swapChainData{ SwapChainData(device, m_swapChainSettings, m_swapChainExtent, m_surface.get()) },
-      m_camera{ camera } {
+      m_camera{ camera }, m_gui{ gui }
+{
     m_pipelines.emplace_back(std::make_unique<ScenePipeline>(
             device,
             vk::PipelineRenderingCreateInfo(
@@ -119,19 +118,7 @@ void VulkanRenderer::draw() {
     for (const auto& pipeline : m_pipelines) {
         pipeline->draw(commandBuffer.get());
     }
-
-    ImGui_ImplVulkan_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    bool showDemoWindow = true;
-    ImGui::NewFrame();
-    ImGui::ShowDemoWindow(&showDemoWindow);
-    ImGui::Render();
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer.get());
-    // Update and Render additional Platform Windows
-    if (const auto io = ImGui::GetIO(); io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
-    }
+    m_gui.draw(commandBuffer.get());
 
     commandBuffer->endRendering();
     transitImageLayout(commandBuffer.get(),
@@ -145,7 +132,7 @@ void VulkanRenderer::draw() {
     constexpr vk::PipelineStageFlags f = vk::PipelineStageFlagBits::eColorAttachmentOutput;
     const auto submitInfo = vk::SubmitInfo(vk::SubmitInfo(
             { imageAvailableSemaphore.get() }, { f }, { commandBuffer.get() }, { renderFinishedSemaphore.get() }));
-    const auto& graphicQueue = logicalDevice->getQueue(m_device.queueFamilyIndices.graphicFamily.value(), 0);
+    const auto& graphicQueue = logicalDevice->getQueue(queueFamilyIndices.graphicFamily.value(), 0);
     graphicQueue.submit(submitInfo, fence.get());
     const auto& presentationQueue = logicalDevice->getQueue(queueFamilyIndices.presentFamily.value(), 0);
 
@@ -171,7 +158,7 @@ inline void VulkanRenderer::recreateSwapChain(const Resolution& resolution) {
     m_device.logicalDevice->waitIdle();
     const auto swapChainSupportDetails = SwapChainSupportDetails(m_device.physicalDevice, m_surface.get());
     m_swapChainExtent = swapChainSupportDetails.getSwapExtent(resolution);
-    m_swapChainSettings = SwapChainSupportDetails(m_device.physicalDevice, m_surface.get()).getBestSwapChainSettings();
+    m_swapChainSettings = swapChainSupportDetails.getBestSwapChainSettings();
     m_colorImageMemory =
             ImageMemory(m_device,
                         Resolution{ .width = m_swapChainExtent.width, .height = m_swapChainExtent.height },

@@ -1,8 +1,8 @@
 #include <thyme/core/event.hpp>
 #include <thyme/core/logger.hpp>
-#include <thyme/core/utils.hpp>
 #include <thyme/core/window.hpp>
 #include <thyme/platform/glfw_window.hpp>
+#include <thyme/platform/vulkan/gui.hpp>
 #include <thyme/platform/vulkan/renderer.hpp>
 #include <thyme/platform/vulkan/vulkan_layer.hpp>
 #include <thyme/platform/vulkan_device_manager.hpp>
@@ -25,8 +25,7 @@ Engine::Engine(const EngineConfig& engineConfig, vulkan::VulkanLayerStack& layer
                                         .eye = { 2.0f, 2.0f, 2.0f },
                                         .center = { 0.0f, 0.0f, 0.0f },
                                         .up = { 0.0f, 0.0f, 1.0f } } },
-      m_layers{ layers }, m_modelStorage{ modelStorage } {
-}
+      m_layers{ layers }, m_modelStorage{ modelStorage } {}
 
 void Engine::run() {
     TH_API_LOG_INFO("Start {} engine", m_engineConfig.engineName);
@@ -57,49 +56,8 @@ void Engine::run() {
 
     const auto& device = physicalDevicesManager.getSelectedDevice();
 
-    vulkan::VulkanRenderer renderer(window, device, surface, m_modelStorage, m_camera);
-
-    // ImGui implementation is temporary.
-    // It will have to be adjusted with vulkan and renderer to be more concise together
-    ImGui_ImplGlfw_InitForVulkan(window.getHandler().get(), true);
-    ImGui_ImplVulkan_InitInfo initInfo{};
-    initInfo.Instance = instance.instance.get();
-    initInfo.PhysicalDevice = device.physicalDevice;
-    initInfo.Device = device.logicalDevice.get();
-    initInfo.QueueFamily = device.queueFamilyIndices.graphicFamily.value();
-    initInfo.Queue = device.logicalDevice->getQueue(device.queueFamilyIndices.graphicFamily.value(), 0);
-    const auto pipelineCache = device.logicalDevice->createPipelineCacheUnique(vk::PipelineCacheCreateInfo());
-    initInfo.PipelineCache = pipelineCache.get();
-    const auto descriptorPool =
-            vulkan::createDescriptorPool(device.logicalDevice.get(),
-                                         { vk::DescriptorPoolSize(vk::DescriptorType::eSampler, 2),
-                                           vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, 2),
-                                           vk::DescriptorPoolSize(vk::DescriptorType::eSampledImage, 2),
-                                           vk::DescriptorPoolSize(vk::DescriptorType::eStorageImage, 2),
-                                           vk::DescriptorPoolSize(vk::DescriptorType::eUniformTexelBuffer, 2),
-                                           vk::DescriptorPoolSize(vk::DescriptorType::eStorageTexelBuffer, 2),
-                                           vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, 2),
-                                           vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, 2),
-                                           vk::DescriptorPoolSize(vk::DescriptorType::eUniformBufferDynamic, 2),
-                                           vk::DescriptorPoolSize(vk::DescriptorType::eStorageBufferDynamic, 2),
-                                           vk::DescriptorPoolSize(vk::DescriptorType::eInputAttachment, 2) });
-    initInfo.DescriptorPool = descriptorPool.get();
-    initInfo.RenderPass = renderer.m_renderPass.get();
-    initInfo.Subpass = 0;
-    initInfo.MinImageCount = vulkan::VulkanRenderer::maxFramesInFlight;
-    initInfo.ImageCount = vulkan::VulkanRenderer::maxFramesInFlight;
-    initInfo.MSAASamples = static_cast<VkSampleCountFlagBits>(device.maxMsaaSamples);
-    initInfo.UseDynamicRendering = true;
-    initInfo.PipelineRenderingCreateInfo = vk::PipelineRenderingCreateInfo(
-            0, { renderer.m_swapChainSettings.surfaceFormat.format }, th::vulkan::findDepthFormat(device.physicalDevice));
-    initInfo.Allocator = nullptr;
-    initInfo.CheckVkResultFn = [](const auto vkResult) {
-        if (vkResult == VK_SUCCESS) {
-            return;
-        }
-        TH_API_LOG_INFO("CheckVkResultFn: {}", static_cast<int>(vkResult));
-    };
-    ImGui_ImplVulkan_Init(&initInfo);
+    vulkan::Gui gui(device, window, instance.instance.get());
+    vulkan::VulkanRenderer renderer(window, device, surface, m_modelStorage, m_camera, gui);
 
     while (!window.shouldClose()) {
         window.poolEvents();

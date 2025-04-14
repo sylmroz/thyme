@@ -7,6 +7,7 @@
 #include <thyme/scene/camera.hpp>
 #include <thyme/scene/model.hpp>
 #include <thyme/platform/vulkan/swapchain.hpp>
+#include <thyme/platform/vulkan/gui.hpp>
 
 #include <vulkan/vulkan.hpp>
 
@@ -15,7 +16,7 @@ namespace th::vulkan {
 class VulkanRenderer final: public renderer::Renderer {
 public:
     explicit VulkanRenderer(const VulkanGlfwWindow& window, const Device& device, const vk::UniqueSurfaceKHR& surface,
-                            scene::ModelStorage& modelStorage, scene::Camera& camera) noexcept;
+                            scene::ModelStorage& modelStorage, scene::Camera& camera, Gui& gui) noexcept;
 
     void draw() override;
 
@@ -36,6 +37,7 @@ public:
     FrameDataList m_frameDataList;
     SwapChainData m_swapChainData;
     scene::Camera& m_camera;
+    Gui& m_gui;
 
     static constexpr uint32_t maxFramesInFlight{ 2 };
 
