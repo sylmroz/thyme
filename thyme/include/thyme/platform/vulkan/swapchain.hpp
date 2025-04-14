@@ -28,6 +28,11 @@ struct SwapChainFrame {
     vk::UniqueImageView imageView;
 };
 
+struct SwapChainFrameNoUnique {
+    vk::Image image;
+    vk::ImageView imageView;
+};
+
 class SwapChainFrames {
 public:
     explicit SwapChainFrames(const vk::Device device, const SwapChain& swapChain, const vk::Format format) noexcept;
@@ -40,6 +45,25 @@ public:
         return m_swapChainFrames;
     }
 
+    [[nodiscard]] auto getSwapChainFrame(const uint32_t index) noexcept -> SwapChainFrameNoUnique {
+        return getSwapChainFrameInternal(index);
+    }
+    [[nodiscard]] auto getSwapChainFrame(const uint32_t index) const noexcept -> SwapChainFrameNoUnique {
+        return getSwapChainFrameInternal(index);
+    }
+
+private:
+    [[nodiscard]] auto getSwapChainFrameInternal(const uint32_t index) const noexcept -> SwapChainFrameNoUnique {
+        if (index >= m_swapChainFrames.size()) {
+            constexpr auto message = "SwapChainFrames index out of range";
+            TH_API_LOG_ERROR(message);
+            throw std::out_of_range(message);
+        }
+        return SwapChainFrameNoUnique {
+            .image = m_swapChainFrames[index].image,
+            .imageView = m_swapChainFrames[index].imageView.get(),
+        };
+    }
 private:
     std::vector<SwapChainFrame> m_swapChainFrames;
 };
@@ -66,6 +90,14 @@ public:
 
     [[nodiscard]] auto getSwapChainFrames() const noexcept -> const std::vector<SwapChainFrame>& {
         return m_swapChainFrames.getSwapChainFrames();
+    }
+
+    [[nodiscard]] auto getSwapChainFrame(const uint32_t index) noexcept -> SwapChainFrameNoUnique {
+        return m_swapChainFrames.getSwapChainFrame(index);
+    }
+
+    [[nodiscard]] auto getSwapChainFrame(const uint32_t index) const noexcept -> SwapChainFrameNoUnique {
+        return m_swapChainFrames.getSwapChainFrame(index);
     }
 
 private:

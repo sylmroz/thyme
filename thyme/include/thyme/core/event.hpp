@@ -3,6 +3,7 @@
 #include <thyme/export_macros.hpp>
 
 #include <glm/vec2.hpp>
+#include <fmt/format.h>
 
 #include <functional>
 #include <ranges>
@@ -19,7 +20,7 @@ struct THYME_API WindowResize {
     int height;
 
     std::string toString() const {
-        return std::format("WindowResize {{ width:{} height:{} }}", width, height);
+        return fmt::format("WindowResize {{ width:{} height:{} }}", width, height);
     }
 };
 
@@ -32,7 +33,7 @@ struct THYME_API WindowMaximalize{};
 struct THYME_API MousePosition {
     glm::vec2 pos;
     std::string toString() const {
-        return std::format("MousePosition {{ x: {}, y: {}}}", pos.x, pos.y);
+        return fmt::format("MousePosition {{ x: {}, y: {}}}", pos.x, pos.y);
     }
 };
 

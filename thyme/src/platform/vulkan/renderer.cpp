@@ -44,7 +44,7 @@ void VulkanRenderer::draw() {
             m_frameDataList.getNext();
     const auto& logicalDevice = m_device.logicalDevice;
     const auto& queueFamilyIndices = m_device.queueFamilyIndices;
-    if (logicalDevice->waitForFences({ fence.get() }, vk::True, std::numeric_limits<uint64_t>::max())
+    if (logicalDevice->waitForFences({ fence }, vk::True, std::numeric_limits<uint64_t>::max())
         != vk::Result::eSuccess) {
         TH_API_LOG_ERROR("Failed to wait for a complete fence");
         throw std::runtime_error("Failed to wait for a complete fence");
@@ -53,7 +53,7 @@ void VulkanRenderer::draw() {
         try {
             return logicalDevice->acquireNextImageKHR(m_swapChainData.getSwapChain(),
                                                       std::numeric_limits<uint64_t>::max(),
-                                                      imageAvailableSemaphore.get());
+                                                      imageAvailableSemaphore);
         } catch (const vk::OutOfDateKHRError&) {
             recreateSwapChain();
         }
@@ -65,35 +65,35 @@ void VulkanRenderer::draw() {
     }
     const auto imageIndex = imageIndexResult.value;
 
-    logicalDevice->resetFences({ fence.get() });
-    commandBuffer->reset();
+    logicalDevice->resetFences({ fence });
+    commandBuffer.reset();
 
-    commandBuffer->begin(vk::CommandBufferBeginInfo());
+    commandBuffer.begin(vk::CommandBufferBeginInfo());
     constexpr auto clearColorValues = vk::ClearValue(vk::ClearColorValue(1.0f, 0.0f, 1.0f, 1.0f));
     constexpr auto depthClearValue = vk::ClearValue(vk::ClearDepthStencilValue(1.0f, 0));
 
-    const auto& swapChainFrame = m_swapChainData.getSwapChainFrames()[imageIndex];
-    transitImageLayout(commandBuffer.get(),
-                       swapChainFrame.image,
+    const auto& [image, imageView] = m_swapChainData.getSwapChainFrame(imageIndex);
+    transitImageLayout(commandBuffer,
+                       image,
                        vk::ImageLayout::eUndefined,
                        vk::ImageLayout::eColorAttachmentOptimal,
                        1);
 
-    transitDepthImageLayout(commandBuffer.get());
+    transitDepthImageLayout(commandBuffer);
 
-    commandBuffer->setViewport(0,
+    commandBuffer.setViewport(0,
                                { vk::Viewport(0.0f,
                                               0.0f,
                                               static_cast<float>(m_swapChainExtent.width),
                                               static_cast<float>(m_swapChainExtent.height),
                                               0.0f,
                                               1.0f) });
-    commandBuffer->setScissor(0, { vk::Rect2D(vk::Offset2D(0, 0), m_swapChainExtent) });
+    commandBuffer.setScissor(0, { vk::Rect2D(vk::Offset2D(0, 0), m_swapChainExtent) });
 
     const auto colorAttachment = vk::RenderingAttachmentInfo(m_colorImageMemory.getImageView().get(),
                                                              vk::ImageLayout::eColorAttachmentOptimal,
                                                              vk::ResolveModeFlagBits::eAverage,
-                                                             swapChainFrame.imageView.get(),
+                                                             imageView,
                                                              vk::ImageLayout::eColorAttachmentOptimal,
                                                              vk::AttachmentLoadOp::eClear,
                                                              vk::AttachmentStoreOp::eStore,
@@ -114,32 +114,32 @@ void VulkanRenderer::draw() {
                                                  0,
                                                  { colorAttachment },
                                                  &depthAttachment);
-    commandBuffer->beginRendering(renderingInfo);
+    commandBuffer.beginRendering(renderingInfo);
     for (const auto& pipeline : m_pipelines) {
-        pipeline->draw(commandBuffer.get());
+        pipeline->draw(commandBuffer);
     }
-    m_gui.draw(commandBuffer.get());
+    m_gui.draw(commandBuffer);
 
-    commandBuffer->endRendering();
-    transitImageLayout(commandBuffer.get(),
-                       swapChainFrame.image,
+    commandBuffer.endRendering();
+    transitImageLayout(commandBuffer,
+                       image,
                        vk::ImageLayout::eColorAttachmentOptimal,
                        vk::ImageLayout::ePresentSrcKHR,
                        1);
 
-    commandBuffer->end();
+    commandBuffer.end();
 
     constexpr vk::PipelineStageFlags f = vk::PipelineStageFlagBits::eColorAttachmentOutput;
     const auto submitInfo = vk::SubmitInfo(vk::SubmitInfo(
-            { imageAvailableSemaphore.get() }, { f }, { commandBuffer.get() }, { renderFinishedSemaphore.get() }));
+            { imageAvailableSemaphore }, { f }, { commandBuffer }, { renderFinishedSemaphore }));
     const auto& graphicQueue = logicalDevice->getQueue(queueFamilyIndices.graphicFamily.value(), 0);
-    graphicQueue.submit(submitInfo, fence.get());
+    graphicQueue.submit(submitInfo, fence);
     const auto& presentationQueue = logicalDevice->getQueue(queueFamilyIndices.presentFamily.value(), 0);
 
     try {
         const auto swapChain = m_swapChainData.getSwapChain();
         const auto queuePresentResult = presentationQueue.presentKHR(
-                vk::PresentInfoKHR({ renderFinishedSemaphore.get() }, { swapChain }, { imageIndex }));
+                vk::PresentInfoKHR({ renderFinishedSemaphore }, { swapChain }, { imageIndex }));
         if (queuePresentResult == vk::Result::eErrorOutOfDateKHR || queuePresentResult == vk::Result::eSuboptimalKHR
             || m_window.frameBufferResized) {
             m_window.frameBufferResized = false;

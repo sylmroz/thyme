@@ -63,12 +63,12 @@ vk::DebugUtilsMessengerCreateInfoEXT createDebugUtilsMessengerCreateInfo() {
 
 namespace th::vulkan {
 
-static constexpr auto deviceExtensions =
+static constexpr auto s_deviceExtensions =
         std::array{ vk::KHRSwapchainExtensionName, vk::KHRDynamicRenderingExtensionName };
 
 bool deviceHasAllRequiredExtensions(const vk::PhysicalDevice& physicalDevice) {
     const auto& availableDeviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
-    return std::ranges::all_of(deviceExtensions, [&availableDeviceExtensions](const auto& extension) {
+    return std::ranges::all_of(s_deviceExtensions, [&availableDeviceExtensions](const auto& extension) {
         return std::ranges::any_of(availableDeviceExtensions, [&extension](const auto& instanceExtension) {
             return std::string_view(extension) == std::string_view(instanceExtension.extensionName);
         });
@@ -241,9 +241,10 @@ std::vector<PhysicalDevice> getPhysicalDevices(const vk::UniqueInstance& instanc
     }
 
     const auto features = physicalDevice.getFeatures();
-    const auto dynamicRenderingFeatures = vk::PhysicalDeviceDynamicRenderingFeaturesKHR(true);
-    const vk::StructureChain deviceCreateInfo(
-            vk::DeviceCreateInfo(vk::DeviceCreateFlags(), deviceQueueCreateInfos, nullptr, deviceExtensions, &features),
+    constexpr auto dynamicRenderingFeatures = vk::PhysicalDeviceDynamicRenderingFeaturesKHR(true);
+    const auto deviceCreateInfo = vk::StructureChain(
+            vk::DeviceCreateInfo(
+                    vk::DeviceCreateFlags(), deviceQueueCreateInfos, nullptr, s_deviceExtensions, &features),
             dynamicRenderingFeatures);
 
     return physicalDevice.createDeviceUnique(deviceCreateInfo.get<vk::DeviceCreateInfo>());
@@ -422,8 +423,8 @@ void transitImageLayout(const Device& device, const vk::CommandPool commandPool,
 void transitImageLayout(const vk::CommandBuffer commandBuffer, const vk::Image image,
                         const ImageLayoutTransition layoutTransition,
                         const ImagePipelineStageTransition stageTransition,
-                        const ImageAccessFlagsTransition accessFlagsTransition,
-                        const vk::ImageAspectFlags aspectFlags, const uint32_t mipLevels) {
+                        const ImageAccessFlagsTransition accessFlagsTransition, const vk::ImageAspectFlags aspectFlags,
+                        const uint32_t mipLevels) {
     const auto [srcAccessFlag, dstAccessFlag] = accessFlagsTransition;
     const auto [oldLayout, newLayout] = layoutTransition;
     const auto [srcStages, dstStages] = stageTransition;

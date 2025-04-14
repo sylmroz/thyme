@@ -27,7 +27,7 @@ public:
 
 private:
     uint32_t m_mipLevels;
-    Resolution m_resolution;
+    Resolution m_resolution{};
     std::vector<uint8_t> m_data;
 };
 

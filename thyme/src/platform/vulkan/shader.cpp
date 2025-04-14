@@ -1,5 +1,5 @@
 #include <thyme/platfrom/vulkan/shader.hpp>
-
+#include <fmt/format.h>
 #include <shaderc/shaderc.hpp>
 
 #include <thyme/core/logger.hpp>
@@ -11,7 +11,7 @@
     compileOptions.SetOptimizationLevel(shaderc_optimization_level_performance);
     const auto result = shaderc::Compiler{}.CompileGlslToSpv(source.data(), source.size(), kind, "main", {});
     if (const auto status = result.GetCompilationStatus(); status != shaderc_compilation_status_success) {
-        const auto message = std::format("Failed to compile shader. Shaderrc status: {}", std::to_string(status));
+        const auto message = fmt::format("Failed to compile shader. Shaderrc status: {}", std::to_string(status));
         TH_API_LOG_ERROR(message);
         throw std::runtime_error(message);
     }

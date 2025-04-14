@@ -24,23 +24,6 @@ public:
         recreateSwapChain(resolution);
     }
 
-    // temporary public
-    const Device& m_device;
-    const VulkanGlfwWindow& m_window;
-    const vk::UniqueSurfaceKHR& m_surface;
-    const vk::UniqueCommandPool m_commandPool;
-    SwapChainSettings m_swapChainSettings;
-    vk::Extent2D m_swapChainExtent;
-    ImageMemory m_colorImageMemory;
-    ImageMemory m_depthImage;
-    const vk::UniqueRenderPass m_renderPass;
-    FrameDataList m_frameDataList;
-    SwapChainData m_swapChainData;
-    scene::Camera& m_camera;
-    Gui& m_gui;
-
-    static constexpr uint32_t maxFramesInFlight{ 2 };
-
 private:
     inline void recreateSwapChain(const Resolution& resolution);
     
@@ -68,6 +51,22 @@ private:
     }
 
 private:
+    // temporary public
+    const Device& m_device;
+    const VulkanGlfwWindow& m_window;
+    const vk::UniqueSurfaceKHR& m_surface;
+    const vk::UniqueCommandPool m_commandPool;
+    SwapChainSettings m_swapChainSettings;
+    vk::Extent2D m_swapChainExtent;
+    ImageMemory m_colorImageMemory;
+    ImageMemory m_depthImage;
+    const vk::UniqueRenderPass m_renderPass;
+    FrameDataList m_frameDataList;
+    SwapChainData m_swapChainData;
+    scene::Camera& m_camera;
+    Gui& m_gui;
+
+    static constexpr uint32_t maxFramesInFlight{ 2 };
     std::vector<std::unique_ptr<GraphicPipeline>> m_pipelines;
 };
 }// namespace th::vulkan

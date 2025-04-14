@@ -35,7 +35,7 @@ public:
                         model.name,
                         model.mesh.vertices.size(),
                         model.mesh.indices.size());
-        if (std::find_if(m_models.begin(), m_models.end(), [&model](const Model& m) { return m.name == model.name; })
+        if (std::ranges::find_if(m_models, [&model](const Model& m) { return m.name == model.name; })
             != m_models.end()) {
             const auto msg = fmt::format("Model {} already exists", model.name);
             TH_API_LOG_WARN(msg);
@@ -45,8 +45,8 @@ public:
     }
 
     inline void deleteModel(const std::string_view name) noexcept {
-        const auto it = std::ranges::find_if(m_models, [name](const Model& model) { return model.name == name; });
-        if (it != m_models.end()) {
+        if (const auto it = std::ranges::find_if(m_models, [name](const Model& model) { return model.name == name; });
+            it != m_models.end()) {
             m_models.erase(it);
         }
     }

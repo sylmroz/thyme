@@ -152,14 +152,28 @@ struct FrameData {
     uint32_t currentFrame;
 };
 
+struct  FrameDataNoUnique {
+    vk::CommandBuffer commandBuffer;
+    vk::Semaphore imageAvailableSemaphore;
+    vk::Semaphore renderFinishedSemaphore;
+    vk::Fence fence;
+    uint32_t currentFrame;
+};
+
 class FrameDataList {
 public:
     explicit FrameDataList(const vk::Device logicalDevice, const vk::CommandPool commandPool,
                            const uint32_t maxFrames) noexcept;
 
-    [[nodiscard]] auto getNext() noexcept -> const FrameData& {
+    [[nodiscard]] auto getNext() noexcept -> FrameDataNoUnique {
         const auto index = getNextFrameIndex();
-        return m_frameDataList[index];
+        return FrameDataNoUnique{
+            .commandBuffer = m_frameDataList[index].commandBuffer.get(),
+            .imageAvailableSemaphore = m_frameDataList[index].imageAvailableSemaphore.get(),
+            .renderFinishedSemaphore = m_frameDataList[index].renderFinishedSemaphore.get(),
+            .fence = m_frameDataList[index].fence.get(),
+            .currentFrame = m_frameDataList[index].currentFrame
+        };
     };
 
 private:

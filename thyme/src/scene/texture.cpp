@@ -3,15 +3,17 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+#include <fmt/format.h>
+
 namespace th {
 
 Texture::Texture(const std::filesystem::path& file) {
     if (!std::filesystem::exists(file) || !std::filesystem::is_regular_file(file)) {
-        throw std::invalid_argument(std::format("File {} does not exist", file.string()));
+        throw std::invalid_argument(fmt::format("File {} does not exist", file.string()));
     }
-    int texWidth, texHeight, texChannels;
+    int texWidth{}, texHeight{}, texChannels{};
     const auto str = file.string();
-    const auto pixels =
+    auto *const pixels =
             stbi_load(str.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     m_mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
     m_resolution.width = static_cast<uint32_t>(texWidth);
@@ -22,4 +24,4 @@ Texture::Texture(const std::filesystem::path& file) {
 }
 
 
-}// namespace Thyme
+}// namespace th
