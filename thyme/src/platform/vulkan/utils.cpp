@@ -98,7 +98,7 @@ UniqueInstance::UniqueInstance(const UniqueInstanceConfig& config) {
 #endif
 
     try {
-        instance = vk::createInstanceUnique(instanceCreateInfo.get<vk::InstanceCreateInfo>());
+        m_instance = vk::createInstanceUnique(instanceCreateInfo.get<vk::InstanceCreateInfo>());
 #if !defined(NDEBUG)
         setupDebugMessenger(enabledExtensions);
 #endif
@@ -129,7 +129,7 @@ void UniqueInstance::setupDebugMessenger(const std::vector<const char*>& extensi
     validateExtensions(extensions);
 
     pfnVkCreateDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
-            instance->getProcAddr("vkCreateDebugUtilsMessengerEXT"));
+            m_instance->getProcAddr("vkCreateDebugUtilsMessengerEXT"));
     if (!pfnVkCreateDebugUtilsMessengerEXT) {
         constexpr auto message = "Failed to get vkCreateDebugUtilsMessengerEXT function.";
         TH_API_LOG_ERROR(message);
@@ -137,14 +137,14 @@ void UniqueInstance::setupDebugMessenger(const std::vector<const char*>& extensi
     }
 
     pfnVkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
-            instance->getProcAddr("vkDestroyDebugUtilsMessengerEXT"));
+            m_instance->getProcAddr("vkDestroyDebugUtilsMessengerEXT"));
     if (!pfnVkDestroyDebugUtilsMessengerEXT) {
         constexpr auto message = "Failed to get vkDestroyDebugUtilsMessengerEXT function.";
         TH_API_LOG_ERROR(message);
         throw std::runtime_error(message);
     }
 
-    debugMessenger = instance->createDebugUtilsMessengerEXTUnique(createDebugUtilsMessengerCreateInfo());
+    debugMessenger = m_instance->createDebugUtilsMessengerEXTUnique(createDebugUtilsMessengerCreateInfo());
 }
 #endif
 
@@ -198,7 +198,7 @@ auto getMaxUsableSampleCount(const vk::PhysicalDevice& device) -> vk::SampleCoun
     return vk::SampleCountFlagBits::e1;
 }
 
-std::vector<PhysicalDevice> getPhysicalDevices(const vk::UniqueInstance& instance, const vk::SurfaceKHR surface) {
+std::vector<PhysicalDevice> getPhysicalDevices(const vk::Instance instance, const vk::SurfaceKHR surface) {
     static std::map<vk::PhysicalDeviceType, uint32_t> priorities = {
         { vk::PhysicalDeviceType::eOther, 0 },       { vk::PhysicalDeviceType::eCpu, 1 },
         { vk::PhysicalDeviceType::eVirtualGpu, 2 },  { vk::PhysicalDeviceType::eIntegratedGpu, 3 },
@@ -206,7 +206,7 @@ std::vector<PhysicalDevice> getPhysicalDevices(const vk::UniqueInstance& instanc
     };
 
     std::vector<PhysicalDevice> physicalDevices;
-    for (const auto& device : instance->enumeratePhysicalDevices()) {
+    for (const auto& device : instance.enumeratePhysicalDevices()) {
         const auto queueFamilyIndex = QueueFamilyIndices(device, surface);
         const auto deviceSupportExtensions = deviceHasAllRequiredExtensions(device);
         const auto swapChainSupportDetails = SwapChainSupportDetails(device, surface);

@@ -23,7 +23,12 @@ class UniqueInstance {
 public:
     explicit UniqueInstance(const UniqueInstanceConfig& config);
     static void validateExtensions(const std::vector<const char*>& extensions);
-    vk::UniqueInstance instance;
+
+    [[nodiscard]] auto getInstance() const noexcept -> vk::Instance {
+        return m_instance.get();
+    }
+private:
+    vk::UniqueInstance m_instance;
 
 private:
 #if !defined(NDEBUG)
@@ -142,7 +147,7 @@ struct Device {
     }
 };
 
-std::vector<PhysicalDevice> getPhysicalDevices(const vk::UniqueInstance& instance, const vk::SurfaceKHR surface);
+std::vector<PhysicalDevice> getPhysicalDevices(const vk::Instance instance, const vk::SurfaceKHR surface);
 
 struct FrameData {
     vk::UniqueCommandBuffer commandBuffer;
@@ -255,7 +260,7 @@ void singleTimeCommand(const Device& device, const vk::CommandPool commandPool, 
 }
 
 static constexpr auto getBindingDescription() -> vk::VertexInputBindingDescription {
-    return vk::VertexInputBindingDescription(0, sizeof(th::renderer::Vertex), vk::VertexInputRate::eVertex);
+    return {0, sizeof(th::renderer::Vertex), vk::VertexInputRate::eVertex};
 }
 
 static constexpr auto getAttributeDescriptions() -> std::array<vk::VertexInputAttributeDescription, 3> {

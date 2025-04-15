@@ -6,6 +6,7 @@
 namespace th::vulkan {
 
 Gui::Gui(const Device& device, const VulkanGlfwWindow& window, const vk::Instance& instance) noexcept {
+    TH_API_LOG_INFO("Create Gui Class");
     ImGui_ImplGlfw_InitForVulkan(window.getHandler().get(), true);
     ImGui_ImplVulkan_InitInfo initInfo{};
     initInfo.Instance = instance;
@@ -58,6 +59,11 @@ void Gui::draw(const vk::CommandBuffer commandBuffer) const noexcept {
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
     }
+}
+Gui::~Gui() noexcept {
+    TH_API_LOG_INFO("Destroy Gui Class");
+    ImGui_ImplVulkan_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
 }
 
 }// namespace th::vulkan

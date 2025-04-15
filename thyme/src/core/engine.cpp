@@ -40,7 +40,7 @@ void Engine::run() {
 
     const auto glfwExtensions = VulkanGlfwWindow::getRequiredInstanceExtensions();
     // clang-format off
-    const std::vector<const char*> enabledExtensions = glfwExtensions
+    const auto enabledExtensions = glfwExtensions
             | std::views::transform([](auto const& layerName) { return layerName.c_str(); })
             | std::ranges::to<std::vector<const char*>>();
     // clang-format on
@@ -49,14 +49,14 @@ void Engine::run() {
             vulkan::UniqueInstance(vulkan::UniqueInstanceConfig{ .engineName = m_engineConfig.engineName,
                                                                  .appName = m_engineConfig.appName,
                                                                  .instanceExtension = enabledExtensions });
-    const auto surface = window.getSurface(instance.instance);
+    const auto surface = window.getSurface(instance.getInstance());
 
-    const auto devices = vulkan::getPhysicalDevices(instance.instance, surface.get());
+    const auto devices = vulkan::getPhysicalDevices(instance.getInstance(), surface.get());
     const vulkan::PhysicalDevicesManager physicalDevicesManager(devices);
 
     const auto& device = physicalDevicesManager.getSelectedDevice();
 
-    vulkan::Gui gui(device, window, instance.instance.get());
+    vulkan::Gui gui(device, window, instance.getInstance());
     vulkan::VulkanRenderer renderer(window, device, surface, m_modelStorage, m_camera, gui);
 
     while (!window.shouldClose()) {
@@ -68,9 +68,6 @@ void Engine::run() {
     }
 
     device.logicalDevice->waitIdle();
-
-    ImGui_ImplVulkan_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
 }
 
 }// namespace th

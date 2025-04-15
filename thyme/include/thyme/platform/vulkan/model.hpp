@@ -25,7 +25,7 @@ public:
         return m_texture;
     }
     [[nodiscard]] uint32_t getIndicesSize() const noexcept {
-        return indicesSize;
+        return m_indicesSize;
     }
 
     void draw(const vk::CommandBuffer commandBuffer) const noexcept;
@@ -35,7 +35,7 @@ private:
     BufferMemory m_indexMemoryBuffer;
     UniformBufferObject<renderer::MVP> m_uniformBufferObject;
     VulkanTexture m_texture;
-    uint32_t indicesSize;
+    uint32_t m_indicesSize;
 };
 
 }// namespace th::vulkan

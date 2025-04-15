@@ -27,7 +27,7 @@ public:
 
 class ScenePipeline final: public GraphicPipeline {
 public:
-    explicit ScenePipeline(const Device& device, const vk::PipelineRenderingCreateInfo pipelineRenderingCreateInfo,
+    explicit ScenePipeline(const Device& device, const vk::PipelineRenderingCreateInfo& pipelineRenderingCreateInfo,
                            const vk::CommandPool commandPool, scene::ModelStorage& modelStorage, scene::Camera& camera);
 
     virtual void draw(const vk::CommandBuffer commandBuffer) const override;

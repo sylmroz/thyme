@@ -15,7 +15,7 @@
 
 namespace th::vulkan {
 
-ScenePipeline::ScenePipeline(const Device& device, const vk::PipelineRenderingCreateInfo pipelineRenderingCreateInfo,
+ScenePipeline::ScenePipeline(const Device& device, const vk::PipelineRenderingCreateInfo& pipelineRenderingCreateInfo,
                              const vk::CommandPool commandPool, scene::ModelStorage& modelStorage,
                              scene::Camera& camera)
     : GraphicPipeline{}, m_camera{ camera } {

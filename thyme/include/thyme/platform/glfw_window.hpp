@@ -49,14 +49,14 @@ public:
 
     [[nodiscard]] static std::vector<std::string> getRequiredInstanceExtensions() noexcept;
 
-    [[nodiscard]] auto getSurface(const vk::UniqueInstance& instance) const {
+    [[nodiscard]] auto getSurface(const vk::Instance instance) const {
         VkSurfaceKHR surface{ nullptr };
-        if (const auto result = glfwCreateWindowSurface(*instance, this->getHandler().get(), nullptr, &surface);
+        if (const auto result = glfwCreateWindowSurface(instance, this->getHandler().get(), nullptr, &surface);
             result != VK_SUCCESS) {
             throw std::runtime_error(
                     fmt::format("GLFW cannot create VkSurface! Error: {}", static_cast<uint32_t>(result)));
         }
-        return vk::UniqueSurfaceKHR(surface, *instance);
+        return vk::UniqueSurfaceKHR(surface, instance);
     }
 };
 
