@@ -385,16 +385,16 @@ public:
     ImageMemory(const Device& device, const vk::CommandPool commandPool, const std::span<const uint8_t> data,
                 const Resolution resolution, const vk::SampleCountFlagBits msaa, const uint32_t mipLevels = 1);
 
-    [[nodiscard]] auto getImage() const noexcept -> const vk::UniqueImage& {
-        return m_image;
+    [[nodiscard]] auto getImage() const noexcept -> vk::Image {
+        return m_image.get();
     }
 
-    [[nodiscard]] auto getMemory() const noexcept -> const vk::UniqueDeviceMemory& {
-        return m_memory;
+    [[nodiscard]] auto getMemory() const noexcept -> vk::DeviceMemory {
+        return m_memory.get();
     }
 
-    [[nodiscard]] auto getImageView() const noexcept -> const vk::UniqueImageView& {
-        return m_imageView;
+    [[nodiscard]] auto getImageView() const noexcept -> vk::ImageView {
+        return m_imageView.get();
     }
 
 private:

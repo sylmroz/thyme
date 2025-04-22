@@ -70,9 +70,8 @@ ScenePipeline::ScenePipeline(const Device& device, const vk::PipelineRenderingCr
 
     for (const auto [descriptorSet, model] : std::views::zip(m_descriptorSets, m_models)) {
         const auto descriptorBufferInfo = model.getUniformBufferObject().getDescriptorBufferInfos();
-        const auto descriptorImageInfo = vk::DescriptorImageInfo(model.getTexture().getSampler().get(),
-                                                                 model.getTexture().getImageView().get(),
-                                                                 vk::ImageLayout::eShaderReadOnlyOptimal);
+        const auto descriptorImageInfo =
+                model.getTexture().getDescriptorImageInfo(vk::ImageLayout::eShaderReadOnlyOptimal);
         const auto writeDescriptorSets = std::array{
             vk::WriteDescriptorSet(
                     descriptorSet, 0, 0, vk::DescriptorType::eUniformBuffer, {}, { descriptorBufferInfo }),

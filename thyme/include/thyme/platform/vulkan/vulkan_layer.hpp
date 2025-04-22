@@ -7,10 +7,10 @@
 
 namespace th::vulkan {
 
-using VulkanLayer = Layer<vk::UniqueCommandBuffer>;
-using VulkanOverlayLayer = OverlayLayer<vk::UniqueCommandBuffer>;
-using VulkanNonOverlayLayer = NonOverlayLayer<vk::UniqueCommandBuffer>;
+using VulkanLayer = Layer<vk::CommandBuffer>;
+using VulkanOverlayLayer = OverlayLayer<vk::CommandBuffer>;
+using VulkanNonOverlayLayer = NonOverlayLayer<vk::CommandBuffer>;
 
-using VulkanLayerStack = LayerStack<vk::UniqueCommandBuffer>;
+using VulkanLayerStack = LayerStack<vk::CommandBuffer>;
 
 }// namespace th::vulkan

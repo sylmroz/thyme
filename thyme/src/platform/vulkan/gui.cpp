@@ -5,7 +5,8 @@
 
 namespace th::vulkan {
 
-Gui::Gui(const Device& device, const VulkanGlfwWindow& window, const vk::Instance& instance) noexcept {
+Gui::Gui(const Device& device, const VulkanGlfwWindow& window, const vk::Instance& instance)
+    : VulkanNonOverlayLayer("GUI") {
     TH_API_LOG_INFO("Create Gui Class");
     ImGui_ImplGlfw_InitForVulkan(window.getHandler().get(), true);
     ImGui_ImplVulkan_InitInfo initInfo{};
@@ -46,12 +47,11 @@ Gui::Gui(const Device& device, const VulkanGlfwWindow& window, const vk::Instanc
     };
     ImGui_ImplVulkan_Init(&initInfo);
 }
-void Gui::draw(const vk::CommandBuffer commandBuffer) const noexcept {
-    ImGui_ImplVulkan_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
+void Gui::draw(const vk::CommandBuffer commandBuffer) {
+
     bool showDemoWindow = true;
-    ImGui::NewFrame();
     ImGui::ShowDemoWindow(&showDemoWindow);
+
     ImGui::Render();
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
     // Update and Render additional Platform Windows
@@ -60,6 +60,13 @@ void Gui::draw(const vk::CommandBuffer commandBuffer) const noexcept {
         ImGui::RenderPlatformWindowsDefault();
     }
 }
+
+void Gui::start() {
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+}
+
 Gui::~Gui() noexcept {
     TH_API_LOG_INFO("Destroy Gui Class");
     ImGui_ImplVulkan_Shutdown();

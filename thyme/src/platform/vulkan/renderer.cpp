@@ -84,7 +84,7 @@ void VulkanRenderer::draw() {
                                              1.0f) });
     commandBuffer.setScissor(0, { vk::Rect2D(vk::Offset2D(0, 0), m_swapChainExtent) });
 
-    const auto colorAttachment = vk::RenderingAttachmentInfo(m_colorImageMemory.getImageView().get(),
+    const auto colorAttachment = vk::RenderingAttachmentInfo(m_colorImageMemory.getImageView(),
                                                              vk::ImageLayout::eColorAttachmentOptimal,
                                                              vk::ResolveModeFlagBits::eAverage,
                                                              imageView,
@@ -93,7 +93,7 @@ void VulkanRenderer::draw() {
                                                              vk::AttachmentStoreOp::eStore,
                                                              clearColorValues);
 
-    const auto depthAttachment = vk::RenderingAttachmentInfo(m_depthImage.getImageView().get(),
+    const auto depthAttachment = vk::RenderingAttachmentInfo(m_depthImage.getImageView(),
                                                              vk::ImageLayout::eDepthAttachmentOptimal,
                                                              vk::ResolveModeFlagBits::eNone,
                                                              {},

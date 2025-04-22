@@ -28,7 +28,9 @@ public:
     virtual void onEvent(const Event& event) = 0;
     virtual void onAttach() = 0;
     virtual void onDetach() = 0;
-    virtual void draw(Args&&...) = 0;
+    virtual void draw(Args...) = 0;
+    virtual void start() = 0;
+    virtual void submit() = 0;
 
     [[nodiscard]] inline std::string_view getName() const noexcept {
         return m_name;

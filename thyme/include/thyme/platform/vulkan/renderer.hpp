@@ -33,7 +33,7 @@ private:
 
     inline void transitDepthImageLayout(const vk::CommandBuffer commandBuffer) const {
         transitImageLayout(commandBuffer,
-                               m_depthImage.getImage().get(),
+                               m_depthImage.getImage(),
                                ImageLayoutTransition{
                                    .oldLayout =vk::ImageLayout::eUndefined,
                                    .newLayout = vk::ImageLayout::eDepthAttachmentOptimal
@@ -60,7 +60,6 @@ private:
     vk::Extent2D m_swapChainExtent;
     ImageMemory m_colorImageMemory;
     ImageMemory m_depthImage;
-    const vk::UniqueRenderPass m_renderPass;
     FrameDataList m_frameDataList;
     SwapChainData m_swapChainData;
     scene::Camera& m_camera;

@@ -22,12 +22,14 @@ class ExampleLayer final: public th::vulkan::VulkanOverlayLayer {
 
 public:
     explicit ExampleLayer() : OverlayLayer("example layer") {}
-    void draw(vk::UniqueCommandBuffer&&) override {}
+    void draw(vk::CommandBuffer) override {}
     void onAttach() override {}
     void onDetach() override {}
     void onEvent(const th::Event& event) override {
         std::visit(MyEventDispatcher{}, event);
     }
+    void start() override {}
+    void submit() override {}
 };
 
 class ExampleApp: public th::Application {

@@ -61,6 +61,7 @@ void Engine::run() {
 
     while (!window.shouldClose()) {
         window.poolEvents();
+        gui.start();
         for (const auto& layer : m_layers) {
             // layer->draw();
         }
