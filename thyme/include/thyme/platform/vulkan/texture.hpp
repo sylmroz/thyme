@@ -23,8 +23,9 @@ public:
     [[nodiscard]] auto getImageMemory() const noexcept -> const ImageMemory& {
         return m_imageMemory;
     }
-    [[nodiscard]] auto getDescriptorImageInfo(const vk::ImageLayout imageLayout) const noexcept -> vk::DescriptorImageInfo {
-        return {m_sampler.get(), getImageView(), imageLayout};
+    [[nodiscard]] auto getDescriptorImageInfo(const vk::ImageLayout imageLayout) const noexcept
+            -> vk::DescriptorImageInfo {
+        return { m_sampler.get(), getImageView(), imageLayout };
     }
 
 private:

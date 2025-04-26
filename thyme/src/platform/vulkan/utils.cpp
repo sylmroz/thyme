@@ -252,17 +252,11 @@ std::vector<PhysicalDevice> getPhysicalDevices(const vk::Instance instance, cons
 
 FrameDataList::FrameDataList(const vk::Device logicalDevice, const vk::CommandPool commandPool,
                              const uint32_t maxFrames) noexcept {
-    m_frameDataList.reserve(maxFrames);
-    for (uint32_t i = 0; i < maxFrames; i++) {
+    for (uint32_t i{ 0 }; i < maxFrames; ++i) {
         m_frameDataList.emplace_back(FrameData{
-                .commandBuffer = std::move(logicalDevice
-                                                   .allocateCommandBuffersUnique(vk::CommandBufferAllocateInfo(
-                                                           commandPool, vk::CommandBufferLevel::ePrimary, 1))
-                                                   .front()),
                 .imageAvailableSemaphore = logicalDevice.createSemaphoreUnique(vk::SemaphoreCreateInfo()),
                 .renderFinishedSemaphore = logicalDevice.createSemaphoreUnique(vk::SemaphoreCreateInfo()),
                 .fence = logicalDevice.createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled)),
-                .currentFrame = i,
         });
     }
 }
@@ -544,7 +538,8 @@ void generateMipmaps(const Device& device, const vk::CommandPool commandPool, co
                             vk::Offset3D{ 0, 0, 0 },
                             vk::Offset3D{ mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 } });
         };
-        int mipWidth = static_cast<int>(resolution.width), mipHeight = static_cast<int>(resolution.height);
+        int mipWidth = static_cast<int>(resolution.width);
+        int mipHeight = static_cast<int>(resolution.height);
         for (uint32_t mipLevel = 0; mipLevel < mipLevels - 1; ++mipLevel, mipWidth /= 2, mipHeight /= 2) {
             auto barrier = getImageBarrier(mipLevel);
             commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
@@ -630,6 +625,16 @@ auto findSupportedImageFormat(const vk::PhysicalDevice& device, const std::span<
         }
     }
     throw std::runtime_error("failed to find image format");
+}
+void setCommandBufferFrameSize(const vk::CommandBuffer commandBuffer, const vk::Extent2D frameSize) {
+    commandBuffer.setViewport(0,
+                              { vk::Viewport(0.0f,
+                                             0.0f,
+                                             static_cast<float>(frameSize.width),
+                                             static_cast<float>(frameSize.height),
+                                             0.0f,
+                                             1.0f) });
+    commandBuffer.setScissor(0, { vk::Rect2D(vk::Offset2D(0, 0), frameSize) });
 }
 
 }// namespace th::vulkan

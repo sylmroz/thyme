@@ -19,13 +19,15 @@ VulkanRenderer::VulkanRenderer(const VulkanGlfwWindow& window, const Device& dev
               m_swapChainSettings.surfaceFormat.format,
               vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment,
               vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor, m_device.maxMsaaSamples, 1)),
-      m_depthImage(ImageMemory(device, Resolution{ .width = m_swapChainExtent.width, .height = m_swapChainExtent.height },
-                               findDepthFormat(device.physicalDevice), vk::ImageUsageFlagBits::eDepthStencilAttachment,
-                               vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eDepth,
-                               m_device.maxMsaaSamples, 1)),
+      m_depthImage(ImageMemory(
+              device, Resolution{ .width = m_swapChainExtent.width, .height = m_swapChainExtent.height },
+              findDepthFormat(device.physicalDevice), vk::ImageUsageFlagBits::eDepthStencilAttachment,
+              vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eDepth, m_device.maxMsaaSamples, 1)),
       m_frameDataList{ FrameDataList(device.logicalDevice.get(), m_commandPool.get(), maxFramesInFlight) },
       m_swapChainData{ SwapChainData(device, m_swapChainSettings, m_swapChainExtent, m_surface.get()) },
-      m_camera{ camera }, m_gui{ gui } {
+      m_camera{ camera }, m_gui{ gui },
+      m_commandBuffers{ m_device.logicalDevice->allocateCommandBuffersUnique(vk::CommandBufferAllocateInfo(
+              m_commandPool.get(), vk::CommandBufferLevel::ePrimary, m_swapChainData.getSwapChainFramesCount())) } {
     m_pipelines.emplace_back(std::make_unique<ScenePipeline>(
             device,
             vk::PipelineRenderingCreateInfo(
@@ -39,8 +41,8 @@ void VulkanRenderer::draw() {
     if (m_window.isMinimalized()) {
         return;
     }
-    const auto& [commandBuffer, imageAvailableSemaphore, renderFinishedSemaphore, fence, currentFrame] =
-            m_frameDataList.getNext();
+
+    const auto& [imageAvailableSemaphore, renderFinishedSemaphore, fence] = m_frameDataList.getNext();
     const auto& logicalDevice = m_device.logicalDevice;
     const auto& queueFamilyIndices = m_device.queueFamilyIndices;
     if (logicalDevice->waitForFences({ fence }, vk::True, std::numeric_limits<uint64_t>::max())
@@ -64,25 +66,17 @@ void VulkanRenderer::draw() {
     const auto imageIndex = imageIndexResult.value;
 
     logicalDevice->resetFences({ fence });
-    commandBuffer.reset();
 
+    const auto commandBuffer = m_commandBuffers[m_commandBufferIndex].get();
+    ++m_commandBufferIndex%=m_commandBuffers.size();
+    commandBuffer.reset();
     commandBuffer.begin(vk::CommandBufferBeginInfo());
+    setCommandBufferFrameSize(commandBuffer, m_swapChainExtent);
+
     constexpr auto clearColorValues = vk::ClearValue(vk::ClearColorValue(1.0f, 0.0f, 1.0f, 1.0f));
     constexpr auto depthClearValue = vk::ClearValue(vk::ClearDepthStencilValue(1.0f, 0));
 
     const auto& [image, imageView] = m_swapChainData.getSwapChainFrame(imageIndex);
-    transitImageLayout(commandBuffer, image, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, 1);
-
-    transitDepthImageLayout(commandBuffer);
-
-    commandBuffer.setViewport(0,
-                              { vk::Viewport(0.0f,
-                                             0.0f,
-                                             static_cast<float>(m_swapChainExtent.width),
-                                             static_cast<float>(m_swapChainExtent.height),
-                                             0.0f,
-                                             1.0f) });
-    commandBuffer.setScissor(0, { vk::Rect2D(vk::Offset2D(0, 0), m_swapChainExtent) });
 
     const auto colorAttachment = vk::RenderingAttachmentInfo(m_colorImageMemory.getImageView(),
                                                              vk::ImageLayout::eColorAttachmentOptimal,
@@ -108,13 +102,17 @@ void VulkanRenderer::draw() {
                                                  0,
                                                  { colorAttachment },
                                                  &depthAttachment);
+    transitImageLayout(commandBuffer, image, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, 1);
+    transitDepthImageLayout(commandBuffer);
+
     commandBuffer.beginRendering(renderingInfo);
     for (const auto& pipeline : m_pipelines) {
         pipeline->draw(commandBuffer);
     }
+    m_gui.start();
     m_gui.draw(commandBuffer);
-
     commandBuffer.endRendering();
+
     transitImageLayout(
             commandBuffer, image, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR, 1);
 
@@ -160,7 +158,7 @@ inline void VulkanRenderer::recreateSwapChain(const Resolution& resolution) {
                         m_device.maxMsaaSamples,
                         1);
     m_depthImage = ImageMemory(m_device,
-                               Resolution{ m_swapChainExtent.width, m_swapChainExtent.height },
+                               Resolution{ .width = m_swapChainExtent.width, .height = m_swapChainExtent.height },
                                findDepthFormat(m_device.physicalDevice),
                                vk::ImageUsageFlagBits::eDepthStencilAttachment,
                                vk::MemoryPropertyFlagBits::eDeviceLocal,

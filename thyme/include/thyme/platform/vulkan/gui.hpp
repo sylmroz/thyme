@@ -7,7 +7,7 @@
 #include <vulkan/vulkan.hpp>
 
 namespace th::vulkan {
-class Gui : public VulkanNonOverlayLayer {
+class Gui final: public VulkanNonOverlayLayer {
 public:
     explicit Gui(const Device& device, const VulkanGlfwWindow& window, const vk::Instance& instance);
 
@@ -16,14 +16,14 @@ public:
     Gui(const Gui& other) = delete;
     Gui& operator=(const Gui& other) = delete;
 
-    virtual void draw(vk::CommandBuffer commandBuffer) override;
+    void draw(vk::CommandBuffer commandBuffer) override;
 
-    virtual void start() override;
-    virtual void submit() override {}
+    void start() override;
+    void submit() override {}
 
-    virtual void onEvent(const Event& event) override {};
-    virtual void onAttach() override {};
-    virtual void onDetach() override {};
+    void onEvent(const Event& event) override {};
+    void onAttach() override {};
+    void onDetach() override {};
 
     ~Gui() noexcept override;
 
@@ -31,5 +31,6 @@ private:
     vk::UniquePipelineCache m_pipelineCache;
     vk::UniqueDescriptorPool m_descriptorPool;
     vk::UniqueCommandBuffer m_commandBuffer;
+    vk::Format m_format;
 };
 }// namespace th::vulkan

@@ -150,19 +150,15 @@ struct Device {
 std::vector<PhysicalDevice> getPhysicalDevices(const vk::Instance instance, const vk::SurfaceKHR surface);
 
 struct FrameData {
-    vk::UniqueCommandBuffer commandBuffer;
     vk::UniqueSemaphore imageAvailableSemaphore;
     vk::UniqueSemaphore renderFinishedSemaphore;
     vk::UniqueFence fence;
-    uint32_t currentFrame;
 };
 
 struct  FrameDataNoUnique {
-    vk::CommandBuffer commandBuffer;
     vk::Semaphore imageAvailableSemaphore;
     vk::Semaphore renderFinishedSemaphore;
     vk::Fence fence;
-    uint32_t currentFrame;
 };
 
 class FrameDataList {
@@ -173,11 +169,9 @@ public:
     [[nodiscard]] auto getNext() noexcept -> FrameDataNoUnique {
         const auto index = getNextFrameIndex();
         return FrameDataNoUnique{
-            .commandBuffer = m_frameDataList[index].commandBuffer.get(),
             .imageAvailableSemaphore = m_frameDataList[index].imageAvailableSemaphore.get(),
             .renderFinishedSemaphore = m_frameDataList[index].renderFinishedSemaphore.get(),
             .fence = m_frameDataList[index].fence.get(),
-            .currentFrame = m_frameDataList[index].currentFrame
         };
     };
 
@@ -444,5 +438,7 @@ void generateMipmaps(const Device& device, const vk::CommandPool commandPool, co
 [[nodiscard]] inline bool hasStencilFormat(const vk::Format format) noexcept {
     return format == vk::Format::eD24UnormS8Uint || format == vk::Format::eD32SfloatS8Uint;
 }
+
+void setCommandBufferFrameSize(const vk::CommandBuffer commandBuffer, const vk::Extent2D frameSize);
 
 }// namespace th::vulkan

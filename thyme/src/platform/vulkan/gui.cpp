@@ -35,9 +35,9 @@ Gui::Gui(const Device& device, const VulkanGlfwWindow& window, const vk::Instanc
     initInfo.ImageCount = 2;// VulkanRenderer::maxFramesInFlight;
     initInfo.MSAASamples = static_cast<VkSampleCountFlagBits>(device.maxMsaaSamples);
     initInfo.UseDynamicRendering = true;
-    const auto format = device.swapChainSupportDetails.getBestSurfaceFormat().format;
+    m_format = device.swapChainSupportDetails.getBestSurfaceFormat().format;
     initInfo.PipelineRenderingCreateInfo =
-            vk::PipelineRenderingCreateInfo(0, { format }, findDepthFormat(device.physicalDevice));
+            vk::PipelineRenderingCreateInfo(0, { m_format }, findDepthFormat(device.physicalDevice));
     initInfo.Allocator = nullptr;
     initInfo.CheckVkResultFn = [](const auto vkResult) {
         if (vkResult == VK_SUCCESS) {
@@ -48,7 +48,6 @@ Gui::Gui(const Device& device, const VulkanGlfwWindow& window, const vk::Instanc
     ImGui_ImplVulkan_Init(&initInfo);
 }
 void Gui::draw(const vk::CommandBuffer commandBuffer) {
-
     bool showDemoWindow = true;
     ImGui::ShowDemoWindow(&showDemoWindow);
 

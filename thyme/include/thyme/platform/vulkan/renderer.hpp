@@ -51,7 +51,6 @@ private:
     }
 
 private:
-    // temporary public
     const Device& m_device;
     const VulkanGlfwWindow& m_window;
     const vk::UniqueSurfaceKHR& m_surface;
@@ -64,6 +63,8 @@ private:
     SwapChainData m_swapChainData;
     scene::Camera& m_camera;
     Gui& m_gui;
+    std::vector<vk::UniqueCommandBuffer> m_commandBuffers;
+    size_t m_commandBufferIndex{ 0 };
 
     static constexpr uint32_t maxFramesInFlight{ 2 };
     std::vector<std::unique_ptr<GraphicPipeline>> m_pipelines;
