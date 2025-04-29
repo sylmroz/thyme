@@ -18,7 +18,7 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	target_compile_options(${PROJECT_NAME} PRIVATE
 			$<$<CONFIG:Debug>:/Wall /EHsc /ZI /MP>
-			$<$<CONFIG:Release>:/GL /MP /O3>
+			$<$<CONFIG:Release>:/GL /MP /O2>
 			$<$<CONFIG:RelWithDebInfo>:>
 			$<$<CONFIG:MinSizeRel>:>
 	)
@@ -41,8 +41,8 @@ target_sources(${PROJECT_NAME} PRIVATE
 		src/platform/vulkan/renderer.cpp
 		#src/platform/vulkan/shader.cpp #for now there are problems with integrating shaderc from google
 		src/platform/vulkan/swapchain.cpp
-		src/platform/vulkan/texture.cpp
 		src/platform/vulkan/utils.cpp
+		src/platform/vulkan/vulkan_texture.cpp
 )
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)

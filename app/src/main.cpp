@@ -45,7 +45,7 @@ public:
                                               { { 0.5f, 0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },
                                               { { -0.5f, 0.5f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } } },
                                 .indices = { 0, 1, 2, 2, 3, 0 } },
-                .texture = th::Texture("C:\\Users\\sylwek\\Desktop\\grumpy.jpg") });
+                .texture = th::TextureData("C:\\Users\\sylwek\\Desktop\\grumpy.jpg") });
         modelStorage.addModel(th::scene::Model{
                 .name = "Grumpy 2",
                 .mesh =
@@ -55,7 +55,7 @@ public:
                                               { { 0.5f, 0.5f, -0.5f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },
                                               { { -0.5f, 0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } } },
                                 .indices = { 0, 1, 2, 2, 3, 0 } },
-                .texture = th::Texture("C:\\Users\\sylwek\\Desktop\\grumpy2.jpg") });
+                .texture = th::TextureData("C:\\Users\\sylwek\\Desktop\\grumpy2.jpg") });
     }
 
 private:

@@ -9,9 +9,6 @@ VulkanRenderer::VulkanRenderer(const VulkanGlfwWindow& window, const Device& dev
                                const vk::UniqueSurfaceKHR& surface, scene::ModelStorage& modelStorage,
                                scene::Camera& camera, Gui& gui) noexcept
     : m_device{ device }, m_window{ window }, m_surface{ surface },
-      m_commandPool{ device.logicalDevice->createCommandPoolUnique(
-              vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-                                        device.queueFamilyIndices.graphicFamily.value())) },
       m_swapChainSettings{ device.swapChainSupportDetails.getBestSwapChainSettings() },
       m_swapChainExtent{ device.swapChainSupportDetails.getSwapExtent(m_window.getFrameBufferSize()) },
       m_colorImageMemory(ImageMemory(
@@ -23,16 +20,16 @@ VulkanRenderer::VulkanRenderer(const VulkanGlfwWindow& window, const Device& dev
               device, Resolution{ .width = m_swapChainExtent.width, .height = m_swapChainExtent.height },
               findDepthFormat(device.physicalDevice), vk::ImageUsageFlagBits::eDepthStencilAttachment,
               vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eDepth, m_device.maxMsaaSamples, 1)),
-      m_frameDataList{ FrameDataList(device.logicalDevice.get(), m_commandPool.get(), maxFramesInFlight) },
+      m_frameDataList{ FrameDataList(device.logicalDevice.get(), device.commandPool.get(), maxFramesInFlight) },
       m_swapChainData{ SwapChainData(device, m_swapChainSettings, m_swapChainExtent, m_surface.get()) },
       m_camera{ camera }, m_gui{ gui },
       m_commandBuffers{ m_device.logicalDevice->allocateCommandBuffersUnique(vk::CommandBufferAllocateInfo(
-              m_commandPool.get(), vk::CommandBufferLevel::ePrimary, m_swapChainData.getSwapChainFramesCount())) } {
+              device.commandPool.get(), vk::CommandBufferLevel::ePrimary, m_swapChainData.getSwapChainFramesCount())) } {
     m_pipelines.emplace_back(std::make_unique<ScenePipeline>(
             device,
             vk::PipelineRenderingCreateInfo(
                     0, { m_swapChainSettings.surfaceFormat.format }, findDepthFormat(device.physicalDevice)),
-            m_commandPool.get(),
+            device.commandPool.get(),
             modelStorage,
             camera));
 }
@@ -148,23 +145,8 @@ inline void VulkanRenderer::recreateSwapChain(const Resolution& resolution) {
     const auto swapChainSupportDetails = SwapChainSupportDetails(m_device.physicalDevice, m_surface.get());
     m_swapChainExtent = swapChainSupportDetails.getSwapExtent(resolution);
     m_swapChainSettings = swapChainSupportDetails.getBestSwapChainSettings();
-    m_colorImageMemory =
-            ImageMemory(m_device,
-                        Resolution{ .width = m_swapChainExtent.width, .height = m_swapChainExtent.height },
-                        m_swapChainSettings.surfaceFormat.format,
-                        vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment,
-                        vk::MemoryPropertyFlagBits::eDeviceLocal,
-                        vk::ImageAspectFlagBits::eColor,
-                        m_device.maxMsaaSamples,
-                        1);
-    m_depthImage = ImageMemory(m_device,
-                               Resolution{ .width = m_swapChainExtent.width, .height = m_swapChainExtent.height },
-                               findDepthFormat(m_device.physicalDevice),
-                               vk::ImageUsageFlagBits::eDepthStencilAttachment,
-                               vk::MemoryPropertyFlagBits::eDeviceLocal,
-                               vk::ImageAspectFlagBits::eDepth,
-                               m_device.maxMsaaSamples,
-                               1);
+    m_colorImageMemory.resize(Resolution{ .width = m_swapChainExtent.width, .height = m_swapChainExtent.height });
+    m_depthImage.resize(Resolution{ .width = m_swapChainExtent.width, .height = m_swapChainExtent.height });
     m_swapChainData = SwapChainData(
             m_device, m_swapChainSettings, m_swapChainExtent, m_surface.get(), m_swapChainData.getSwapChain());
     m_camera.setResolution(glm::vec2{ resolution.width, resolution.height });

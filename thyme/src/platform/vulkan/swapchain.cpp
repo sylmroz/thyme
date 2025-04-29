@@ -24,7 +24,8 @@ auto SwapChainData::createSwapChain(const Device& device, const SwapChainSetting
                                   logicalDevice,
                                   queueFamilyIndices,
                                   swapChainSupportDetails,
-                                  maxMsaaSamples] = device;
+                                  maxMsaaSamples,
+                                  commandPool] = device;
     const auto swapChainCreateInfo = [&] {
         auto info = vk::SwapchainCreateInfoKHR(vk::SwapchainCreateFlagsKHR(),
                                                surface,

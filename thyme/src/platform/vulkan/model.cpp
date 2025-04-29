@@ -8,7 +8,7 @@ VulkanModel::VulkanModel(const scene::Model& model, const Device& device, const 
                                          vk::BufferUsageFlagBits::eVertexBuffer) },
       m_indexMemoryBuffer{ BufferMemory(device, commandPool, model.mesh.indices,
                                         vk::BufferUsageFlagBits::eIndexBuffer) },
-      m_uniformBufferObject{ device }, m_texture{ device, commandPool, model.texture },
+      m_uniformBufferObject{ device }, m_texture{ device, model.texture },
       m_indicesSize{ static_cast<uint32_t>(model.mesh.indices.size()) } {}
 
 void VulkanModel::draw(const vk::CommandBuffer commandBuffer) const noexcept {

@@ -1,9 +1,9 @@
 #pragma once
 
 #include <thyme/platform/vulkan/model.hpp>
-#include <thyme/platform/vulkan/texture.hpp>
 #include <thyme/platform/vulkan/uniform_buffer_object.hpp>
 #include <thyme/platform/vulkan/utils.hpp>
+#include <thyme/platform/vulkan/vulkan_texture.hpp>
 #include <thyme/renderer/structs.hpp>
 #include <thyme/scene/camera.hpp>
 

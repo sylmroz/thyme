@@ -3,8 +3,8 @@
 #include <thyme/core/logger.hpp>
 #include <thyme/export_macros.hpp>
 #include <thyme/renderer/structs.hpp>
-#include <thyme/scene/texture.hpp>
 #include <thyme/scene/transformation.hpp>
+#include <thyme/scene/vulkan_texture.hpp>
 
 #include <fmt/format.h>
 
@@ -25,7 +25,7 @@ public:
     Transformation transformation;
     std::string name;
     Mesh mesh;
-    Texture texture;// TODO! make array of textures
+    TextureData texture;// TODO! make array of textures
 };
 
 class THYME_API ModelStorage {

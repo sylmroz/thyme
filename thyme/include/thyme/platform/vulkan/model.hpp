@@ -1,8 +1,8 @@
 #pragma once
 
-#include <thyme/platform/vulkan/texture.hpp>
 #include <thyme/platform/vulkan/uniform_buffer_object.hpp>
 #include <thyme/platform/vulkan/utils.hpp>
+#include <thyme/platform/vulkan/vulkan_texture.hpp>
 
 #include <thyme/scene/model.hpp>
 
@@ -21,7 +21,7 @@ public:
     [[nodiscard]] auto getUniformBufferObject() const noexcept -> const UniformBufferObject<renderer::MVP>& {
         return m_uniformBufferObject;
     }
-    [[nodiscard]] auto getTexture() const noexcept -> const VulkanTexture& {
+    [[nodiscard]] auto getTexture() const noexcept -> const Vulkan2DTexture& {
         return m_texture;
     }
     [[nodiscard]] uint32_t getIndicesSize() const noexcept {
@@ -34,7 +34,7 @@ private:
     BufferMemory m_vertexMemoryBuffer;
     BufferMemory m_indexMemoryBuffer;
     UniformBufferObject<renderer::MVP> m_uniformBufferObject;
-    VulkanTexture m_texture;
+    Vulkan2DTexture m_texture;
     uint32_t m_indicesSize;
 };
 

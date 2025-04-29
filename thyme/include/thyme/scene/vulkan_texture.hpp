@@ -8,10 +8,10 @@
 
 namespace th {
 
-class Texture {
+class TextureData {
 public:
-    explicit Texture(const std::filesystem::path& file);
-    Texture(const uint32_t mipLevel, const Resolution resolution, const std::vector<uint8_t>& data)
+    explicit TextureData(const std::filesystem::path& file);
+    TextureData(const uint32_t mipLevel, const Resolution resolution, const std::vector<uint8_t>& data)
         : m_mipLevels{ mipLevel }, m_resolution{ resolution }, m_data{ data } {}
     [[nodiscard]] auto getMipLevels() const noexcept -> uint32_t {
         return m_mipLevels;
