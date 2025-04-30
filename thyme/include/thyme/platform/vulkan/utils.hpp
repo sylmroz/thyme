@@ -309,31 +309,32 @@ public:
                  vk::MemoryPropertyFlags properties);
 
     template <typename Vec>
-    BufferMemory(const Device& device, const vk::CommandPool commandPool, const Vec& data,
-                 const vk::BufferUsageFlags usage)
-        : BufferMemory(device, data.size() * sizeof(data[0]), vk::BufferUsageFlagBits::eTransferDst | usage,
-                       vk::MemoryPropertyFlagBits::eDeviceLocal) {
+    BufferMemory(const vk::Device device, vk::PhysicalDevice physicalDevice, const vk::Queue graphicQueue,
+                 const vk::CommandPool commandPool, const Vec& data, const vk::BufferUsageFlags usage)
+        : BufferMemory(device, physicalDevice, data.size() * sizeof(data[0]),
+                       vk::BufferUsageFlagBits::eTransferDst | usage, vk::MemoryPropertyFlagBits::eDeviceLocal) {
         const auto size = data.size() * sizeof(data[0]);
 
         const auto stagingMemoryBuffer =
                 BufferMemory(device,
+                             physicalDevice,
                              size,
                              vk::BufferUsageFlagBits::eTransferSrc,
                              vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 
         void* mappedMemory = nullptr;
-        [[maybe_unused]] const auto result = device.logicalDevice->mapMemory(
-                stagingMemoryBuffer.getMemory().get(), 0, size, vk::MemoryMapFlags(), &mappedMemory);
+        [[maybe_unused]] const auto result =
+                device.mapMemory(stagingMemoryBuffer.getMemory().get(), 0, size, vk::MemoryMapFlags(), &mappedMemory);
         memcpy(mappedMemory, data.data(), size);
-        device.logicalDevice->unmapMemory(stagingMemoryBuffer.getMemory().get());
-        const auto& graphicQueue = device.logicalDevice->getQueue(device.queueFamilyIndices.graphicFamily.value(), 0);
-        copyBuffer(device.logicalDevice.get(),
-                   commandPool,
-                   graphicQueue,
-                   stagingMemoryBuffer.getBuffer().get(),
-                   m_buffer.get(),
-                   size);
+        device.unmapMemory(stagingMemoryBuffer.getMemory().get());
+        copyBuffer(device, commandPool, graphicQueue, stagingMemoryBuffer.getBuffer().get(), m_buffer.get(), size);
     }
+
+    template <typename Vec>
+    BufferMemory(const Device& device, const Vec& data, const vk::BufferUsageFlags usage)
+        : BufferMemory(device.logicalDevice.get(), device.physicalDevice, device.getGraphicQueue(),
+                       device.commandPool.get(), data, usage) {}
+
     [[nodiscard]] auto getBuffer() const noexcept -> const vk::UniqueBuffer& {
         return m_buffer;
     }
@@ -364,6 +365,10 @@ struct ImageAccessFlagsTransition {
 void transitImageLayout(const Device& device, const vk::CommandPool commandPool, const vk::Image image,
                         const vk::ImageLayout oldLayout, const vk::ImageLayout newLayout, const uint32_t mipLevels);
 
+void transitImageLayout(const vk::Device device, const vk::CommandPool commandPool, const vk::Queue graphicQueue,
+                        const vk::Image image, const vk::ImageLayout oldLayout, const vk::ImageLayout newLayout,
+                        const uint32_t mipLevels);
+
 void transitImageLayout(const Device& device, const vk::Image image, const vk::ImageLayout oldLayout,
                         const vk::ImageLayout newLayout, const uint32_t mipLevels);
 
@@ -376,9 +381,9 @@ void transitImageLayout(const vk::CommandBuffer commandBuffer, const vk::Image i
                         const ImageAccessFlagsTransition accessFlagsTransition, const vk::ImageAspectFlags aspectFlags,
                         const uint32_t mipLevels);
 
-inline void copyBufferToImage(const Device& device, const vk::CommandPool commandPool, const vk::Buffer buffer,
-                              const vk::Image image, const Resolution resolution) {
-    singleTimeCommand(device, commandPool, [&](const vk::CommandBuffer commandBuffer) {
+inline void copyBufferToImage(const vk::Device device, const vk::CommandPool commandPool, vk::Queue graphicQueue,
+                              const vk::Buffer buffer, const vk::Image image, const Resolution resolution) {
+    singleTimeCommand(device, commandPool, graphicQueue, [&](const vk::CommandBuffer commandBuffer) {
         const auto region = vk::BufferImageCopy(0,
                                                 0,
                                                 0,
@@ -389,25 +394,10 @@ inline void copyBufferToImage(const Device& device, const vk::CommandPool comman
     });
 }
 
-[[nodiscard]] inline auto createImageSampler(const Device& device, const uint32_t mipLevels) noexcept
-        -> vk::UniqueSampler {
-    return device.logicalDevice->createSamplerUnique(
-            vk::SamplerCreateInfo(vk::SamplerCreateFlags(),
-                                  vk::Filter::eLinear,
-                                  vk::Filter::eLinear,
-                                  vk::SamplerMipmapMode::eLinear,
-                                  vk::SamplerAddressMode::eRepeat,
-                                  vk::SamplerAddressMode::eRepeat,
-                                  vk::SamplerAddressMode::eRepeat,
-                                  0.0f,
-                                  vk::True,
-                                  device.physicalDevice.getProperties().limits.maxSamplerAnisotropy,
-                                  vk::False,
-                                  vk::CompareOp::eAlways,
-                                  0.0f,
-                                  static_cast<float>(mipLevels),
-                                  vk::BorderColor::eIntOpaqueBlack,
-                                  vk::False));
+inline void copyBufferToImage(const Device& device, const vk::Buffer buffer, const vk::Image image,
+                              const Resolution resolution) {
+    copyBufferToImage(
+            device.logicalDevice.get(), device.commandPool.get(), device.getGraphicQueue(), buffer, image, resolution);
 }
 
 [[nodiscard]] auto findSupportedImageFormat(const vk::PhysicalDevice& device,

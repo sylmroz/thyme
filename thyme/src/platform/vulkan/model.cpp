@@ -4,9 +4,9 @@
 namespace th::vulkan {
 
 VulkanModel::VulkanModel(const scene::Model& model, const Device& device, const vk::CommandPool commandPool)
-    : m_vertexMemoryBuffer{ BufferMemory(device, commandPool, model.mesh.vertices,
+    : m_vertexMemoryBuffer{ BufferMemory(device, model.mesh.vertices,
                                          vk::BufferUsageFlagBits::eVertexBuffer) },
-      m_indexMemoryBuffer{ BufferMemory(device, commandPool, model.mesh.indices,
+      m_indexMemoryBuffer{ BufferMemory(device, model.mesh.indices,
                                         vk::BufferUsageFlagBits::eIndexBuffer) },
       m_uniformBufferObject{ device }, m_texture{ device, model.texture },
       m_indicesSize{ static_cast<uint32_t>(model.mesh.indices.size()) } {}

@@ -47,7 +47,7 @@ private:
 
 class Vulkan2DTexture {
 public:
-    Vulkan2DTexture(const Device& device, const TextureData& texture);
+    Vulkan2DTexture(const Device& device, const TextureData& texture, vk::Format format = vk::Format::eR8G8B8A8Srgb);
 
     [[nodiscard]] auto getImage() const noexcept -> vk::Image {
         return m_imageMemory.getImage();
@@ -69,11 +69,21 @@ public:
     void setData(const TextureData& texture);
 
 private:
+
+    void generateMipmaps() const;
+
+private:
     ImageMemory m_imageMemory;
     vk::UniqueSampler m_sampler;
+    vk::Format m_format;
 
     vk::Device m_device;
     vk::PhysicalDevice m_physicalDevice;
+    vk::CommandPool m_commandPool;
+    vk::Queue m_graphicsQueue;
+
+    vk::Extent2D m_extent{};
+    uint32_t m_mipLevels{};
 };
 
 }// namespace th::vulkan

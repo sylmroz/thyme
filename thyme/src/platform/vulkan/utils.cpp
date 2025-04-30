@@ -409,11 +409,23 @@ BufferMemory::BufferMemory(const vk::Device device, const vk::PhysicalDevice phy
     device.bindBufferMemory(m_buffer.get(), m_memory.get(), 0);
 }
 
-void transitImageLayout(const Device& device, const vk::CommandPool commandPool, const vk::Image image,
-                        const vk::ImageLayout oldLayout, const vk::ImageLayout newLayout, const uint32_t mipLevels) {
-    singleTimeCommand(device, commandPool, [&](const vk::CommandBuffer commandBuffer) {
+void transitImageLayout(const vk::Device device, const vk::CommandPool commandPool, const vk::Queue graphicQueue,
+                        const vk::Image image, const vk::ImageLayout oldLayout, const vk::ImageLayout newLayout,
+                        const uint32_t mipLevels) {
+    singleTimeCommand(device, commandPool, graphicQueue, [&](const vk::CommandBuffer commandBuffer) {
         transitImageLayout(commandBuffer, image, oldLayout, newLayout, mipLevels);
     });
+}
+
+void transitImageLayout(const Device& device, const vk::Image image, const vk::ImageLayout oldLayout,
+                        const vk::ImageLayout newLayout, const uint32_t mipLevels) {
+    transitImageLayout(device.logicalDevice.get(),
+                       device.commandPool.get(),
+                       device.getGraphicQueue(),
+                       image,
+                       oldLayout,
+                       newLayout,
+                       mipLevels);
 }
 
 void transitImageLayout(const vk::CommandBuffer commandBuffer, const vk::Image image,
