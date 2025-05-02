@@ -1,7 +1,8 @@
 #pragma once
 
 #include <thyme/platform/vulkan/utils.hpp>
-#include <thyme/scene/vulkan_texture.hpp>
+#include <thyme/platform/vulkan/vulkan_device.hpp>
+#include <thyme/scene/texture_data.hpp>
 
 #include <vulkan/vulkan.hpp>
 
@@ -9,7 +10,7 @@ namespace th::vulkan {
 
 class ImageMemory {
 public:
-    ImageMemory(const Device& device, Resolution resolution, vk::Format format, vk::ImageUsageFlags imageUsageFlags,
+    ImageMemory(const VulkanDevice& device, Resolution resolution, vk::Format format, vk::ImageUsageFlags imageUsageFlags,
                 vk::MemoryPropertyFlags memoryPropertyFlags, vk::ImageAspectFlags aspectFlags,
                 vk::SampleCountFlagBits msaa, uint32_t mipLevels);
 
@@ -27,27 +28,28 @@ public:
 
     void resize(Resolution resolution);
 
+    void transitImageLayout(ImageLayoutTransition layoutTransition);
+
 private:
     vk::UniqueImage m_image;
     vk::UniqueDeviceMemory m_memory;
     vk::UniqueImageView m_imageView;
 
-    vk::Device m_device;
-    vk::PhysicalDevice m_physicalDevice;
-    vk::CommandPool m_commandPool;
+    VulkanDevice m_device;
 
     vk::Format m_format;
     vk::ImageUsageFlags m_imageUsageFlags;
     vk::MemoryPropertyFlags m_memoryPropertyFlags;
     vk::ImageAspectFlags m_aspectFlags;
     vk::SampleCountFlagBits m_msaa;
-    uint32_t m_mipLevels{1};
+    uint32_t m_mipLevels{ 1 };
     Resolution m_resolution{};
 };
 
 class Vulkan2DTexture {
 public:
-    Vulkan2DTexture(const Device& device, const TextureData& texture, vk::Format format = vk::Format::eR8G8B8A8Srgb);
+    Vulkan2DTexture(const VulkanDevice& device, const TextureData& texture,
+                    vk::Format format = vk::Format::eR8G8B8A8Srgb);
 
     [[nodiscard]] auto getImage() const noexcept -> vk::Image {
         return m_imageMemory.getImage();
@@ -69,7 +71,6 @@ public:
     void setData(const TextureData& texture);
 
 private:
-
     void generateMipmaps() const;
 
 private:
@@ -77,10 +78,7 @@ private:
     vk::UniqueSampler m_sampler;
     vk::Format m_format;
 
-    vk::Device m_device;
-    vk::PhysicalDevice m_physicalDevice;
-    vk::CommandPool m_commandPool;
-    vk::Queue m_graphicsQueue;
+    VulkanDevice m_device;
 
     vk::Extent2D m_extent{};
     uint32_t m_mipLevels{};

@@ -5,7 +5,7 @@
 
 namespace th::vulkan {
 
-VulkanRenderer::VulkanRenderer(const VulkanGlfwWindow& window, const Device& device,
+VulkanRenderer::VulkanRenderer(const VulkanGlfwWindow& window, const VulkanDevice& device,
                                const vk::UniqueSurfaceKHR& surface, scene::ModelStorage& modelStorage,
                                scene::Camera& camera, Gui& gui) noexcept
     : m_device{ device }, m_window{ window }, m_surface{ surface },
@@ -20,16 +20,15 @@ VulkanRenderer::VulkanRenderer(const VulkanGlfwWindow& window, const Device& dev
               device, Resolution{ .width = m_swapChainExtent.width, .height = m_swapChainExtent.height },
               findDepthFormat(device.physicalDevice), vk::ImageUsageFlagBits::eDepthStencilAttachment,
               vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eDepth, m_device.maxMsaaSamples, 1)),
-      m_frameDataList{ FrameDataList(device.logicalDevice.get(), device.commandPool.get(), maxFramesInFlight) },
+      m_frameDataList{ FrameDataList(device.logicalDevice, maxFramesInFlight) },
       m_swapChainData{ SwapChainData(device, m_swapChainSettings, m_swapChainExtent, m_surface.get()) },
       m_camera{ camera }, m_gui{ gui },
-      m_commandBuffers{ m_device.logicalDevice->allocateCommandBuffersUnique(vk::CommandBufferAllocateInfo(
-              device.commandPool.get(), vk::CommandBufferLevel::ePrimary, m_swapChainData.getSwapChainFramesCount())) } {
+      m_commandBuffers{ m_device.logicalDevice.allocateCommandBuffersUnique(vk::CommandBufferAllocateInfo(
+              device.commandPool, vk::CommandBufferLevel::ePrimary, m_swapChainData.getSwapChainFramesCount())) } {
     m_pipelines.emplace_back(std::make_unique<ScenePipeline>(
             device,
             vk::PipelineRenderingCreateInfo(
                     0, { m_swapChainSettings.surfaceFormat.format }, findDepthFormat(device.physicalDevice)),
-            device.commandPool.get(),
             modelStorage,
             camera));
 }
@@ -40,16 +39,16 @@ void VulkanRenderer::draw() {
     }
 
     const auto& [imageAvailableSemaphore, renderFinishedSemaphore, fence] = m_frameDataList.getNext();
-    const auto& logicalDevice = m_device.logicalDevice;
-    const auto& queueFamilyIndices = m_device.queueFamilyIndices;
-    if (logicalDevice->waitForFences({ fence }, vk::True, std::numeric_limits<uint64_t>::max())
+    const auto logicalDevice = m_device.logicalDevice;
+    const auto queueFamilyIndices = m_device.queueFamilyIndices;
+    if (logicalDevice.waitForFences({ fence }, vk::True, std::numeric_limits<uint64_t>::max())
         != vk::Result::eSuccess) {
         TH_API_LOG_ERROR("Failed to wait for a complete fence");
         throw std::runtime_error("Failed to wait for a complete fence");
     }
     const auto imageIndexResult = [&] {
         try {
-            return logicalDevice->acquireNextImageKHR(
+            return logicalDevice.acquireNextImageKHR(
                     m_swapChainData.getSwapChain(), std::numeric_limits<uint64_t>::max(), imageAvailableSemaphore);
         } catch (const vk::OutOfDateKHRError&) {
             recreateSwapChain();
@@ -62,7 +61,7 @@ void VulkanRenderer::draw() {
     }
     const auto imageIndex = imageIndexResult.value;
 
-    logicalDevice->resetFences({ fence });
+    logicalDevice.resetFences({ fence });
 
     const auto commandBuffer = m_commandBuffers[m_commandBufferIndex].get();
     ++m_commandBufferIndex%=m_commandBuffers.size();
@@ -118,10 +117,10 @@ void VulkanRenderer::draw() {
     constexpr vk::PipelineStageFlags f = vk::PipelineStageFlagBits::eColorAttachmentOutput;
     const auto submitInfo = vk::SubmitInfo(
             vk::SubmitInfo({ imageAvailableSemaphore }, { f }, { commandBuffer }, { renderFinishedSemaphore }));
-    const auto& graphicQueue = logicalDevice->getQueue(queueFamilyIndices.graphicFamily.value(), 0);
+    const auto& graphicQueue = m_device.getGraphicQueue();
     graphicQueue.submit(submitInfo, fence);
-    const auto& presentationQueue = logicalDevice->getQueue(queueFamilyIndices.presentFamily.value(), 0);
 
+    const auto& presentationQueue = m_device.getPresentationQueue();
     try {
         const auto swapChain = m_swapChainData.getSwapChain();
         const auto queuePresentResult = presentationQueue.presentKHR(
@@ -141,7 +140,7 @@ void VulkanRenderer::draw() {
 }
 
 inline void VulkanRenderer::recreateSwapChain(const Resolution& resolution) {
-    m_device.logicalDevice->waitIdle();
+    m_device.logicalDevice.waitIdle();
     const auto swapChainSupportDetails = SwapChainSupportDetails(m_device.physicalDevice, m_surface.get());
     m_swapChainExtent = swapChainSupportDetails.getSwapExtent(resolution);
     m_swapChainSettings = swapChainSupportDetails.getBestSwapChainSettings();

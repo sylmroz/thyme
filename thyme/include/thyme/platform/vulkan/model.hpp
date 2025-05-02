@@ -2,6 +2,8 @@
 
 #include <thyme/platform/vulkan/uniform_buffer_object.hpp>
 #include <thyme/platform/vulkan/utils.hpp>
+#include <thyme/platform/vulkan/vulkan_buffer.hpp>
+#include <thyme/platform/vulkan/vulkan_device.hpp>
 #include <thyme/platform/vulkan/vulkan_texture.hpp>
 
 #include <thyme/scene/model.hpp>
@@ -10,7 +12,7 @@ namespace th::vulkan {
 
 class VulkanModel {
 public:
-    VulkanModel(const scene::Model& model, const Device& device, vk::CommandPool commandPool);
+    VulkanModel(const scene::Model& model, const VulkanDevice& device);
 
     [[nodiscard]] auto getVertexMemoryBuffer() const noexcept -> const BufferMemory& {
         return m_vertexMemoryBuffer;

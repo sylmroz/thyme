@@ -5,19 +5,19 @@
 
 namespace th::vulkan {
 
-Gui::Gui(const Device& device, const VulkanGlfwWindow& window, const vk::Instance& instance)
+Gui::Gui(const VulkanDevice& device, const VulkanGlfwWindow& window, const vk::Instance instance)
     : VulkanNonOverlayLayer("GUI") {
     TH_API_LOG_INFO("Create Gui Class");
     ImGui_ImplGlfw_InitForVulkan(window.getHandler().get(), true);
     ImGui_ImplVulkan_InitInfo initInfo{};
     initInfo.Instance = instance;
     initInfo.PhysicalDevice = device.physicalDevice;
-    initInfo.Device = device.logicalDevice.get();
+    initInfo.Device = device.logicalDevice;
     initInfo.QueueFamily = device.queueFamilyIndices.graphicFamily.value();
-    initInfo.Queue = device.logicalDevice->getQueue(device.queueFamilyIndices.graphicFamily.value(), 0);
-    m_pipelineCache = device.logicalDevice->createPipelineCacheUnique(vk::PipelineCacheCreateInfo());
+    initInfo.Queue = device.getGraphicQueue();
+    m_pipelineCache = device.logicalDevice.createPipelineCacheUnique(vk::PipelineCacheCreateInfo());
     initInfo.PipelineCache = m_pipelineCache.get();
-    m_descriptorPool = createDescriptorPool(device.logicalDevice.get(),
+    m_descriptorPool = createDescriptorPool(device.logicalDevice,
                                             { vk::DescriptorPoolSize(vk::DescriptorType::eSampler, 2),
                                               vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, 2),
                                               vk::DescriptorPoolSize(vk::DescriptorType::eSampledImage, 2),

@@ -1,9 +1,10 @@
 #include <thyme/platform/vulkan/model.hpp>
 #include <thyme/platform/vulkan/utils.hpp>
+#include <thyme/platform/vulkan/vulkan_buffer.hpp>
 
 namespace th::vulkan {
 
-VulkanModel::VulkanModel(const scene::Model& model, const Device& device, const vk::CommandPool commandPool)
+VulkanModel::VulkanModel(const scene::Model& model, const VulkanDevice& device)
     : m_vertexMemoryBuffer{ BufferMemory(device, model.mesh.vertices,
                                          vk::BufferUsageFlagBits::eVertexBuffer) },
       m_indexMemoryBuffer{ BufferMemory(device, model.mesh.indices,

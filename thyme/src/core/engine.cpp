@@ -1,3 +1,4 @@
+#include <thyme/platform/vulkan/vulkan_device.hpp>
 #include <thyme/core/event.hpp>
 #include <thyme/core/logger.hpp>
 #include <thyme/core/window.hpp>
@@ -5,14 +6,11 @@
 #include <thyme/platform/vulkan/gui.hpp>
 #include <thyme/platform/vulkan/renderer.hpp>
 #include <thyme/platform/vulkan/vulkan_layer.hpp>
-#include <thyme/platform/vulkan_device_manager.hpp>
 
 #include <ranges>
 #include <vector>
 
 #include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_vulkan.h>
 
 namespace th {
 
@@ -32,7 +30,7 @@ void Engine::run() {
 
     EventSubject windowEvents;
     windowEvents.subscribe([&layers = m_layers](const Event& event) {
-        for (const auto layer : layers) {
+        for (auto* const layer : layers) {
             layer->onEvent(event);
         }
     });
@@ -51,8 +49,7 @@ void Engine::run() {
                                                                  .instanceExtension = enabledExtensions });
     const auto surface = window.getSurface(instance.getInstance());
 
-    const auto devices = vulkan::getPhysicalDevices(instance.getInstance(), surface.get());
-    const vulkan::PhysicalDevicesManager physicalDevicesManager(devices);
+    const auto physicalDevicesManager = vulkan::PhysicalDevicesManager(instance.getInstance(), surface.get());
 
     const auto& device = physicalDevicesManager.getSelectedDevice();
 
@@ -61,13 +58,10 @@ void Engine::run() {
 
     while (!window.shouldClose()) {
         window.poolEvents();
-        for (const auto& layer : m_layers) {
-            // layer->draw();
-        }
         renderer.draw();
     }
 
-    device.logicalDevice->waitIdle();
+    device.logicalDevice.waitIdle();
 }
 
 }// namespace th

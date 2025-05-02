@@ -1,6 +1,8 @@
 #pragma once
 
 #include <thyme/platform/vulkan/utils.hpp>
+#include <thyme/platform/vulkan/vulkan_buffer.hpp>
+#include <thyme/platform/vulkan/vulkan_device.hpp>
 
 #include <utility>
 
@@ -9,14 +11,14 @@ namespace th::vulkan {
 template <typename T>
 class UniformBufferObject final {
 public:
-    explicit UniformBufferObject(const Device& device)
+    explicit UniformBufferObject(const VulkanDevice& device)
         : m_uniformMemoryBuffer{ BufferMemory(device,
                                               sizeof(T),
                                               vk::BufferUsageFlagBits::eUniformBuffer,
                                               vk::MemoryPropertyFlagBits::eHostVisible
                                                       | vk::MemoryPropertyFlagBits::eHostCoherent) },
-          m_device{ device } {
-        [[maybe_unused]] const auto result = device.logicalDevice->mapMemory(
+          m_device{ device.logicalDevice } {
+        [[maybe_unused]] const auto result = device.logicalDevice.mapMemory(
                 *m_uniformMemoryBuffer.getMemory(), 0, sizeof(T), vk::MemoryMapFlags(), &m_mappedMemoryBuffer);
     }
 
@@ -35,7 +37,7 @@ public:
 
     ~UniformBufferObject() {
         if (m_uniformMemoryBuffer.getMemory().get() != nullptr) {
-            m_device.logicalDevice->unmapMemory(*m_uniformMemoryBuffer.getMemory());
+            m_device.unmapMemory(m_uniformMemoryBuffer.getMemory().get());
         }
     }
 
@@ -43,7 +45,7 @@ private:
     BufferMemory m_uniformMemoryBuffer;
     void* m_mappedMemoryBuffer{ nullptr };
 
-    const Device& m_device;
+    vk::Device m_device;
 };
 
 }// namespace th::vulkan

@@ -9,11 +9,16 @@
 
 namespace th {
 
+enum struct THYME_API BackendType {
+    vulkan
+};
+
 struct THYME_API EngineConfig {
-    std::string engineName{ "Thyme" };
-    std::string appName;
     uint32_t width{ 1920 };
     uint32_t height{ 1080 };
+    BackendType backend{ BackendType::vulkan };
+    std::string engineName{ "Thyme" };
+    std::string appName;
 };
 
 class THYME_API Engine final {
@@ -22,7 +27,6 @@ public:
                     scene::ModelStorage& modelStorage);
 
     void run();
-
 private:
     EngineConfig m_engineConfig;
     scene::Camera m_camera;

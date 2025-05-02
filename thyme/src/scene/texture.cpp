@@ -1,4 +1,4 @@
-#include <thyme/scene/vulkan_texture.hpp>
+#include <thyme/scene/texture_data.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>

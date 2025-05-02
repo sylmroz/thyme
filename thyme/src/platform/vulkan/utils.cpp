@@ -148,7 +148,7 @@ void UniqueInstance::setupDebugMessenger(const std::vector<const char*>& extensi
 }
 #endif
 
-QueueFamilyIndices::QueueFamilyIndices(const vk::PhysicalDevice& device, const vk::SurfaceKHR surface) noexcept {
+QueueFamilyIndices::QueueFamilyIndices(const vk::PhysicalDevice device, const vk::SurfaceKHR surface) noexcept {
     const auto& queueFamilies = device.getQueueFamilyProperties2();
     for (uint32_t i{ 0 }; i < queueFamilies.size(); i++) {
         const auto& queueFamily = queueFamilies[i];
@@ -174,7 +174,7 @@ SwapChainSupportDetails::SwapChainSupportDetails(const vk::PhysicalDevice& devic
     presentModes = device.getSurfacePresentModesKHR(surface);
 }
 
-auto getMaxUsableSampleCount(const vk::PhysicalDevice& device) -> vk::SampleCountFlagBits {
+static auto getMaxUsableSampleCount(const vk::PhysicalDevice& device) -> vk::SampleCountFlagBits {
     const auto counts = device.getProperties().limits.framebufferColorSampleCounts
                         & device.getProperties().limits.framebufferDepthSampleCounts;
     if (counts & vk::SampleCountFlagBits::e64) {
@@ -198,60 +198,7 @@ auto getMaxUsableSampleCount(const vk::PhysicalDevice& device) -> vk::SampleCoun
     return vk::SampleCountFlagBits::e1;
 }
 
-std::vector<PhysicalDevice> getPhysicalDevices(const vk::Instance instance, const vk::SurfaceKHR surface) {
-    static std::map<vk::PhysicalDeviceType, uint32_t> priorities = {
-        { vk::PhysicalDeviceType::eOther, 0 },       { vk::PhysicalDeviceType::eCpu, 1 },
-        { vk::PhysicalDeviceType::eVirtualGpu, 2 },  { vk::PhysicalDeviceType::eIntegratedGpu, 3 },
-        { vk::PhysicalDeviceType::eDiscreteGpu, 4 },
-    };
-
-    std::vector<PhysicalDevice> physicalDevices;
-    for (const auto& device : instance.enumeratePhysicalDevices()) {
-        const auto queueFamilyIndex = QueueFamilyIndices(device, surface);
-        const auto deviceSupportExtensions = deviceHasAllRequiredExtensions(device);
-        const auto swapChainSupportDetails = SwapChainSupportDetails(device, surface);
-        const auto maxMsaaSamples = getMaxUsableSampleCount(device);
-        if (queueFamilyIndex.isCompleted() && deviceSupportExtensions && swapChainSupportDetails.isValid()
-            && device.getFeatures().samplerAnisotropy) {
-            physicalDevices.emplace_back(device, queueFamilyIndex, swapChainSupportDetails, maxMsaaSamples);
-        }
-    }
-
-    if (physicalDevices.empty()) {
-        constexpr auto message = "No physical device exist which met all requirements!";
-        TH_API_LOG_ERROR(message);
-        throw std::runtime_error(message);
-    }
-
-    std::ranges::sort(physicalDevices, [](const auto& device1, const auto& device2) {
-        const auto dt1 = device1.physicalDevice.getProperties().deviceType;
-        const auto dt2 = device2.physicalDevice.getProperties().deviceType;
-        return priorities[dt1] > priorities[dt2];
-    });
-
-    return physicalDevices;
-}
-
-[[nodiscard]] vk::UniqueDevice PhysicalDevice::createLogicalDevice() const {
-    const std::set indices = { queueFamilyIndices.graphicFamily.value(), queueFamilyIndices.presentFamily.value() };
-    std::vector<vk::DeviceQueueCreateInfo> deviceQueueCreateInfos;
-    for (const auto ind : indices) {
-        float queuePriority{ 1.0 };
-        deviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), ind, 1, &queuePriority);
-    }
-
-    const auto features = physicalDevice.getFeatures();
-    constexpr auto dynamicRenderingFeatures = vk::PhysicalDeviceDynamicRenderingFeaturesKHR(true);
-    const auto deviceCreateInfo = vk::StructureChain(
-            vk::DeviceCreateInfo(
-                    vk::DeviceCreateFlags(), deviceQueueCreateInfos, nullptr, s_deviceExtensions, &features),
-            dynamicRenderingFeatures);
-
-    return physicalDevice.createDeviceUnique(deviceCreateInfo.get<vk::DeviceCreateInfo>());
-}
-
-FrameDataList::FrameDataList(const vk::Device logicalDevice, const vk::CommandPool commandPool,
-                             const uint32_t maxFrames) noexcept {
+FrameDataList::FrameDataList(const vk::Device logicalDevice, const uint32_t maxFrames) noexcept {
     for (uint32_t i{ 0 }; i < maxFrames; ++i) {
         m_frameDataList.emplace_back(FrameData{
                 .imageAvailableSemaphore = logicalDevice.createSemaphoreUnique(vk::SemaphoreCreateInfo()),
@@ -358,7 +305,7 @@ auto createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipelineCrea
                                                   vk::LogicOp::eClear,
                                                   { colorBlendAttachments },
                                                   std::array{ 0.0f, 0.0f, 0.0f, 0.0f });
-    const auto deptStencilStateCreateInfo =
+    constexpr auto deptStencilStateCreateInfo =
             vk::PipelineDepthStencilStateCreateInfo(vk::PipelineDepthStencilStateCreateFlagBits(),
                                                     vk::True,
                                                     vk::True,
@@ -390,42 +337,6 @@ auto createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipelineCrea
                                                                          {},
                                                                          &pipelineRenderingCreateInfo))
             .value;
-}
-
-BufferMemory::BufferMemory(const Device& device, const size_t size, const vk::BufferUsageFlags usage,
-                           const vk::MemoryPropertyFlags properties)
-    : BufferMemory(device.logicalDevice.get(), device.physicalDevice, size, usage, properties) {}
-
-BufferMemory::BufferMemory(const vk::Device device, const vk::PhysicalDevice physicalDevice, const size_t size,
-                           const vk::BufferUsageFlags usage, const vk::MemoryPropertyFlags properties) {
-    m_buffer = device.createBufferUnique(
-            vk::BufferCreateInfo(vk::BufferCreateFlagBits(), size, usage, vk::SharingMode::eExclusive));
-
-    vk::MemoryRequirements memoryRequirements;
-    device.getBufferMemoryRequirements(m_buffer.get(), &memoryRequirements);
-    m_memory = device.allocateMemoryUnique(vk::MemoryAllocateInfo(
-            memoryRequirements.size, findMemoryType(physicalDevice, memoryRequirements.memoryTypeBits, properties)));
-
-    device.bindBufferMemory(m_buffer.get(), m_memory.get(), 0);
-}
-
-void transitImageLayout(const vk::Device device, const vk::CommandPool commandPool, const vk::Queue graphicQueue,
-                        const vk::Image image, const vk::ImageLayout oldLayout, const vk::ImageLayout newLayout,
-                        const uint32_t mipLevels) {
-    singleTimeCommand(device, commandPool, graphicQueue, [&](const vk::CommandBuffer commandBuffer) {
-        transitImageLayout(commandBuffer, image, oldLayout, newLayout, mipLevels);
-    });
-}
-
-void transitImageLayout(const Device& device, const vk::Image image, const vk::ImageLayout oldLayout,
-                        const vk::ImageLayout newLayout, const uint32_t mipLevels) {
-    transitImageLayout(device.logicalDevice.get(),
-                       device.commandPool.get(),
-                       device.getGraphicQueue(),
-                       image,
-                       oldLayout,
-                       newLayout,
-                       mipLevels);
 }
 
 void transitImageLayout(const vk::CommandBuffer commandBuffer, const vk::Image image,

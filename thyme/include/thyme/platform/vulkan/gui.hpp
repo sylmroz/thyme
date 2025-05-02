@@ -1,7 +1,7 @@
 #pragma once
 
 #include <thyme/platform/glfw_window.hpp>
-#include <thyme/platform/vulkan/utils.hpp>
+#include <thyme/platform/vulkan/vulkan_device.hpp>"
 #include <thyme/platform/vulkan/vulkan_layer.hpp>
 
 #include <vulkan/vulkan.hpp>
@@ -9,7 +9,7 @@
 namespace th::vulkan {
 class Gui final: public VulkanNonOverlayLayer {
 public:
-    explicit Gui(const Device& device, const VulkanGlfwWindow& window, const vk::Instance& instance);
+    explicit Gui(const VulkanDevice& device, const VulkanGlfwWindow& window, vk::Instance instance);
 
     Gui(Gui&& other) noexcept = delete;
     Gui& operator=(Gui&& other) noexcept = delete;

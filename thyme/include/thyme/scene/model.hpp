@@ -3,8 +3,8 @@
 #include <thyme/core/logger.hpp>
 #include <thyme/export_macros.hpp>
 #include <thyme/renderer/structs.hpp>
+#include <thyme/scene/texture_data.hpp>
 #include <thyme/scene/transformation.hpp>
-#include <thyme/scene/vulkan_texture.hpp>
 
 #include <fmt/format.h>
 

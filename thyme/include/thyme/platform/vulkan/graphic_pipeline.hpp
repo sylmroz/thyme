@@ -1,10 +1,8 @@
 #pragma once
 
 #include <thyme/platform/vulkan/model.hpp>
-#include <thyme/platform/vulkan/uniform_buffer_object.hpp>
 #include <thyme/platform/vulkan/utils.hpp>
-#include <thyme/platform/vulkan/vulkan_texture.hpp>
-#include <thyme/renderer/structs.hpp>
+#include <thyme/platform/vulkan/vulkan_device.hpp>
 #include <thyme/scene/camera.hpp>
 
 #include <vulkan/vulkan.hpp>
@@ -21,16 +19,17 @@ public:
     GraphicPipeline& operator=(const GraphicPipeline&) = delete;
     GraphicPipeline& operator=(GraphicPipeline&&) = delete;
 
-    virtual void draw(const vk::CommandBuffer commandBuffer) const = 0;
+    virtual void draw(vk::CommandBuffer commandBuffer) const = 0;
     virtual ~GraphicPipeline() = default;
 };
 
 class ScenePipeline final: public GraphicPipeline {
 public:
-    explicit ScenePipeline(const Device& device, const vk::PipelineRenderingCreateInfo& pipelineRenderingCreateInfo,
-                           const vk::CommandPool commandPool, scene::ModelStorage& modelStorage, scene::Camera& camera);
+    explicit ScenePipeline(const VulkanDevice& device,
+                           const vk::PipelineRenderingCreateInfo& pipelineRenderingCreateInfo,
+                           scene::ModelStorage& modelStorage, scene::Camera& camera);
 
-    virtual void draw(const vk::CommandBuffer commandBuffer) const override;
+    virtual void draw(vk::CommandBuffer commandBuffer) const override;
 
 private:
     vk::UniquePipeline m_pipeline;

@@ -1,38 +1,35 @@
+#include "thyme/platform/vulkan/vulkan_buffer.hpp"
 #include <thyme/platform/vulkan/vulkan_texture.hpp>
+#include <thyme/platform/vulkan/utils.hpp>
 
 namespace th::vulkan {
 
-static void generateMipmaps(const Device& device, vk::Image image, vk::Format format, Resolution resolution,
-                            uint32_t mipLevels);
-
-[[nodiscard]] inline auto createImageSampler(const Device& device, const uint32_t mipLevels) -> vk::UniqueSampler {
-    return device.logicalDevice->createSamplerUnique(
-            vk::SamplerCreateInfo(vk::SamplerCreateFlags(),
-                                  vk::Filter::eLinear,
-                                  vk::Filter::eLinear,
-                                  vk::SamplerMipmapMode::eLinear,
-                                  vk::SamplerAddressMode::eRepeat,
-                                  vk::SamplerAddressMode::eRepeat,
-                                  vk::SamplerAddressMode::eRepeat,
-                                  0.0f,
-                                  vk::True,
-                                  device.physicalDevice.getProperties().limits.maxSamplerAnisotropy,
-                                  vk::False,
-                                  vk::CompareOp::eAlways,
-                                  0.0f,
-                                  static_cast<float>(mipLevels),
-                                  vk::BorderColor::eIntOpaqueBlack,
-                                  vk::False));
+[[nodiscard]] static auto createImageSampler(const vk::Device device, const float maxSamplerAnisotropy,
+                                             const uint32_t mipLevels) -> vk::UniqueSampler {
+    return device.createSamplerUnique(vk::SamplerCreateInfo(vk::SamplerCreateFlags(),
+                                                            vk::Filter::eLinear,
+                                                            vk::Filter::eLinear,
+                                                            vk::SamplerMipmapMode::eLinear,
+                                                            vk::SamplerAddressMode::eRepeat,
+                                                            vk::SamplerAddressMode::eRepeat,
+                                                            vk::SamplerAddressMode::eRepeat,
+                                                            0.0f,
+                                                            vk::True,
+                                                            maxSamplerAnisotropy,
+                                                            vk::False,
+                                                            vk::CompareOp::eAlways,
+                                                            0.0f,
+                                                            static_cast<float>(mipLevels),
+                                                            vk::BorderColor::eIntOpaqueBlack,
+                                                            vk::False));
 }
 
-ImageMemory::ImageMemory(const Device& device, const Resolution resolution, const vk::Format format,
+ImageMemory::ImageMemory(const VulkanDevice& device, const Resolution resolution, const vk::Format format,
                          const vk::ImageUsageFlags imageUsageFlags, const vk::MemoryPropertyFlags memoryPropertyFlags,
                          const vk::ImageAspectFlags aspectFlags, const vk::SampleCountFlagBits msaa,
                          const uint32_t mipLevels)
-    : m_device{ device.logicalDevice.get() }, m_physicalDevice{ device.physicalDevice },
-      m_commandPool{ device.commandPool.get() }, m_format{ format }, m_imageUsageFlags{ imageUsageFlags },
-      m_memoryPropertyFlags{ memoryPropertyFlags }, m_aspectFlags{ aspectFlags }, m_msaa{ msaa },
-      m_mipLevels{ mipLevels } {
+    : m_format{ format }, m_imageUsageFlags{ imageUsageFlags }, m_memoryPropertyFlags{ memoryPropertyFlags },
+      m_aspectFlags{ aspectFlags }, m_msaa{ msaa }, m_device{ device }, m_mipLevels{ mipLevels } {
     resize(resolution);
 }
 
@@ -41,23 +38,24 @@ void ImageMemory::resize(const Resolution resolution) {
         return;
     }
     m_resolution = resolution;
-    m_image = m_device.createImageUnique(vk::ImageCreateInfo(vk::ImageCreateFlags(),
-                                                             vk::ImageType::e2D,
-                                                             m_format,
-                                                             vk::Extent3D(m_resolution.width, m_resolution.height, 1),
-                                                             m_mipLevels,
-                                                             1,
-                                                             m_msaa,
-                                                             vk::ImageTiling::eOptimal,
-                                                             m_imageUsageFlags,
-                                                             vk::SharingMode::eExclusive));
+    m_image = m_device.logicalDevice.createImageUnique(
+            vk::ImageCreateInfo(vk::ImageCreateFlags(),
+                                vk::ImageType::e2D,
+                                m_format,
+                                vk::Extent3D(m_resolution.width, m_resolution.height, 1),
+                                m_mipLevels,
+                                1,
+                                m_msaa,
+                                vk::ImageTiling::eOptimal,
+                                m_imageUsageFlags,
+                                vk::SharingMode::eExclusive));
     vk::MemoryRequirements memoryRequirements;
-    m_device.getImageMemoryRequirements(m_image.get(), &memoryRequirements);
-    m_memory = m_device.allocateMemoryUnique(vk::MemoryAllocateInfo(
+    m_device.logicalDevice.getImageMemoryRequirements(m_image.get(), &memoryRequirements);
+    m_memory = m_device.logicalDevice.allocateMemoryUnique(vk::MemoryAllocateInfo(
             memoryRequirements.size,
-            findMemoryType(m_physicalDevice, memoryRequirements.memoryTypeBits, m_memoryPropertyFlags)));
-    m_device.bindImageMemory(m_image.get(), m_memory.get(), 0);
-    m_imageView = m_device.createImageViewUnique(
+            findMemoryType(m_device.physicalDevice, memoryRequirements.memoryTypeBits, m_memoryPropertyFlags)));
+    m_device.logicalDevice.bindImageMemory(m_image.get(), m_memory.get(), 0);
+    m_imageView = m_device.logicalDevice.createImageViewUnique(
             vk::ImageViewCreateInfo(vk::ImageViewCreateFlags(),
                                     m_image.get(),
                                     vk::ImageViewType::e2D,
@@ -65,8 +63,13 @@ void ImageMemory::resize(const Resolution resolution) {
                                     vk::ComponentMapping(),
                                     vk::ImageSubresourceRange(m_aspectFlags, 0, m_mipLevels, 0, 1)));
 }
+void ImageMemory::transitImageLayout(ImageLayoutTransition layoutTransition) {
+    m_device.singleTimeCommand([layoutTransition, image = m_image.get(), mipLevels = m_mipLevels](const vk::CommandBuffer commandBuffer) {
+            vulkan::transitImageLayout(commandBuffer, image, layoutTransition.oldLayout, layoutTransition.newLayout, mipLevels);
+        });
+}
 
-Vulkan2DTexture::Vulkan2DTexture(const Device& device, const TextureData& texture, vk::Format format)
+Vulkan2DTexture::Vulkan2DTexture(const VulkanDevice& device, const TextureData& texture, const vk::Format format)
     : m_imageMemory{ ImageMemory(device,
                                  texture.getResolution(),
                                  format,
@@ -76,38 +79,40 @@ Vulkan2DTexture::Vulkan2DTexture(const Device& device, const TextureData& textur
                                  vk::ImageAspectFlagBits::eColor,
                                  vk::SampleCountFlagBits::e1,
                                  texture.getMipLevels()) },
-      m_sampler{ createImageSampler(device, texture.getMipLevels()) }, m_device{ device.logicalDevice.get() },
-      m_physicalDevice{ device.physicalDevice }, m_commandPool{ device.commandPool.get() },
-      m_graphicsQueue{ device.getGraphicQueue() }, m_format{ format } {
+      m_sampler{ createImageSampler(device.logicalDevice,
+                                    device.physicalDevice.getProperties().limits.maxSamplerAnisotropy,
+                                    texture.getMipLevels()) },
+      m_format{ format }, m_device{ device } {
     setData(texture);
 }
+
 void Vulkan2DTexture::setData(const TextureData& texture) {
     m_imageMemory.resize(texture.getResolution());
     m_extent = vk::Extent2D(texture.getResolution().width, texture.getResolution().height);
     m_mipLevels = texture.getMipLevels();
+
     const auto data = texture.getData();
     const auto stagingMemoryBuffer =
-            BufferMemory(m_device,
-                         m_physicalDevice,
+            BufferMemory(m_device.logicalDevice,
+                         m_device.physicalDevice,
                          data.size(),
                          vk::BufferUsageFlagBits::eTransferSrc,
                          vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
     void* mappedMemory = nullptr;
-    [[maybe_unused]] const auto result = m_device.mapMemory(
+    [[maybe_unused]] const auto result = m_device.logicalDevice.mapMemory(
             stagingMemoryBuffer.getMemory().get(), 0, data.size(), vk::MemoryMapFlags(), &mappedMemory);
     memcpy(mappedMemory, data.data(), data.size());
-    m_device.unmapMemory(stagingMemoryBuffer.getMemory().get());
+    m_device.logicalDevice.unmapMemory(stagingMemoryBuffer.getMemory().get());
 
-    transitImageLayout(m_device,
-                       m_commandPool,
-                       m_graphicsQueue,
-                       m_imageMemory.getImage(),
-                       vk::ImageLayout::eUndefined,
-                       vk::ImageLayout::eTransferDstOptimal,
-                       texture.getMipLevels());
-    copyBufferToImage(m_device,
-                      m_commandPool,
-                      m_graphicsQueue,
+    m_imageMemory.transitImageLayout(ImageLayoutTransition {
+        .oldLayout = vk::ImageLayout::eUndefined,
+        .newLayout = vk::ImageLayout::eTransferDstOptimal,
+    });
+
+    const auto graphicsQueue = m_device.getGraphicQueue();
+    copyBufferToImage(m_device.logicalDevice,
+                      m_device.commandPool,
+                      graphicsQueue,
                       stagingMemoryBuffer.getBuffer().get(),
                       m_imageMemory.getImage(),
                       texture.getResolution());
@@ -115,11 +120,15 @@ void Vulkan2DTexture::setData(const TextureData& texture) {
 }
 
 void Vulkan2DTexture::generateMipmaps() const {
-    if (!(m_physicalDevice.getFormatProperties(m_format).optimalTilingFeatures
+    const auto device = m_device.logicalDevice;
+    const auto physicalDevice = m_device.physicalDevice;
+    const auto commandPool = m_device.commandPool;
+    const auto graphicsQueue = m_device.getGraphicQueue();
+    if (!(physicalDevice.getFormatProperties(m_format).optimalTilingFeatures
           & vk::FormatFeatureFlagBits::eSampledImageFilterLinear)) {
         throw std::runtime_error("Failed to generate mipmaps! Unsupported linear filtering!");
     }
-    singleTimeCommand(m_device, m_commandPool, m_graphicsQueue, [&](const vk::CommandBuffer& commandBuffer) {
+    singleTimeCommand(device, commandPool, graphicsQueue, [&](const vk::CommandBuffer& commandBuffer) {
         const auto getImageBarrier =
                 [image = m_imageMemory.getImage()](const uint32_t mipLevel) -> vk::ImageMemoryBarrier {
             return vk::ImageMemoryBarrier(

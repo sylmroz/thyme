@@ -1,6 +1,9 @@
 #include <thyme/core/common_structs.hpp>
 #include <thyme/core/utils.hpp>
 #include <thyme/platform/vulkan/graphic_pipeline.hpp>
+#include <thyme/platform/vulkan/uniform_buffer_object.hpp>
+#include <thyme/platform/vulkan/vulkan_texture.hpp>
+#include <thyme/renderer/structs.hpp>
 #include <thyme/scene/model.hpp>
 
 #include <chrono>
@@ -15,13 +18,13 @@
 
 namespace th::vulkan {
 
-ScenePipeline::ScenePipeline(const Device& device, const vk::PipelineRenderingCreateInfo& pipelineRenderingCreateInfo,
-                             const vk::CommandPool commandPool, scene::ModelStorage& modelStorage,
-                             scene::Camera& camera)
+ScenePipeline::ScenePipeline(const VulkanDevice& device,
+                             const vk::PipelineRenderingCreateInfo& pipelineRenderingCreateInfo,
+                             scene::ModelStorage& modelStorage, scene::Camera& camera)
     : m_camera{ camera } {
 
     for (const auto& model : modelStorage) {
-        m_models.emplace_back(model, device, commandPool);
+        m_models.emplace_back(model, device);
     }
     constexpr auto uboBinding =
             vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex);
@@ -29,17 +32,17 @@ ScenePipeline::ScenePipeline(const Device& device, const vk::PipelineRenderingCr
             1, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eFragment);
     constexpr auto bindings = std::array{ uboBinding, samplerLayoutBinding };
 
-    m_descriptorSetLayout = device.logicalDevice->createDescriptorSetLayoutUnique(
+    m_descriptorSetLayout = device.logicalDevice.createDescriptorSetLayoutUnique(
             vk::DescriptorSetLayoutCreateInfo(vk::DescriptorSetLayoutCreateFlags{}, bindings));
-    m_pipelineLayout = device.logicalDevice->createPipelineLayoutUnique(
+    m_pipelineLayout = device.logicalDevice.createPipelineLayoutUnique(
             vk::PipelineLayoutCreateInfo(vk::PipelineLayoutCreateFlags(), 1, &(m_descriptorSetLayout.get())));
     m_descriptorPool = createDescriptorPool(
-            device.logicalDevice.get(),
+            device.logicalDevice,
             { vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, m_models.size()),
               vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, m_models.size()) });
 
     const auto descriptorSetLayouts = std::vector{ m_models.size(), m_descriptorSetLayout.get() };
-    m_descriptorSets = device.logicalDevice->allocateDescriptorSets(
+    m_descriptorSets = device.logicalDevice.allocateDescriptorSets(
             vk::DescriptorSetAllocateInfo(m_descriptorPool.get(), descriptorSetLayouts));
 
     const auto currentDir = std::filesystem::current_path();
@@ -47,9 +50,9 @@ ScenePipeline::ScenePipeline(const Device& device, const vk::PipelineRenderingCr
     const auto shaderAbsolutePath = std::filesystem::absolute(shaderPath);
     const auto vertShader = readFile(shaderAbsolutePath / "triangle.vert.spv");
     const auto fragShader = readFile(shaderAbsolutePath / "triangle.frag.spv");
-    const auto vertexShaderModule = device.logicalDevice->createShaderModuleUnique(vk::ShaderModuleCreateInfo(
+    const auto vertexShaderModule = device.logicalDevice.createShaderModuleUnique(vk::ShaderModuleCreateInfo(
             vk::ShaderModuleCreateFlagBits(), vertShader.size(), reinterpret_cast<const uint32_t*>(vertShader.data())));
-    const auto fragmentShaderModule = device.logicalDevice->createShaderModuleUnique(vk::ShaderModuleCreateInfo(
+    const auto fragmentShaderModule = device.logicalDevice.createShaderModuleUnique(vk::ShaderModuleCreateInfo(
             vk::ShaderModuleCreateFlagBits(), fragShader.size(), reinterpret_cast<const uint32_t*>(fragShader.data())));
     const auto vertexShaderStageInfo = vk::PipelineShaderStageCreateInfo(vk::PipelineShaderStageCreateFlagBits(),
                                                                          vk::ShaderStageFlagBits::eVertex,
@@ -62,7 +65,7 @@ ScenePipeline::ScenePipeline(const Device& device, const vk::PipelineRenderingCr
     const auto shaderStages = std::vector{ vertexShaderStageInfo, fragmentShaderStageInfo };
 
     m_pipeline = createGraphicsPipeline(
-            GraphicPipelineCreateInfo{ .logicalDevice = device.logicalDevice.get(),
+            GraphicPipelineCreateInfo{ .logicalDevice = device.logicalDevice,
                                        .pipelineLayout = m_pipelineLayout.get(),
                                        .samples = device.maxMsaaSamples,
                                        .pipelineRenderingCreateInfo = pipelineRenderingCreateInfo,
@@ -78,7 +81,7 @@ ScenePipeline::ScenePipeline(const Device& device, const vk::PipelineRenderingCr
             vk::WriteDescriptorSet(
                     descriptorSet, 1, 0, vk::DescriptorType::eCombinedImageSampler, { descriptorImageInfo }, {})
         };
-        device.logicalDevice->updateDescriptorSets(writeDescriptorSets, {});
+        device.logicalDevice.updateDescriptorSets(writeDescriptorSets, {});
     }
 }
 

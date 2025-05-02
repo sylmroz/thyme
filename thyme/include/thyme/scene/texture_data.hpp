@@ -31,5 +31,4 @@ private:
     std::vector<uint8_t> m_data;
 };
 
-
-}// namespace Thyme
+}// namespace th

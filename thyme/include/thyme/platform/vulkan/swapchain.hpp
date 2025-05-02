@@ -2,7 +2,9 @@
 
 #include <vulkan/vulkan.hpp>
 
+#include <thyme/renderer/swapchain.hpp>
 #include <thyme/platform/vulkan/utils.hpp>
+#include <thyme/platform/vulkan/vulkan_device.hpp>
 
 namespace th::vulkan {
 
@@ -13,7 +15,7 @@ struct SwapChainFrame {
 
 class SwapChainFrames {
 public:
-    explicit SwapChainFrames(const vk::Device device, const vk::SwapchainKHR swapChain, const vk::Format format);
+    explicit SwapChainFrames(vk::Device device, vk::SwapchainKHR swapChain, vk::Format format);
 
     [[nodiscard]] std::size_t getSwapChainFramesCount() const noexcept {
         return m_images.size();
@@ -46,11 +48,11 @@ private:
 
 class SwapChainData {
 public:
-    explicit SwapChainData(const Device& device, const SwapChainSettings& swapChainSettings,
+    explicit SwapChainData(const VulkanDevice& device, const SwapChainSettings& swapChainSettings,
                            const vk::Extent2D swapChainExtent, const vk::SurfaceKHR surface,
                            const vk::SwapchainKHR oldSwapChain = {})
         : m_swapChain{ createSwapChain(device, swapChainSettings, swapChainExtent, surface, oldSwapChain) },
-          m_swapChainFrames{ device.logicalDevice.get(), m_swapChain.get(), swapChainSettings.surfaceFormat.format } {}
+          m_swapChainFrames{ device.logicalDevice, m_swapChain.get(), swapChainSettings.surfaceFormat.format } {}
 
     [[nodiscard]] auto getSwapChain() noexcept -> vk::SwapchainKHR {
         return m_swapChain.get();
@@ -77,10 +79,17 @@ private:
     SwapChainFrames m_swapChainFrames;
 
 private:
-    static [[nodiscard]] auto createSwapChain(const Device& device, const SwapChainSettings& swapChainSettings,
-                                  const vk::Extent2D swapChainExtent, const vk::SurfaceKHR surface,
-                                  const vk::SwapchainKHR oldSwapChain)
+    static [[nodiscard]] auto createSwapChain(const VulkanDevice& device, const SwapChainSettings& swapChainSettings,
+                                  vk::Extent2D swapChainExtent, vk::SurfaceKHR surface,
+                                  vk::SwapchainKHR oldSwapChain)
             ->vk::UniqueSwapchainKHR;
+};
+
+class VulkanSwapChain final: public renderer::SwapChain {
+public:
+    VulkanSwapChain();
+    uint32_t prepareFrame() override;
+    void submitFrame() override;
 };
 
 }// namespace th::vulkan
