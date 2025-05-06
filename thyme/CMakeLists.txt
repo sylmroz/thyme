@@ -7,7 +7,8 @@ set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 
-add_library(${PROJECT_NAME})
+add_library(${PROJECT_NAME}
+		include/thyme/platform/vulkan/vulkan_graphic_context.hpp)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 	# using Clang

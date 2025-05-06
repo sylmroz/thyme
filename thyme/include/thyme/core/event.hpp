@@ -2,8 +2,8 @@
 
 #include <thyme/export_macros.hpp>
 
-#include <glm/vec2.hpp>
 #include <fmt/format.h>
+#include <glm/vec2.hpp>
 
 #include <functional>
 #include <ranges>
@@ -79,11 +79,11 @@ using Event = std::variant<WindowResize,
                            KeyPressedRepeated,
                            KeyReleased>;
 
-class THYME_API EventSubject {
+template <typename EventType>
+class THYME_API EventHandler {
+    using event_fn = std::function<void(EventType)>;
 public:
-    using event_fn = std::function<void(Event)>;
-
-    void next(const Event& event) const noexcept {
+    void next(const EventType& event) const noexcept {
         for (const auto& f : m_handlers | std::views::keys) {
             f(event);
         }
@@ -106,6 +106,18 @@ private:
     std::vector<std::pair<event_fn, int>> m_handlers;
 };
 
+using EventSubject = EventHandler<Event>;
+using WindowResizedEventHandler = EventHandler<WindowResize>;
+using WindowClosedEventHandler = EventHandler<WindowClose>;
+using WindowMinimalizedEventHandler = EventHandler<WindowMinimalize>;
+using WindowMaximalizedEventHandler = EventHandler<WindowMaximalize>;
+using MousePositionEventHandler = EventHandler<MousePosition>;
+using MouseWheelEventHandler = EventHandler<MouseWheel>;
+using MouseButtonDownEventHandler = EventHandler<MouseButtonDown>;
+using MouseButtonUpEventHandler = EventHandler<MouseButtonUp>;
+using KeyPressedEventHandler = EventHandler<KeyPressed>;
+using KeyPressedRepeatedEventHandler = EventHandler<KeyPressedRepeated>;
+
 template <typename Event>
 struct EventDispatcherHelper: NoCopyable {
     EventDispatcherHelper() = default;
@@ -117,4 +129,4 @@ struct EventDispatcher: EventDispatcherHelper<Events>... {
     void operator()(auto&&) {}
 };
 
-}// namespace Thyme
+}// namespace th

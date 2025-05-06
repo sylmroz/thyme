@@ -5,8 +5,11 @@
 
 namespace th::vulkan {
 
-Gui::Gui(const VulkanDevice& device, const VulkanGlfwWindow& window, const vk::Instance instance)
-    : VulkanNonOverlayLayer("GUI") {
+Gui::Gui(const VulkanDevice& device,
+         const VulkanGlfwWindow& window,
+         VulkanGraphicContext context,
+         const vk::Instance instance)
+    : VulkanNonOverlayLayer("GUI"), m_context{ std::move(context) } {
     TH_API_LOG_INFO("Create Gui Class");
     ImGui_ImplGlfw_InitForVulkan(window.getHandler().get(), true);
     ImGui_ImplVulkan_InitInfo initInfo{};
@@ -31,13 +34,12 @@ Gui::Gui(const VulkanDevice& device, const VulkanGlfwWindow& window, const vk::I
                                               vk::DescriptorPoolSize(vk::DescriptorType::eInputAttachment, 2) });
     initInfo.DescriptorPool = m_descriptorPool.get();
     initInfo.Subpass = 0;
-    initInfo.MinImageCount = 2;// VulkanRenderer::maxFramesInFlight;
-    initInfo.ImageCount = 2;// VulkanRenderer::maxFramesInFlight;
+    initInfo.MinImageCount = m_context.imageCount;
+    initInfo.ImageCount = m_context.imageCount;
     initInfo.MSAASamples = static_cast<VkSampleCountFlagBits>(device.maxMsaaSamples);
     initInfo.UseDynamicRendering = true;
-    m_format = device.swapChainSupportDetails.getBestSurfaceFormat().format;
     initInfo.PipelineRenderingCreateInfo =
-            vk::PipelineRenderingCreateInfo(0, { m_format }, findDepthFormat(device.physicalDevice));
+            vk::PipelineRenderingCreateInfo(0, { m_context.surfaceFormat.format }, m_context.depthFormat);
     initInfo.Allocator = nullptr;
     initInfo.CheckVkResultFn = [](const auto vkResult) {
         if (vkResult == VK_SUCCESS) {

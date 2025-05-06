@@ -200,7 +200,7 @@ static auto getMaxUsableSampleCount(const vk::PhysicalDevice& device) -> vk::Sam
 
 FrameDataList::FrameDataList(const vk::Device logicalDevice, const uint32_t maxFrames) noexcept {
     for (uint32_t i{ 0 }; i < maxFrames; ++i) {
-        m_frameDataList.emplace_back(FrameData{
+        m_frameDataList.emplace_back(InternalFrameData{
                 .imageAvailableSemaphore = logicalDevice.createSemaphoreUnique(vk::SemaphoreCreateInfo()),
                 .renderFinishedSemaphore = logicalDevice.createSemaphoreUnique(vk::SemaphoreCreateInfo()),
                 .fence = logicalDevice.createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled)),
@@ -405,7 +405,7 @@ void transitImageLayout(const vk::CommandBuffer commandBuffer, const vk::Image i
             srcPipelineStage, dstPipelineStage, vk::DependencyFlags(), 0, nullptr, 0, nullptr, 1, &barrier);
 }
 
-auto findSupportedImageFormat(const vk::PhysicalDevice& device, const std::span<const vk::Format> formats,
+auto findSupportedImageFormat(const vk::PhysicalDevice device, const std::span<const vk::Format> formats,
                               const vk::ImageTiling imageTiling, const vk::FormatFeatureFlags features) -> vk::Format {
     for (const auto format : formats) {
         const auto properties = device.getFormatProperties(format);

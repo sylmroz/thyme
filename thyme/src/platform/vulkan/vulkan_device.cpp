@@ -61,7 +61,7 @@ static auto getMaxUsableSampleCount(const vk::PhysicalDevice& device) -> vk::Sam
 }
 
 
-auto PhysicalDevicesManager::getPhysicalDevices(const vk::Instance instance, const vk::SurfaceKHR surface)
+auto PhysicalDevicesManager::getPhysicalDevices(const vk::Instance instance, const vk::SurfaceKHR surface) const
         -> std::vector<PhysicalDevice> {
     static std::map<vk::PhysicalDeviceType, uint32_t> priorities = {
         { vk::PhysicalDeviceType::eOther, 0 },       { vk::PhysicalDeviceType::eCpu, 1 },
@@ -77,7 +77,7 @@ auto PhysicalDevicesManager::getPhysicalDevices(const vk::Instance instance, con
         const auto maxMsaaSamples = getMaxUsableSampleCount(device);
         if (queueFamilyIndex.isCompleted() && deviceSupportExtensions && swapChainSupportDetails.isValid()
             && device.getFeatures().samplerAnisotropy) {
-            physicalDevices.emplace_back(device, queueFamilyIndex, swapChainSupportDetails, maxMsaaSamples);
+            physicalDevices.emplace_back(device, queueFamilyIndex, maxMsaaSamples);
         }
     }
 

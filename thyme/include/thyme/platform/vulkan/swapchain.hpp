@@ -1,10 +1,14 @@
 #pragma once
 
+#include "vulkan_graphic_context.hpp"
+#include "vulkan_texture.hpp"
+
+
 #include <vulkan/vulkan.hpp>
 
-#include <thyme/renderer/swapchain.hpp>
 #include <thyme/platform/vulkan/utils.hpp>
 #include <thyme/platform/vulkan/vulkan_device.hpp>
+#include <thyme/renderer/swapchain.hpp>
 
 namespace th::vulkan {
 
@@ -79,17 +83,53 @@ private:
     SwapChainFrames m_swapChainFrames;
 
 private:
-    static [[nodiscard]] auto createSwapChain(const VulkanDevice& device, const SwapChainSettings& swapChainSettings,
-                                  vk::Extent2D swapChainExtent, vk::SurfaceKHR surface,
-                                  vk::SwapchainKHR oldSwapChain)
-            ->vk::UniqueSwapchainKHR;
+    static [[nodiscard]] auto createSwapChain(const VulkanDevice& device, SwapChainSettings swapChainSettings,
+                                              vk::Extent2D swapChainExtent, vk::SurfaceKHR surface,
+                                              vk::SwapchainKHR oldSwapChain) -> vk::UniqueSwapchainKHR;
 };
 
 class VulkanSwapChain final: public renderer::SwapChain {
 public:
-    VulkanSwapChain();
-    uint32_t prepareFrame() override;
+    VulkanSwapChain(const VulkanDevice& device, vk::SurfaceKHR surface, const VulkanGraphicContext& context,
+                    vk::Extent2D swapChainExtent);
+    void frameResized(vk::Extent2D resolution);
+    bool prepareFrame() override;
+    void prepareRenderMode(vk::CommandBuffer commandBuffer);
+    void preparePresentMode(vk::CommandBuffer commandBuffer);
+    void renderGraphic(vk::CommandBuffer commandBuffer);
     void submitFrame() override;
+
+private:
+    bool hasResized() const;
+    void recreateSwapChain();
+    void transitDepthImageLayout(const vk::CommandBuffer commandBuffer) const {
+        transitImageLayout(commandBuffer,
+                           m_depthImageMemory.getImage(),
+                           ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eUndefined,
+                                                  .newLayout = vk::ImageLayout::eDepthAttachmentOptimal },
+                           ImagePipelineStageTransition{ .oldStage = vk::PipelineStageFlagBits::eEarlyFragmentTests
+                                                                     | vk::PipelineStageFlagBits::eLateFragmentTests,
+                                                         .newStage = vk::PipelineStageFlagBits::eEarlyFragmentTests
+                                                                     | vk::PipelineStageFlagBits::eLateFragmentTests },
+                           ImageAccessFlagsTransition{ .oldAccess = vk::AccessFlags(),
+                                                       .newAccess = vk::AccessFlagBits::eDepthStencilAttachmentWrite },
+                           vk::ImageAspectFlagBits::eDepth,
+                           1);
+    }
+
+
+private:
+    uint32_t m_currentImageIndex{ 0 };
+    vk::SurfaceKHR m_surface;
+    vk::Extent2D m_swapChainExtent;
+    vk::Extent2D m_fallBackExtent{};
+    VulkanGraphicContext m_context;
+    VulkanDevice m_device;
+    SwapChainData m_swapChainData;
+    DepthImageMemory m_depthImageMemory;
+    ColorImageMemory m_colorImageMemory;
+    FrameDataList m_frameDataList;
+    FrameData m_currentFrameData;
 };
 
 }// namespace th::vulkan

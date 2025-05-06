@@ -115,32 +115,33 @@ public:
 };
 
 struct FrameData {
-    vk::UniqueSemaphore imageAvailableSemaphore;
-    vk::UniqueSemaphore renderFinishedSemaphore;
-    vk::UniqueFence fence;
-};
-
-struct FrameDataNoUnique {
     vk::Semaphore imageAvailableSemaphore;
     vk::Semaphore renderFinishedSemaphore;
     vk::Fence fence;
 };
 
 class FrameDataList {
+    struct InternalFrameData {
+        vk::UniqueSemaphore imageAvailableSemaphore;
+        vk::UniqueSemaphore renderFinishedSemaphore;
+        vk::UniqueFence fence;
+    };
+
 public:
     explicit FrameDataList(vk::Device logicalDevice, uint32_t maxFrames) noexcept;
 
-    [[nodiscard]] auto getNext() noexcept -> FrameDataNoUnique {
+    [[nodiscard]] auto getNext() noexcept -> FrameData {
         const auto index = getNextFrameIndex();
-        return FrameDataNoUnique{
-            .imageAvailableSemaphore = m_frameDataList[index].imageAvailableSemaphore.get(),
-            .renderFinishedSemaphore = m_frameDataList[index].renderFinishedSemaphore.get(),
-            .fence = m_frameDataList[index].fence.get(),
+        const auto& [imageAvailableSemaphore, renderFinishedSemaphore, fence] = m_frameDataList[index];
+        return FrameData{
+            .imageAvailableSemaphore = imageAvailableSemaphore.get(),
+            .renderFinishedSemaphore = renderFinishedSemaphore.get(),
+            .fence = fence.get(),
         };
     };
 
 private:
-    std::vector<FrameData> m_frameDataList;
+    std::vector<InternalFrameData> m_frameDataList;
     uint32_t m_frameIndex{ 0 };
 
     [[nodiscard]] uint32_t getNextFrameIndex() noexcept {
@@ -223,7 +224,7 @@ static constexpr auto getAttributeDescriptions() -> std::array<vk::VertexInputAt
 }
 
 
-[[nodiscard]] inline uint32_t findMemoryType(const vk::PhysicalDevice& device, const uint32_t typeFilter,
+[[nodiscard]] inline uint32_t findMemoryType(const vk::PhysicalDevice device, const uint32_t typeFilter,
                                              const vk::MemoryPropertyFlags properties) {
     const auto& memProperties = device.getMemoryProperties();
     for (uint32_t i{ 0 }; i < memProperties.memoryTypeCount; ++i) {
@@ -263,7 +264,7 @@ void transitImageLayout(vk::CommandBuffer commandBuffer, vk::Image image, ImageL
                         ImagePipelineStageTransition stageTransition, ImageAccessFlagsTransition accessFlagsTransition,
                         vk::ImageAspectFlags aspectFlags, uint32_t mipLevels);
 
-inline void copyBufferToImage(const vk::Device device, const vk::CommandPool commandPool, vk::Queue graphicQueue,
+inline void copyBufferToImage(vk::Device device, const vk::CommandPool commandPool, vk::Queue graphicQueue,
                               const vk::Buffer buffer, const vk::Image image, const Resolution resolution) {
     singleTimeCommand(device, commandPool, graphicQueue, [&](const vk::CommandBuffer commandBuffer) {
         const auto region = vk::BufferImageCopy(0,
@@ -276,12 +277,12 @@ inline void copyBufferToImage(const vk::Device device, const vk::CommandPool com
     });
 }
 
-[[nodiscard]] auto findSupportedImageFormat(const vk::PhysicalDevice& device,
-                                            const std::span<const vk::Format> formats,
-                                            const vk::ImageTiling imageTiling,
-                                            const vk::FormatFeatureFlags features) -> vk::Format;
+[[nodiscard]] auto findSupportedImageFormat(vk::PhysicalDevice device,
+                                            std::span<const vk::Format> formats,
+                                            vk::ImageTiling imageTiling,
+                                            vk::FormatFeatureFlags features) -> vk::Format;
 
-[[nodiscard]] inline auto findDepthFormat(const vk::PhysicalDevice& device) -> vk::Format {
+[[nodiscard]] inline auto findDepthFormat(const vk::PhysicalDevice device) -> vk::Format {
     constexpr auto formats =
             std::array{ vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint };
     return findSupportedImageFormat(device,
@@ -294,6 +295,6 @@ inline void copyBufferToImage(const vk::Device device, const vk::CommandPool com
     return format == vk::Format::eD24UnormS8Uint || format == vk::Format::eD32SfloatS8Uint;
 }
 
-void setCommandBufferFrameSize(const vk::CommandBuffer commandBuffer, const vk::Extent2D frameSize);
+void setCommandBufferFrameSize(vk::CommandBuffer commandBuffer, vk::Extent2D frameSize);
 
 }// namespace th::vulkan

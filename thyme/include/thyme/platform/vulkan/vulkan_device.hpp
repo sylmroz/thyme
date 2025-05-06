@@ -11,7 +11,6 @@ struct VulkanDevice {
     vk::Device logicalDevice;
     vk::CommandPool commandPool;
     QueueFamilyIndices queueFamilyIndices;
-    SwapChainSupportDetails swapChainSupportDetails;
     vk::SampleCountFlagBits maxMsaaSamples;
 
     auto getGraphicQueue() const noexcept -> vk::Queue {
@@ -38,25 +37,22 @@ struct VulkanDevice {
 class PhysicalDevicesManager {
     class PhysicalDevice {
     public:
-        explicit PhysicalDevice(const vk::PhysicalDevice& physicalDevice, const QueueFamilyIndices& queueFamilyIndices,
-                                const SwapChainSupportDetails& swapChainSupportDetails,
+        explicit PhysicalDevice(const vk::PhysicalDevice physicalDevice, const QueueFamilyIndices& queueFamilyIndices,
                                 const vk::SampleCountFlagBits maxMsaaSamples) noexcept
             : physicalDevice{ physicalDevice }, queueFamilyIndices{ queueFamilyIndices },
-              swapChainSupportDetails{ swapChainSupportDetails }, maxMsaaSamples{ maxMsaaSamples } {}
+              maxMsaaSamples{ maxMsaaSamples } {}
 
         vk::PhysicalDevice physicalDevice;
         QueueFamilyIndices queueFamilyIndices;
-        SwapChainSupportDetails swapChainSupportDetails;
         vk::SampleCountFlagBits maxMsaaSamples;
 
         [[nodiscard]] vk::UniqueDevice createLogicalDevice() const;
     };
 
     struct VulkanInternalDevice {
-        explicit VulkanInternalDevice(PhysicalDevice physicalDevice)
+        explicit VulkanInternalDevice(const PhysicalDevice& physicalDevice)
             : physicalDevice(physicalDevice.physicalDevice), logicalDevice(physicalDevice.createLogicalDevice()),
               queueFamilyIndices(physicalDevice.queueFamilyIndices),
-              swapChainSupportDetails(physicalDevice.swapChainSupportDetails),
               maxMsaaSamples{ physicalDevice.maxMsaaSamples },
               commandPool{ logicalDevice->createCommandPoolUnique(
                       vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
@@ -64,7 +60,6 @@ class PhysicalDevicesManager {
         vk::PhysicalDevice physicalDevice;
         vk::UniqueDevice logicalDevice;
         QueueFamilyIndices queueFamilyIndices;
-        SwapChainSupportDetails swapChainSupportDetails;
         vk::SampleCountFlagBits maxMsaaSamples;
         vk::UniqueCommandPool commandPool;
 
@@ -86,7 +81,6 @@ public:
             .logicalDevice = m_selectedDevice.logicalDevice.get(),
             .commandPool = m_selectedDevice.commandPool.get(),
             .queueFamilyIndices = m_selectedDevice.queueFamilyIndices,
-            .swapChainSupportDetails = m_selectedDevice.swapChainSupportDetails,
             .maxMsaaSamples = m_selectedDevice.maxMsaaSamples,
         };
     }
@@ -103,7 +97,7 @@ public:
     }
 
 private:
-    auto getPhysicalDevices(vk::Instance instance, vk::SurfaceKHR surface) -> std::vector<PhysicalDevice>;
+    auto getPhysicalDevices(vk::Instance instance, vk::SurfaceKHR surface) const -> std::vector<PhysicalDevice>;
 
 private:
     std::vector<PhysicalDevice> m_physicalDevices{};

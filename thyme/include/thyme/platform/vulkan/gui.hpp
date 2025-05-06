@@ -3,13 +3,14 @@
 #include <thyme/platform/glfw_window.hpp>
 #include <thyme/platform/vulkan/vulkan_device.hpp>"
 #include <thyme/platform/vulkan/vulkan_layer.hpp>
+#include <thyme/platform/vulkan/vulkan_graphic_context.hpp>
 
 #include <vulkan/vulkan.hpp>
 
 namespace th::vulkan {
 class Gui final: public VulkanNonOverlayLayer {
 public:
-    explicit Gui(const VulkanDevice& device, const VulkanGlfwWindow& window, vk::Instance instance);
+    explicit Gui(const VulkanDevice& device, const VulkanGlfwWindow& window, VulkanGraphicContext context, vk::Instance instance);
 
     Gui(Gui&& other) noexcept = delete;
     Gui& operator=(Gui&& other) noexcept = delete;
@@ -31,6 +32,6 @@ private:
     vk::UniquePipelineCache m_pipelineCache;
     vk::UniqueDescriptorPool m_descriptorPool;
     vk::UniqueCommandBuffer m_commandBuffer;
-    vk::Format m_format;
+    VulkanGraphicContext m_context;
 };
 }// namespace th::vulkan

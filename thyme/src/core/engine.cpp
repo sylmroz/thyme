@@ -1,10 +1,11 @@
-#include <thyme/platform/vulkan/vulkan_device.hpp>
 #include <thyme/core/event.hpp>
 #include <thyme/core/logger.hpp>
 #include <thyme/core/window.hpp>
 #include <thyme/platform/glfw_window.hpp>
 #include <thyme/platform/vulkan/gui.hpp>
 #include <thyme/platform/vulkan/renderer.hpp>
+#include <thyme/platform/vulkan/vulkan_device.hpp>
+#include <thyme/platform/vulkan/vulkan_graphic_context.hpp>
 #include <thyme/platform/vulkan/vulkan_layer.hpp>
 
 #include <ranges>
@@ -28,11 +29,23 @@ Engine::Engine(const EngineConfig& engineConfig, vulkan::VulkanLayerStack& layer
 void Engine::run() {
     TH_API_LOG_INFO("Start {} engine", m_engineConfig.engineName);
 
+    WindowResizedEventHandler windowResizedEventHandler;
     EventSubject windowEvents;
-    windowEvents.subscribe([&layers = m_layers](const Event& event) {
+    windowEvents.subscribe([&layers = m_layers, &windowResizedEventHandler](const Event& event) {
         for (auto* const layer : layers) {
             layer->onEvent(event);
         }
+        std::visit(
+                [&](const auto& windowResizedEvent) {
+                    if constexpr (std::is_same_v<std::remove_cvref_t<decltype(windowResizedEvent)>, WindowResize>) {
+                        windowResizedEventHandler.next(windowResizedEvent);
+                    }
+                },
+                event);
+    });
+    windowResizedEventHandler.subscribe([&camera = m_camera](const WindowResize& windowResizedEvent) {
+        const auto [width, height] = windowResizedEvent;
+        camera.setResolution(glm::vec2{ static_cast<float>(width), static_cast<float>(height) });
     });
     VulkanGlfwWindow window(WindowConfig{ m_engineConfig, windowEvents });
 
@@ -52,13 +65,29 @@ void Engine::run() {
     const auto physicalDevicesManager = vulkan::PhysicalDevicesManager(instance.getInstance(), surface.get());
 
     const auto& device = physicalDevicesManager.getSelectedDevice();
+    const auto swapChainDetails = vulkan::SwapChainSupportDetails(device.physicalDevice, surface.get());
+    const auto vulkanGraphicContext =
+            vulkan::VulkanGraphicContext{ .maxFramesInFlight = 2,
+                                          .imageCount = swapChainDetails.getImageCount(),
+                                          .depthFormat = vulkan::findDepthFormat(device.physicalDevice),
+                                          .surfaceFormat = swapChainDetails.getBestSurfaceFormat(),
+                                          .presentMode = swapChainDetails.getBestPresetMode() };
 
-    vulkan::Gui gui(device, window, instance.getInstance());
-    vulkan::VulkanRenderer renderer(window, device, surface, m_modelStorage, m_camera, gui);
+    vulkan::Gui gui(device, window, vulkanGraphicContext, instance.getInstance());
+    vulkan::VulkanSwapChain swapChain(
+            device, surface.get(), vulkanGraphicContext, swapChainDetails.getSwapExtent(window.getFrameBufferSize()));
+    vulkan::VulkanRenderer renderer(device, swapChain, m_modelStorage, m_camera, gui, vulkanGraphicContext);
+
+    windowResizedEventHandler.subscribe([&swapChain](const WindowResize& windowResized) {
+        const auto [width, height] = windowResized;
+        swapChain.frameResized(vk::Extent2D{ static_cast<uint32_t>(width), static_cast<glm::uint32>(height) });
+    });
 
     while (!window.shouldClose()) {
-        window.poolEvents();
-        renderer.draw();
+        if (!window.isMinimalized()) {
+            window.poolEvents();
+            renderer.draw();
+        }
     }
 
     device.logicalDevice.waitIdle();

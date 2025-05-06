@@ -1,6 +1,6 @@
 #include "thyme/platform/vulkan/vulkan_buffer.hpp"
-#include <thyme/platform/vulkan/vulkan_texture.hpp>
 #include <thyme/platform/vulkan/utils.hpp>
+#include <thyme/platform/vulkan/vulkan_texture.hpp>
 
 namespace th::vulkan {
 
@@ -24,7 +24,7 @@ namespace th::vulkan {
                                                             vk::False));
 }
 
-ImageMemory::ImageMemory(const VulkanDevice& device, const Resolution resolution, const vk::Format format,
+ImageMemory::ImageMemory(const VulkanDevice& device, const vk::Extent2D resolution, const vk::Format format,
                          const vk::ImageUsageFlags imageUsageFlags, const vk::MemoryPropertyFlags memoryPropertyFlags,
                          const vk::ImageAspectFlags aspectFlags, const vk::SampleCountFlagBits msaa,
                          const uint32_t mipLevels)
@@ -33,7 +33,7 @@ ImageMemory::ImageMemory(const VulkanDevice& device, const Resolution resolution
     resize(resolution);
 }
 
-void ImageMemory::resize(const Resolution resolution) {
+void ImageMemory::resize(const vk::Extent2D resolution) {
     if (resolution.width == m_resolution.height || resolution.height == m_resolution.height) {
         return;
     }
@@ -64,14 +64,27 @@ void ImageMemory::resize(const Resolution resolution) {
                                     vk::ImageSubresourceRange(m_aspectFlags, 0, m_mipLevels, 0, 1)));
 }
 void ImageMemory::transitImageLayout(ImageLayoutTransition layoutTransition) {
-    m_device.singleTimeCommand([layoutTransition, image = m_image.get(), mipLevels = m_mipLevels](const vk::CommandBuffer commandBuffer) {
-            vulkan::transitImageLayout(commandBuffer, image, layoutTransition.oldLayout, layoutTransition.newLayout, mipLevels);
-        });
+    m_device.singleTimeCommand(
+            [layoutTransition, image = m_image.get(), mipLevels = m_mipLevels](const vk::CommandBuffer commandBuffer) {
+                vulkan::transitImageLayout(
+                        commandBuffer, image, layoutTransition.oldLayout, layoutTransition.newLayout, mipLevels);
+            });
 }
+
+DepthImageMemory::DepthImageMemory(const VulkanDevice& device, const vk::Extent2D resolution, const vk::Format format,
+                                   const vk::SampleCountFlagBits msaa)
+    : ImageMemory(device, resolution, format, vk::ImageUsageFlagBits::eDepthStencilAttachment,
+                  vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eDepth, msaa, 1) {}
+
+ColorImageMemory::ColorImageMemory(const VulkanDevice& device, const vk::Extent2D resolution, const vk::Format format,
+                                   const vk::SampleCountFlagBits msaa)
+    : ImageMemory(device, resolution, format,
+                  vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment,
+                  vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor, msaa, 1) {}
 
 Vulkan2DTexture::Vulkan2DTexture(const VulkanDevice& device, const TextureData& texture, const vk::Format format)
     : m_imageMemory{ ImageMemory(device,
-                                 texture.getResolution(),
+                                 vk::Extent2D(texture.getResolution().width, texture.getResolution().height),
                                  format,
                                  vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst
                                          | vk::ImageUsageFlagBits::eSampled,
@@ -87,8 +100,8 @@ Vulkan2DTexture::Vulkan2DTexture(const VulkanDevice& device, const TextureData& 
 }
 
 void Vulkan2DTexture::setData(const TextureData& texture) {
-    m_imageMemory.resize(texture.getResolution());
     m_extent = vk::Extent2D(texture.getResolution().width, texture.getResolution().height);
+    m_imageMemory.resize(m_extent);
     m_mipLevels = texture.getMipLevels();
 
     const auto data = texture.getData();
@@ -104,9 +117,9 @@ void Vulkan2DTexture::setData(const TextureData& texture) {
     memcpy(mappedMemory, data.data(), data.size());
     m_device.logicalDevice.unmapMemory(stagingMemoryBuffer.getMemory().get());
 
-    m_imageMemory.transitImageLayout(ImageLayoutTransition {
-        .oldLayout = vk::ImageLayout::eUndefined,
-        .newLayout = vk::ImageLayout::eTransferDstOptimal,
+    m_imageMemory.transitImageLayout(ImageLayoutTransition{
+            .oldLayout = vk::ImageLayout::eUndefined,
+            .newLayout = vk::ImageLayout::eTransferDstOptimal,
     });
 
     const auto graphicsQueue = m_device.getGraphicQueue();

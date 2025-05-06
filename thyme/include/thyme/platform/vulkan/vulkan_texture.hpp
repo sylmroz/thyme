@@ -10,9 +10,9 @@ namespace th::vulkan {
 
 class ImageMemory {
 public:
-    ImageMemory(const VulkanDevice& device, Resolution resolution, vk::Format format, vk::ImageUsageFlags imageUsageFlags,
-                vk::MemoryPropertyFlags memoryPropertyFlags, vk::ImageAspectFlags aspectFlags,
-                vk::SampleCountFlagBits msaa, uint32_t mipLevels);
+    ImageMemory(const VulkanDevice& device, vk::Extent2D resolution, vk::Format format,
+                vk::ImageUsageFlags imageUsageFlags, vk::MemoryPropertyFlags memoryPropertyFlags,
+                vk::ImageAspectFlags aspectFlags, vk::SampleCountFlagBits msaa, uint32_t mipLevels);
 
     [[nodiscard]] auto getImage() const noexcept -> vk::Image {
         return m_image.get();
@@ -26,7 +26,7 @@ public:
         return m_imageView.get();
     }
 
-    void resize(Resolution resolution);
+    void resize(vk::Extent2D resolution);
 
     void transitImageLayout(ImageLayoutTransition layoutTransition);
 
@@ -35,15 +35,27 @@ private:
     vk::UniqueDeviceMemory m_memory;
     vk::UniqueImageView m_imageView;
 
-    VulkanDevice m_device;
-
     vk::Format m_format;
     vk::ImageUsageFlags m_imageUsageFlags;
     vk::MemoryPropertyFlags m_memoryPropertyFlags;
     vk::ImageAspectFlags m_aspectFlags;
     vk::SampleCountFlagBits m_msaa;
     uint32_t m_mipLevels{ 1 };
-    Resolution m_resolution{};
+    vk::Extent2D m_resolution{};
+
+    VulkanDevice m_device;
+};
+
+class DepthImageMemory: public ImageMemory {
+public:
+    DepthImageMemory(const VulkanDevice& device, vk::Extent2D resolution, vk::Format format,
+                     vk::SampleCountFlagBits msaa);
+};
+
+class ColorImageMemory: public ImageMemory {
+public:
+    ColorImageMemory(const VulkanDevice& device, vk::Extent2D resolution, vk::Format format,
+                     vk::SampleCountFlagBits msaa);
 };
 
 class Vulkan2DTexture {
