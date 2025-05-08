@@ -1,13 +1,12 @@
 #pragma once
 
-#include "vulkan_graphic_context.hpp"
-#include "vulkan_texture.hpp"
-
-
 #include <vulkan/vulkan.hpp>
 
 #include <thyme/platform/vulkan/utils.hpp>
+#include <thyme/platform/vulkan/vulkan_command_buffers.hpp>
 #include <thyme/platform/vulkan/vulkan_device.hpp>
+#include <thyme/platform/vulkan/vulkan_graphic_context.hpp>
+#include <thyme/platform/vulkan/vulkan_texture.hpp>
 #include <thyme/renderer/swapchain.hpp>
 
 namespace th::vulkan {
@@ -91,12 +90,11 @@ private:
 class VulkanSwapChain final: public renderer::SwapChain {
 public:
     VulkanSwapChain(const VulkanDevice& device, vk::SurfaceKHR surface, const VulkanGraphicContext& context,
-                    vk::Extent2D swapChainExtent);
+                    vk::Extent2D swapChainExtent, VulkanCommandBuffersPool* commandPool);
     void frameResized(vk::Extent2D resolution);
     bool prepareFrame() override;
-    void prepareRenderMode(vk::CommandBuffer commandBuffer);
-    void preparePresentMode(vk::CommandBuffer commandBuffer);
-    void renderGraphic(vk::CommandBuffer commandBuffer);
+    void prepareRenderMode();
+    void preparePresentMode();
     void submitFrame() override;
 
 private:
@@ -128,8 +126,7 @@ private:
     SwapChainData m_swapChainData;
     DepthImageMemory m_depthImageMemory;
     ColorImageMemory m_colorImageMemory;
-    FrameDataList m_frameDataList;
-    FrameData m_currentFrameData;
+    VulkanCommandBuffersPool* m_commandBuffersPool;
 };
 
 }// namespace th::vulkan

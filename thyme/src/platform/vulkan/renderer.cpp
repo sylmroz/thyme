@@ -7,14 +7,12 @@ namespace th::vulkan {
 
 VulkanRenderer::VulkanRenderer(const VulkanDevice& device, VulkanSwapChain& swapChain,
                                scene::ModelStorage& modelStorage, scene::Camera& camera, Gui& gui,
-                               const VulkanGraphicContext& context) noexcept
-    : m_device{ device }, m_gui{ gui }, m_swapChain{ swapChain },
-      m_commandBuffers{ m_device.logicalDevice.allocateCommandBuffersUnique(vk::CommandBufferAllocateInfo(
-              device.commandPool, vk::CommandBufferLevel::ePrimary, context.imageCount)) } {
+                               const VulkanGraphicContext& context,
+                               VulkanCommandBuffersPool* commandBuffersPool) noexcept
+    : m_device{ device }, m_gui{ gui }, m_swapChain{ swapChain }, m_commandBuffersPool{ commandBuffersPool } {
     m_pipelines.emplace_back(std::make_unique<ScenePipeline>(
             device,
-            vk::PipelineRenderingCreateInfo(
-                    0, { context.surfaceFormat.format }, findDepthFormat(device.physicalDevice)),
+            vk::PipelineRenderingCreateInfo(0, { context.surfaceFormat.format }, context.depthFormat),
             modelStorage,
             camera));
 }
@@ -24,22 +22,15 @@ void VulkanRenderer::draw() {
         return;
     }
 
-    const auto commandBuffer = m_commandBuffers[m_commandBufferIndex].get();
-    ++m_commandBufferIndex %= m_commandBuffers.size();
-    commandBuffer.reset();
-    commandBuffer.begin(vk::CommandBufferBeginInfo());
-    m_swapChain.prepareRenderMode(commandBuffer);
+    m_swapChain.prepareRenderMode();
+
+    auto& commandBuffer = m_commandBuffersPool->get();
     for (const auto& pipeline : m_pipelines) {
-        pipeline->draw(commandBuffer);
+        pipeline->draw(commandBuffer.getBuffer());
     }
     m_gui.start();
-    m_gui.draw(commandBuffer);
-    m_swapChain.preparePresentMode(commandBuffer);
-
-    commandBuffer.end();
-
-    m_swapChain.renderGraphic(commandBuffer);
-
+    m_gui.draw(commandBuffer.getBuffer());
+    m_swapChain.preparePresentMode();
     m_swapChain.submitFrame();
 }
 

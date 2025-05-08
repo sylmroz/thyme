@@ -4,6 +4,7 @@
 #include <thyme/platform/glfw_window.hpp>
 #include <thyme/platform/vulkan/gui.hpp>
 #include <thyme/platform/vulkan/renderer.hpp>
+#include <thyme/platform/vulkan/vulkan_command_buffers.hpp>
 #include <thyme/platform/vulkan/vulkan_device.hpp>
 #include <thyme/platform/vulkan/vulkan_graphic_context.hpp>
 #include <thyme/platform/vulkan/vulkan_layer.hpp>
@@ -73,10 +74,13 @@ void Engine::run() {
                                           .surfaceFormat = swapChainDetails.getBestSurfaceFormat(),
                                           .presentMode = swapChainDetails.getBestPresetMode() };
 
+
+    vulkan::VulkanCommandBuffersPool buffersPool(
+            device.logicalDevice, device.commandPool, device.getGraphicQueue(), vulkanGraphicContext.maxFramesInFlight);
     vulkan::Gui gui(device, window, vulkanGraphicContext, instance.getInstance());
     vulkan::VulkanSwapChain swapChain(
-            device, surface.get(), vulkanGraphicContext, swapChainDetails.getSwapExtent(window.getFrameBufferSize()));
-    vulkan::VulkanRenderer renderer(device, swapChain, m_modelStorage, m_camera, gui, vulkanGraphicContext);
+            device, surface.get(), vulkanGraphicContext, swapChainDetails.getSwapExtent(window.getFrameBufferSize()), &buffersPool);
+    vulkan::VulkanRenderer renderer(device, swapChain, m_modelStorage, m_camera, gui, vulkanGraphicContext, &buffersPool);
 
     windowResizedEventHandler.subscribe([&swapChain](const WindowResize& windowResized) {
         const auto [width, height] = windowResized;

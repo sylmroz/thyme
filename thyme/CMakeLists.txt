@@ -7,8 +7,7 @@ set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 
-add_library(${PROJECT_NAME}
-		include/thyme/platform/vulkan/vulkan_graphic_context.hpp)
+add_library(${PROJECT_NAME})
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 	# using Clang
@@ -44,6 +43,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 		src/platform/vulkan/swapchain.cpp
 		src/platform/vulkan/utils.cpp
 		src/platform/vulkan/vulkan_buffer.cpp
+		src/platform/vulkan/vulkan_command_buffers.cpp
 		src/platform/vulkan/vulkan_device.cpp
 		src/platform/vulkan/vulkan_texture.cpp
 )

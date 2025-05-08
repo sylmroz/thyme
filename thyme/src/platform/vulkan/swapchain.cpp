@@ -48,7 +48,8 @@ auto SwapChainData::createSwapChain(const VulkanDevice& device, const SwapChainS
 }
 
 VulkanSwapChain::VulkanSwapChain(const VulkanDevice& device, const vk::SurfaceKHR surface,
-                                 const VulkanGraphicContext& context, const vk::Extent2D swapChainExtent)
+                                 const VulkanGraphicContext& context, const vk::Extent2D swapChainExtent,
+                                 VulkanCommandBuffersPool* commandPool)
     : m_surface{ surface }, m_swapChainExtent{ swapChainExtent }, m_context{ context }, m_device{ device },
       m_swapChainData{ device,
                        SwapChainSettings{ .surfaceFormat = context.surfaceFormat,
@@ -58,26 +59,20 @@ VulkanSwapChain::VulkanSwapChain(const VulkanDevice& device, const vk::SurfaceKH
                        surface },
       m_depthImageMemory{ device, swapChainExtent, context.depthFormat, device.maxMsaaSamples },
       m_colorImageMemory{ device, swapChainExtent, context.surfaceFormat.format, device.maxMsaaSamples },
-      m_frameDataList{ device.logicalDevice, context.maxFramesInFlight } {}
+      m_commandBuffersPool{ commandPool } {}
 
 bool VulkanSwapChain::prepareFrame() {
     if (hasResized()) {
         recreateSwapChain();
     }
-    m_currentFrameData = m_frameDataList.getNext();
-    const auto logicalDevice = m_device.logicalDevice;
-    if (logicalDevice.waitForFences({ m_currentFrameData.fence }, vk::True, std::numeric_limits<uint64_t>::max())
-        != vk::Result::eSuccess) {
-        TH_API_LOG_ERROR("Failed to wait for a complete fence");
-        throw std::runtime_error("Failed to wait for a complete fence");
-    }
-    logicalDevice.resetFences({ m_currentFrameData.fence });
 
+
+    auto imageAvailableSemaphore = m_device.logicalDevice.createSemaphoreUnique(vk::SemaphoreCreateInfo());
     const auto imageIndexResult = [&] {
         try {
-            return logicalDevice.acquireNextImageKHR(m_swapChainData.getSwapChain(),
-                                                     std::numeric_limits<uint64_t>::max(),
-                                                     m_currentFrameData.imageAvailableSemaphore);
+            return m_device.logicalDevice.acquireNextImageKHR(m_swapChainData.getSwapChain(),
+                                                              std::numeric_limits<uint64_t>::max(),
+                                                              imageAvailableSemaphore.get());
         } catch (const vk::OutOfDateKHRError&) {
             recreateSwapChain();
         };
@@ -87,6 +82,7 @@ bool VulkanSwapChain::prepareFrame() {
     if (imageIndexResult.result != vk::Result::eSuccess) {
         return false;
     }
+    m_commandBuffersPool->waitFor(imageAvailableSemaphore);
     m_currentImageIndex = imageIndexResult.value;
     return true;
 }
@@ -95,8 +91,10 @@ void VulkanSwapChain::frameResized(const vk::Extent2D resolution) {
     m_fallBackExtent = vk::Extent2D{ resolution.width, resolution.height };
 }
 
-void VulkanSwapChain::prepareRenderMode(const vk::CommandBuffer commandBuffer) {
-    setCommandBufferFrameSize(commandBuffer, m_swapChainExtent);
+void VulkanSwapChain::prepareRenderMode() {
+    auto& commandBuffer = m_commandBuffersPool->get();
+
+    setCommandBufferFrameSize(commandBuffer.getBuffer(), m_swapChainExtent);
 
     constexpr auto clearColorValues = vk::ClearValue(vk::ClearColorValue(1.0f, 0.0f, 1.0f, 1.0f));
     constexpr auto depthClearValue = vk::ClearValue(vk::ClearDepthStencilValue(1.0f, 0));
@@ -127,38 +125,29 @@ void VulkanSwapChain::prepareRenderMode(const vk::CommandBuffer commandBuffer) {
                                                  0,
                                                  { colorAttachment },
                                                  &depthAttachment);
-    transitImageLayout(commandBuffer, image, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, 1);
-    transitDepthImageLayout(commandBuffer);
+    transitImageLayout(commandBuffer.getBuffer(), image, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, 1);
+    transitDepthImageLayout(commandBuffer.getBuffer());
 
-    commandBuffer.beginRendering(renderingInfo);
+    commandBuffer.getBuffer().beginRendering(renderingInfo);
 }
 
-void VulkanSwapChain::preparePresentMode(const vk::CommandBuffer commandBuffer) {
-    commandBuffer.endRendering();
-    transitImageLayout(commandBuffer,
+void VulkanSwapChain::preparePresentMode() {
+    auto& commandBuffer = m_commandBuffersPool->get();
+    commandBuffer.getBuffer().endRendering();
+    transitImageLayout(commandBuffer.getBuffer(),
                        m_swapChainData.getSwapChainFrame(m_currentImageIndex).image,
                        vk::ImageLayout::eColorAttachmentOptimal,
                        vk::ImageLayout::ePresentSrcKHR,
                        1);
 }
 
-void VulkanSwapChain::renderGraphic(vk::CommandBuffer commandBuffer) {
-    constexpr vk::PipelineStageFlags f = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-    const auto submitInfo = vk::SubmitInfo({ m_currentFrameData.imageAvailableSemaphore },
-                                           { f },
-                                           { commandBuffer },
-                                           { m_currentFrameData.renderFinishedSemaphore });
-    const auto& graphicQueue = m_device.getGraphicQueue();
-    graphicQueue.submit(submitInfo, m_currentFrameData.fence);
-}
-
 void VulkanSwapChain::submitFrame() {
     const auto presentationQueue = m_device.getPresentationQueue();
     const auto swapChain = m_swapChainData.getSwapChain();
-
+    const auto renderFinishedSemaphore = m_commandBuffersPool->submit();
     try {
         const auto queuePresentResult = presentationQueue.presentKHR(vk::PresentInfoKHR(
-                { m_currentFrameData.renderFinishedSemaphore }, { swapChain }, { m_currentImageIndex }));
+                { renderFinishedSemaphore }, { swapChain }, { m_currentImageIndex }));
         if (queuePresentResult == vk::Result::eErrorOutOfDateKHR || queuePresentResult == vk::Result::eSuboptimalKHR) {
             recreateSwapChain();
         }
