@@ -18,21 +18,20 @@ class GlfwWindow: public Window {
 
 public:
     explicit GlfwWindow(const WindowConfig& config);
-    mutable bool frameBufferResized{ false };
 
     void poolEvents() override {
         glfwPollEvents();
     }
 
-    [[nodiscard]] inline bool shouldClose() noexcept override {
+    [[nodiscard]] bool shouldClose() noexcept override {
         return glfwWindowShouldClose(m_window.get()) != 0;
     }
 
-    [[nodiscard]] inline auto& getHandler() const noexcept {
+    [[nodiscard]] auto& getHandler() const noexcept {
         return m_window;
     }
 
-    [[nodiscard]] inline auto getFrameBufferSize() const noexcept {
+    [[nodiscard]] auto getFrameBufferSize() const noexcept {
         int width{};
         int height{};
         glfwGetFramebufferSize(m_window.get(), &width, &height);

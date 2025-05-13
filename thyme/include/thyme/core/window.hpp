@@ -37,7 +37,7 @@ public:
 
     virtual void poolEvents() = 0;
     [[nodiscard]] virtual bool shouldClose() = 0;
-    [[nodiscard]] inline bool isMinimalized() const noexcept {
+    [[nodiscard]] bool isMinimalized() const noexcept {
         return m_windowState == WindowState::minimalized;
     }
 
@@ -48,4 +48,4 @@ protected:
     WindowState m_windowState{ WindowState::maximalized };
 };
 
-}// namespace Thyme
+}// namespace th

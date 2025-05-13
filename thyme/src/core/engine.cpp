@@ -88,8 +88,8 @@ void Engine::run() {
     });
 
     while (!window.shouldClose()) {
+        window.poolEvents();
         if (!window.isMinimalized()) {
-            window.poolEvents();
             renderer.draw();
         }
     }

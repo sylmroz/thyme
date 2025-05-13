@@ -97,23 +97,17 @@ public:
     void preparePresentMode();
     void submitFrame() override;
 
+    vk::Extent2D getSwapChainExtent() const noexcept {
+        return m_swapChainExtent;
+    }
+
+    [[nodiscard]] auto getCurrentSwapChainFrame() noexcept -> SwapChainFrame {
+        return m_swapChainData.getSwapChainFrame(m_currentImageIndex);
+    }
+
 private:
     bool hasResized() const;
-    void recreateSwapChain();
-    void transitDepthImageLayout(const vk::CommandBuffer commandBuffer) const {
-        transitImageLayout(commandBuffer,
-                           m_depthImageMemory.getImage(),
-                           ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eUndefined,
-                                                  .newLayout = vk::ImageLayout::eDepthAttachmentOptimal },
-                           ImagePipelineStageTransition{ .oldStage = vk::PipelineStageFlagBits::eEarlyFragmentTests
-                                                                     | vk::PipelineStageFlagBits::eLateFragmentTests,
-                                                         .newStage = vk::PipelineStageFlagBits::eEarlyFragmentTests
-                                                                     | vk::PipelineStageFlagBits::eLateFragmentTests },
-                           ImageAccessFlagsTransition{ .oldAccess = vk::AccessFlags(),
-                                                       .newAccess = vk::AccessFlagBits::eDepthStencilAttachmentWrite },
-                           vk::ImageAspectFlagBits::eDepth,
-                           1);
-    }
+    bool recreateSwapChain();
 
 
 private:
@@ -124,8 +118,6 @@ private:
     VulkanGraphicContext m_context;
     VulkanDevice m_device;
     SwapChainData m_swapChainData;
-    DepthImageMemory m_depthImageMemory;
-    ColorImageMemory m_colorImageMemory;
     VulkanCommandBuffersPool* m_commandBuffersPool;
 };
 

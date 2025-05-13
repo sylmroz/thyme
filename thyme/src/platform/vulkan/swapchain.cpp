@@ -57,15 +57,12 @@ VulkanSwapChain::VulkanSwapChain(const VulkanDevice& device, const vk::SurfaceKH
                                           .imageCount = context.imageCount },
                        swapChainExtent,
                        surface },
-      m_depthImageMemory{ device, swapChainExtent, context.depthFormat, device.maxMsaaSamples },
-      m_colorImageMemory{ device, swapChainExtent, context.surfaceFormat.format, device.maxMsaaSamples },
       m_commandBuffersPool{ commandPool } {}
 
 bool VulkanSwapChain::prepareFrame() {
-    if (hasResized()) {
-        recreateSwapChain();
+    if (hasResized() && !recreateSwapChain()) {
+        return false;
     }
-
 
     auto imageAvailableSemaphore = m_device.logicalDevice.createSemaphoreUnique(vk::SemaphoreCreateInfo());
     const auto imageIndexResult = [&] {
@@ -92,49 +89,18 @@ void VulkanSwapChain::frameResized(const vk::Extent2D resolution) {
 }
 
 void VulkanSwapChain::prepareRenderMode() {
-    auto& commandBuffer = m_commandBuffersPool->get();
-
-    setCommandBufferFrameSize(commandBuffer.getBuffer(), m_swapChainExtent);
-
-    constexpr auto clearColorValues = vk::ClearValue(vk::ClearColorValue(1.0f, 0.0f, 1.0f, 1.0f));
-    constexpr auto depthClearValue = vk::ClearValue(vk::ClearDepthStencilValue(1.0f, 0));
+    const auto commandBuffer = m_commandBuffersPool->get().getBuffer();
 
     const auto& [image, imageView] = m_swapChainData.getSwapChainFrame(m_currentImageIndex);
+    setCommandBufferFrameSize(commandBuffer, m_swapChainExtent);
+    transitImageLayout(commandBuffer, image, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, 1);
 
-    const auto colorAttachment = vk::RenderingAttachmentInfo(m_colorImageMemory.getImageView(),
-                                                             vk::ImageLayout::eColorAttachmentOptimal,
-                                                             vk::ResolveModeFlagBits::eAverage,
-                                                             imageView,
-                                                             vk::ImageLayout::eColorAttachmentOptimal,
-                                                             vk::AttachmentLoadOp::eClear,
-                                                             vk::AttachmentStoreOp::eStore,
-                                                             clearColorValues);
-
-    const auto depthAttachment = vk::RenderingAttachmentInfo(m_depthImageMemory.getImageView(),
-                                                             vk::ImageLayout::eDepthAttachmentOptimal,
-                                                             vk::ResolveModeFlagBits::eNone,
-                                                             {},
-                                                             {},
-                                                             vk::AttachmentLoadOp::eClear,
-                                                             vk::AttachmentStoreOp::eDontCare,
-                                                             depthClearValue);
-
-    const auto renderingInfo = vk::RenderingInfo(vk::RenderingFlagBits{},
-                                                 vk::Rect2D(vk::Offset2D(0, 0), m_swapChainExtent),
-                                                 1,
-                                                 0,
-                                                 { colorAttachment },
-                                                 &depthAttachment);
-    transitImageLayout(commandBuffer.getBuffer(), image, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, 1);
-    transitDepthImageLayout(commandBuffer.getBuffer());
-
-    commandBuffer.getBuffer().beginRendering(renderingInfo);
+    //transitDepthImageLayout(commandBuffer.getBuffer());
 }
 
 void VulkanSwapChain::preparePresentMode() {
-    auto& commandBuffer = m_commandBuffersPool->get();
-    commandBuffer.getBuffer().endRendering();
-    transitImageLayout(commandBuffer.getBuffer(),
+    const auto commandBuffer = m_commandBuffersPool->get().getBuffer();
+    transitImageLayout(commandBuffer,
                        m_swapChainData.getSwapChainFrame(m_currentImageIndex).image,
                        vk::ImageLayout::eColorAttachmentOptimal,
                        vk::ImageLayout::ePresentSrcKHR,
@@ -164,7 +130,7 @@ bool VulkanSwapChain::hasResized() const {
     return caps.currentExtent.width != m_swapChainExtent.width || caps.currentExtent.height != m_swapChainExtent.height;
 }
 
-void VulkanSwapChain::recreateSwapChain() {
+bool VulkanSwapChain::recreateSwapChain() {
     m_device.logicalDevice.waitIdle();
     m_swapChainExtent = [resolution = m_fallBackExtent, surface = m_surface, physicalDevice = m_device.physicalDevice] {
         const auto capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface);
@@ -177,6 +143,9 @@ void VulkanSwapChain::recreateSwapChain() {
         return vk::Extent2D{ std::clamp(width, minImageExtent.width, maxImageExtent.width),
                              std::clamp(height, minImageExtent.height, maxImageExtent.height) };
     }();
+    if (m_swapChainExtent.width == 0 || m_swapChainExtent.height == 0) {
+        return false;
+    }
     m_swapChainData = SwapChainData(m_device,
                                     SwapChainSettings{ .surfaceFormat = m_context.surfaceFormat,
                                                        .presetMode = m_context.presentMode,
@@ -184,8 +153,7 @@ void VulkanSwapChain::recreateSwapChain() {
                                     m_swapChainExtent,
                                     m_surface,
                                     m_swapChainData.getSwapChain());
-    m_colorImageMemory.resize(m_swapChainExtent);
-    m_depthImageMemory.resize(m_swapChainExtent);
+    return true;
 }
 
 }// namespace th::vulkan

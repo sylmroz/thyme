@@ -26,10 +26,6 @@ GlfwWindow::GlfwWindow(const WindowConfig& config) : Window{ config } {
                               }
                           });
     glfwSetWindowUserPointer(m_window.get(), this);
-    glfwSetWindowSizeCallback(m_window.get(), [](GLFWwindow* window, const int width, const int height) {
-        const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
-        app->config.eventSubject.next(WindowResize{ .width = width, .height = height });
-    });
 
     glfwSetFramebufferSizeCallback(m_window.get(), [](GLFWwindow* window, int width, int height) {
         const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
@@ -42,7 +38,9 @@ GlfwWindow::GlfwWindow(const WindowConfig& config) : Window{ config } {
                 app->config.eventSubject.next(WindowMaximalize{});
             }
         }
-        app->frameBufferResized = true;
+        if (width > 0 && height > 0) {
+            app->config.eventSubject.next(WindowResize{ .width = width, .height = height });
+        }
     });
 
     glfwSetWindowCloseCallback(m_window.get(), [](GLFWwindow* window) {

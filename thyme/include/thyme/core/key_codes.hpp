@@ -125,4 +125,5 @@ enum class KeyCode : int16_t {
     right_alt = 346,
     right_super = 347
 };
-}// namespace Thyme
+
+}// namespace th
