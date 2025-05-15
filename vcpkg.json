@@ -1,14 +1,6 @@
 {
   "dependencies": [
     "glfw3",
-    {
-      "name": "imgui",
-      "features": [
-        "docking-experimental",
-        "vulkan-binding",
-        "glfw-binding"
-      ]
-    },
     "spdlog",
     "glm",
     "stb",

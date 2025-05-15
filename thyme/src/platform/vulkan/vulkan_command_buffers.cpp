@@ -32,7 +32,8 @@ vk::Semaphore VulkanCommandBuffer::submit(const vk::PipelineStageFlags stage) {
     m_commandBuffer.end();
     const auto dependants = m_dependSemaphores | std::views::transform([](auto& semaphore) { return semaphore.get(); })
                             | std::ranges::to<std::vector>();
-    const auto submitInfo = vk::SubmitInfo(dependants, { stage }, { m_commandBuffer }, { m_semaphore.get() });
+    const vk::PipelineStageFlags waitStage = stage ;
+    const auto submitInfo = vk::SubmitInfo(dependants, { stage,  }, { m_commandBuffer }, { m_semaphore.get() });
     m_graphicQueue.submit(submitInfo, m_fence.get());
     return m_semaphore.get();
 }

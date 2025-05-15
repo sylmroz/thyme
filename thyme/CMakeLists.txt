@@ -25,6 +25,8 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	target_link_options(${PROJECT_NAME} PUBLIC $<$<CONFIG:Debug>:/INCREMENTAL>)
 endif()
 
+file(GLOB imgui_files ${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/imgui/*.cpp)
+
 target_sources(${PROJECT_NAME} PRIVATE
 		src/core/application.cpp
 		src/core/engine.cpp
@@ -46,6 +48,11 @@ target_sources(${PROJECT_NAME} PRIVATE
 		src/platform/vulkan/vulkan_command_buffers.cpp
 		src/platform/vulkan/vulkan_device.cpp
 		src/platform/vulkan/vulkan_texture.cpp
+
+		#### imgui
+		${imgui_files}
+		../thirdparty/imgui/backends/imgui_impl_vulkan.cpp
+		../thirdparty/imgui/backends/imgui_impl_glfw.cpp
 )
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
@@ -59,6 +66,8 @@ target_include_directories(${PROJECT_NAME}
 		$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 	PRIVATE
 		${Stb_INCLUDE_DIR}
+		${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/imgui
+		${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/imgui/backends
 )
 
 include(GenerateExportHeader)
@@ -95,7 +104,7 @@ target_precompile_headers(${PROJECT_NAME}
 find_package(spdlog REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
-find_package(imgui CONFIG REQUIRED)
+#find_package(imgui CONFIG REQUIRED)
 find_package(Stb REQUIRED)
 
 target_link_libraries(${PROJECT_NAME} 
@@ -104,7 +113,7 @@ target_link_libraries(${PROJECT_NAME}
         glfw
         Vulkan::Vulkan
         Vulkan::Headers
-		imgui::imgui
+#		imgui::imgui
 )
 
 # copy dlls to the app

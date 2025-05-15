@@ -95,7 +95,7 @@ void VulkanSwapChain::prepareRenderMode() {
                        getCurrentSwapChainFrame().image,
                        ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eUndefined,
                                               .newLayout = vk::ImageLayout::eColorAttachmentOptimal },
-                       ImagePipelineStageTransition{ .oldStage = vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                       ImagePipelineStageTransition{ .oldStage = vk::PipelineStageFlagBits::eBottomOfPipe,
                                                      .newStage = vk::PipelineStageFlagBits::eColorAttachmentOutput },
                        ImageAccessFlagsTransition{ .oldAccess = vk::AccessFlagBits::eNone,
                                                    .newAccess = vk::AccessFlagBits::eColorAttachmentWrite },
