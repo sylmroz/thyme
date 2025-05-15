@@ -38,10 +38,7 @@ private:
             TH_API_LOG_ERROR(message);
             throw std::out_of_range(message);
         }
-        return SwapChainFrame{
-            .image = m_images[index],
-            .imageView = m_imageViews[index].get(),
-        };
+        return SwapChainFrame{ .image = m_images[index], .imageView = m_imageViews[index].get() };
     }
 
 private:
@@ -108,7 +105,6 @@ public:
 private:
     bool hasResized() const;
     bool recreateSwapChain();
-
 
 private:
     uint32_t m_currentImageIndex{ 0 };

@@ -90,12 +90,17 @@ void VulkanSwapChain::frameResized(const vk::Extent2D resolution) {
 
 void VulkanSwapChain::prepareRenderMode() {
     const auto commandBuffer = m_commandBuffersPool->get().getBuffer();
-
-    const auto& [image, imageView] = m_swapChainData.getSwapChainFrame(m_currentImageIndex);
     setCommandBufferFrameSize(commandBuffer, m_swapChainExtent);
-    transitImageLayout(commandBuffer, image, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, 1);
-
-    //transitDepthImageLayout(commandBuffer.getBuffer());
+    transitImageLayout(commandBuffer,
+                       getCurrentSwapChainFrame().image,
+                       ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eUndefined,
+                                              .newLayout = vk::ImageLayout::eColorAttachmentOptimal },
+                       ImagePipelineStageTransition{ .oldStage = vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                                                     .newStage = vk::PipelineStageFlagBits::eColorAttachmentOutput },
+                       ImageAccessFlagsTransition{ .oldAccess = vk::AccessFlagBits::eNone,
+                                                   .newAccess = vk::AccessFlagBits::eColorAttachmentWrite },
+                       vk::ImageAspectFlagBits::eColor,
+                       1);
 }
 
 void VulkanSwapChain::preparePresentMode() {
@@ -112,8 +117,8 @@ void VulkanSwapChain::submitFrame() {
     const auto swapChain = m_swapChainData.getSwapChain();
     const auto renderFinishedSemaphore = m_commandBuffersPool->submit();
     try {
-        const auto queuePresentResult = presentationQueue.presentKHR(vk::PresentInfoKHR(
-                { renderFinishedSemaphore }, { swapChain }, { m_currentImageIndex }));
+        const auto queuePresentResult = presentationQueue.presentKHR(
+                vk::PresentInfoKHR({ renderFinishedSemaphore }, { swapChain }, { m_currentImageIndex }));
         if (queuePresentResult == vk::Result::eErrorOutOfDateKHR || queuePresentResult == vk::Result::eSuboptimalKHR) {
             recreateSwapChain();
         }
@@ -131,6 +136,7 @@ bool VulkanSwapChain::hasResized() const {
 }
 
 bool VulkanSwapChain::recreateSwapChain() {
+    m_commandBuffersPool->flush();
     m_device.logicalDevice.waitIdle();
     m_swapChainExtent = [resolution = m_fallBackExtent, surface = m_surface, physicalDevice = m_device.physicalDevice] {
         const auto capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface);

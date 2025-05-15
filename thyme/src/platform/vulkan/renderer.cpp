@@ -22,7 +22,7 @@ VulkanRenderTarget::VulkanRenderTarget(const vk::ImageView imageView, const vk::
                                        const vk::AttachmentLoadOp loadOp, const vk::AttachmentStoreOp storeOp,
                                        const vk::ClearValue clearValue) {
     m_attachmentInfo = vk::RenderingAttachmentInfo(
-            imageView, imageLayout, {}, {}, vk::ImageLayout::eUndefined, loadOp, storeOp, clearValue);
+            imageView, imageLayout, vk::ResolveModeFlagBits::eNone, {}, {}, loadOp, storeOp, clearValue);
 }
 
 // VulkanRenderingInfo::VulkanRenderingInfo(VulkanSwapChain* swapChain, const vk::SampleCountFlagBits samples)
@@ -58,6 +58,13 @@ void VulkanRenderer::draw() {
     constexpr auto clearColorValues = vk::ClearValue(vk::ClearColorValue(1.0f, 0.0f, 1.0f, 1.0f));
     constexpr auto depthClearValue = vk::ClearValue(vk::ClearDepthStencilValue(1.0f, 0));
 
+    // const auto colorRenderTarget = VulkanRenderTarget(m_colorImageMemory.getImageView(),
+    //                                                   swapChainImage.imageView,
+    //                                                   vk::ImageLayout::eColorAttachmentOptimal,
+    //                                                   vk::AttachmentLoadOp::eClear,
+    //                                                   vk::AttachmentStoreOp::eStore,
+    //                                                   clearColorValues);
+
     const auto colorAttachment = vk::RenderingAttachmentInfo(m_colorImageMemory.getImageView(),
                                                              vk::ImageLayout::eColorAttachmentOptimal,
                                                              vk::ResolveModeFlagBits::eAverage,
@@ -83,6 +90,7 @@ void VulkanRenderer::draw() {
                                                  { colorAttachment },
                                                  &depthAttachment);
     const auto commandBuffer = m_commandBuffersPool->get().getBuffer();
+    // transitDepthImageLayout(commandBuffer);
     commandBuffer.beginRendering(renderingInfo);
     for (const auto& pipeline : m_pipelines) {
         pipeline->draw(commandBuffer);

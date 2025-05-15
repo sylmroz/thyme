@@ -2,9 +2,8 @@
 
 namespace th::vulkan {
 
-static constexpr auto s_deviceExtensions = std::array{ vk::KHRSwapchainExtensionName,
-                                                       vk::KHRDynamicRenderingExtensionName,
-                                                       vk::EXTDynamicRenderingUnusedAttachmentsExtensionName };
+static constexpr auto s_deviceExtensions =
+        std::array{ vk::KHRSwapchainExtensionName, vk::KHRDynamicRenderingExtensionName };
 
 [[nodiscard]] vk::UniqueDevice PhysicalDevicesManager::PhysicalDevice::createLogicalDevice() const {
     const std::set indices = { queueFamilyIndices.graphicFamily.value(), queueFamilyIndices.presentFamily.value() };
@@ -16,13 +15,10 @@ static constexpr auto s_deviceExtensions = std::array{ vk::KHRSwapchainExtension
 
     const auto features = physicalDevice.getFeatures();
     constexpr auto dynamicRenderingFeatures = vk::PhysicalDeviceDynamicRenderingFeaturesKHR(true);
-    constexpr auto unusedDynamicRenderingAttachments =
-            vk::PhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT(true);
     const auto deviceCreateInfo = vk::StructureChain(
             vk::DeviceCreateInfo(
                     vk::DeviceCreateFlags(), deviceQueueCreateInfos, nullptr, s_deviceExtensions, &features),
-            dynamicRenderingFeatures,
-            unusedDynamicRenderingAttachments);
+            dynamicRenderingFeatures);
 
     return physicalDevice.createDeviceUnique(deviceCreateInfo.get<vk::DeviceCreateInfo>());
 }

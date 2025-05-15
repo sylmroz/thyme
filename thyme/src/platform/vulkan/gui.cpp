@@ -18,8 +18,8 @@ Gui::Gui(const VulkanDevice& device,
     initInfo.Device = device.logicalDevice;
     initInfo.QueueFamily = device.queueFamilyIndices.graphicFamily.value();
     initInfo.Queue = device.getGraphicQueue();
-    m_pipelineCache = device.logicalDevice.createPipelineCacheUnique(vk::PipelineCacheCreateInfo());
-    initInfo.PipelineCache = m_pipelineCache.get();
+    //m_pipelineCache = device.logicalDevice.createPipelineCacheUnique(vk::PipelineCacheCreateInfo());
+    //initInfo.PipelineCache = m_pipelineCache.get();
     m_descriptorPool = createDescriptorPool(device.logicalDevice,
                                             { vk::DescriptorPoolSize(vk::DescriptorType::eSampler, 2),
                                               vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, 2),
@@ -33,7 +33,7 @@ Gui::Gui(const VulkanDevice& device,
                                               vk::DescriptorPoolSize(vk::DescriptorType::eStorageBufferDynamic, 2),
                                               vk::DescriptorPoolSize(vk::DescriptorType::eInputAttachment, 2) });
     initInfo.DescriptorPool = m_descriptorPool.get();
-    initInfo.Subpass = 0;
+    initInfo.Subpass = VK_SUBPASS_EXTERNAL;
     initInfo.MinImageCount = m_context.imageCount;
     initInfo.ImageCount = m_context.imageCount;
     initInfo.MSAASamples = static_cast<VkSampleCountFlagBits>(device.maxMsaaSamples);

@@ -23,7 +23,9 @@ public:
     }
 
     void reset();
-    void start() const;
+    void start() const {
+        m_commandBuffer.begin(vk::CommandBufferBeginInfo());
+    }
 
     vk::Semaphore submit(vk::PipelineStageFlags stage);
 
@@ -72,9 +74,21 @@ public:
         return semaphore;
     }
 
+    void flush() {
+        std::vector<vk::Fence> fences;
+        for (const auto& buffer : m_commandBuffers) {
+            if (buffer.isSubmitted()) {
+                fences.emplace_back(buffer.getFence());
+            }
+        }
+        [[maybe_unused]] const auto result =
+                m_device.waitForFences(fences, vk::True, std::numeric_limits<uint64_t>::max());
+    }
+
 private:
     std::vector<VulkanCommandBuffer> m_commandBuffers;
     std::size_t m_current{ 0 };
+    vk::Device m_device;
 };
 
 }// namespace th::vulkan

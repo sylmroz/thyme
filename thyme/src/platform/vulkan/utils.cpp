@@ -85,13 +85,15 @@ UniqueInstance::UniqueInstance(const UniqueInstanceConfig& config) {
 #if !defined(NDEBUG)
     enabledExtensions.emplace_back(vk::EXTDebugUtilsExtensionName);
     constexpr auto validationLayers = std::array{ "VK_LAYER_KHRONOS_validation" };
-
+    std::vector<vk::ValidationFeatureEnableEXT> enabled{ vk::ValidationFeatureEnableEXT::eSynchronizationValidation };
+    vk::ValidationFeaturesEXT validationFeatures(enabled);
     const vk::StructureChain instanceCreateInfo(
             vk::InstanceCreateInfo{ vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR,
                                     &applicationInfo,
                                     validationLayers,
                                     enabledExtensions },
-            createDebugUtilsMessengerCreateInfo());
+            createDebugUtilsMessengerCreateInfo(),
+            validationFeatures);
 #else
     const vk::StructureChain instanceCreateInfo(vk::InstanceCreateInfo{
             vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR, &applicationInfo, nullptr, enabledExtensions });

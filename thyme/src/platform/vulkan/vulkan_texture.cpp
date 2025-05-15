@@ -34,7 +34,7 @@ ImageMemory::ImageMemory(const VulkanDevice& device, const vk::Extent2D resoluti
 }
 
 void ImageMemory::resize(const vk::Extent2D resolution) {
-    if (resolution.width == m_resolution.height && resolution.height == m_resolution.height) {
+    if (resolution.width == m_resolution.width && resolution.height == m_resolution.height) {
         return;
     }
     m_resolution = resolution;

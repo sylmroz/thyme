@@ -27,10 +27,6 @@ void VulkanCommandBuffer::reset() {
     m_commandBuffer.reset();
 }
 
-void VulkanCommandBuffer::start() const {
-    m_commandBuffer.begin(vk::CommandBufferBeginInfo());
-}
-
 vk::Semaphore VulkanCommandBuffer::submit(const vk::PipelineStageFlags stage) {
     m_submitted = true;
     m_commandBuffer.end();
@@ -42,7 +38,8 @@ vk::Semaphore VulkanCommandBuffer::submit(const vk::PipelineStageFlags stage) {
 }
 
 VulkanCommandBuffersPool::VulkanCommandBuffersPool(const vk::Device device, const vk::CommandPool commandPool,
-                                                   const vk::Queue graphicQueue, const std::size_t capacity) {
+                                                   const vk::Queue graphicQueue, const std::size_t capacity)
+    : m_device{ device } {
     std::generate_n(std::back_inserter(m_commandBuffers), capacity, [device, commandPool, graphicQueue]() {
         return VulkanCommandBuffer{ device, commandPool, graphicQueue };
     });
