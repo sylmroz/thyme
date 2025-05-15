@@ -91,16 +91,7 @@ void VulkanSwapChain::frameResized(const vk::Extent2D resolution) {
 void VulkanSwapChain::prepareRenderMode() {
     const auto commandBuffer = m_commandBuffersPool->get().getBuffer();
     setCommandBufferFrameSize(commandBuffer, m_swapChainExtent);
-    transitImageLayout(commandBuffer,
-                       getCurrentSwapChainFrame().image,
-                       ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eUndefined,
-                                              .newLayout = vk::ImageLayout::eColorAttachmentOptimal },
-                       ImagePipelineStageTransition{ .oldStage = vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                                                     .newStage = vk::PipelineStageFlagBits::eColorAttachmentOutput },
-                       ImageAccessFlagsTransition{ .oldAccess = vk::AccessFlagBits::eNone,
-                                                   .newAccess = vk::AccessFlagBits::eColorAttachmentWrite },
-                       vk::ImageAspectFlagBits::eColor,
-                       1);
+    transitImageLayout(commandBuffer, getCurrentSwapChainFrame().image, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, 1);
 }
 
 void VulkanSwapChain::preparePresentMode() {

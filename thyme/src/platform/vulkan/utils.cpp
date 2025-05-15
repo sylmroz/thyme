@@ -362,49 +362,57 @@ void transitImageLayout(const vk::CommandBuffer commandBuffer, const vk::Image i
 
 void transitImageLayout(const vk::CommandBuffer commandBuffer, const vk::Image image, const vk::ImageLayout oldLayout,
                         const vk::ImageLayout newLayout, const uint32_t mipLevels) {
-    const auto [barrier, srcPipelineStage, dstPipelineStage] = [&] {
-        const auto createBarrier = [&](const vk::AccessFlags srcAccessFlag, const vk::AccessFlags dstAccessFlag) {
-            return vk::ImageMemoryBarrier(
-                    srcAccessFlag,
-                    dstAccessFlag,
-                    oldLayout,
-                    newLayout,
-                    vk::QueueFamilyIgnored,
-                    vk::QueueFamilyIgnored,
-                    image,
-                    vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, mipLevels, 0, 1));
-        };
-
-        if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal) {
-            return std::tuple(createBarrier(vk::AccessFlags(), vk::AccessFlagBits::eTransferWrite),
-                              vk::PipelineStageFlagBits::eTopOfPipe,
-                              vk::PipelineStageFlagBits::eTransfer);
-        }
-        if (oldLayout == vk::ImageLayout::eTransferDstOptimal && newLayout == vk::ImageLayout::eShaderReadOnlyOptimal) {
-            return std::tuple(createBarrier(vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eShaderRead),
-                              vk::PipelineStageFlagBits::eTransfer,
-                              vk::PipelineStageFlagBits::eFragmentShader);
-        }
-        if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eColorAttachmentOptimal) {
-            return std::tuple(
-                    createBarrier(vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eColorAttachmentRead),
-                    vk::PipelineStageFlagBits::eTransfer,
-                    vk::PipelineStageFlagBits::eColorAttachmentOutput);
-        }
-        if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal) {
-            return std::tuple(createBarrier(vk::AccessFlags(), vk::AccessFlagBits::eDepthStencilAttachmentWrite),
-                              vk::PipelineStageFlagBits::eTopOfPipe,
-                              vk::PipelineStageFlagBits::eEarlyFragmentTests);
-        }
-        if (oldLayout == vk::ImageLayout::eColorAttachmentOptimal && newLayout == vk::ImageLayout::ePresentSrcKHR) {
-            return std::tuple(createBarrier(vk::AccessFlagBits::eColorAttachmentWrite, vk::AccessFlagBits()),
-                              vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                              vk::PipelineStageFlagBits::eBottomOfPipe);
-        }
-        throw std::runtime_error("failed to transit image layout!");
-    }();
-    commandBuffer.pipelineBarrier(
-            srcPipelineStage, dstPipelineStage, vk::DependencyFlags(), 0, nullptr, 0, nullptr, 1, &barrier);
+    const auto layoutTransition = ImageLayoutTransition{ .oldLayout = oldLayout, .newLayout = newLayout };
+    if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal) {
+        transitImageLayout(commandBuffer,
+                           image,
+                           layoutTransition,
+                           ImagePipelineStageTransition{ .oldStage = vk::PipelineStageFlagBits::eTopOfPipe,
+                                                         .newStage = vk::PipelineStageFlagBits::eTransfer },
+                           ImageAccessFlagsTransition{ .oldAccess = vk::AccessFlags(),
+                                                       .newAccess = vk::AccessFlagBits::eTransferWrite },
+                           vk::ImageAspectFlagBits::eColor,
+                           mipLevels);
+        return;
+    }
+    if (oldLayout == vk::ImageLayout::eTransferDstOptimal && newLayout == vk::ImageLayout::eShaderReadOnlyOptimal) {
+        transitImageLayout(commandBuffer,
+                           image,
+                           layoutTransition,
+                           ImagePipelineStageTransition{ .oldStage = vk::PipelineStageFlagBits::eTransfer,
+                                                         .newStage = vk::PipelineStageFlagBits::eFragmentShader },
+                           ImageAccessFlagsTransition{ .oldAccess = vk::AccessFlagBits::eTransferWrite,
+                                                       .newAccess = vk::AccessFlagBits::eShaderRead },
+                           vk::ImageAspectFlagBits::eColor,
+                           mipLevels);
+        return;
+    }
+    if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eColorAttachmentOptimal) {
+        transitImageLayout(
+                commandBuffer,
+                image,
+                layoutTransition,
+                ImagePipelineStageTransition{ .oldStage = vk::PipelineStageFlagBits::eBottomOfPipe,
+                                              .newStage = vk::PipelineStageFlagBits::eColorAttachmentOutput },
+                ImageAccessFlagsTransition{ .oldAccess = vk::AccessFlagBits::eNone,
+                                            .newAccess = vk::AccessFlagBits::eColorAttachmentWrite },
+                vk::ImageAspectFlagBits::eColor,
+                mipLevels);
+        return;
+    }
+    if (oldLayout == vk::ImageLayout::eColorAttachmentOptimal && newLayout == vk::ImageLayout::ePresentSrcKHR) {
+        transitImageLayout(commandBuffer,
+                           image,
+                           layoutTransition,
+                           ImagePipelineStageTransition{ .oldStage = vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                                                         .newStage = vk::PipelineStageFlagBits::eBottomOfPipe },
+                           ImageAccessFlagsTransition{ .oldAccess = vk::AccessFlagBits::eColorAttachmentWrite,
+                                                       .newAccess = vk::AccessFlagBits() },
+                           vk::ImageAspectFlagBits::eColor,
+                           mipLevels);
+        return;
+    }
+    throw std::runtime_error("failed to transit image layout!");
 }
 
 auto findSupportedImageFormat(const vk::PhysicalDevice device, const std::span<const vk::Format> formats,
