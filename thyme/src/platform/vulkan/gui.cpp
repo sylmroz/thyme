@@ -9,7 +9,7 @@ Gui::Gui(const VulkanDevice& device,
          const VulkanGlfwWindow& window,
          VulkanGraphicContext context,
          const vk::Instance instance)
-    : VulkanNonOverlayLayer("GUI"), m_context{ std::move(context) } {
+    : VulkanNonOverlayLayer("GUI"), m_context{ context } {
     TH_API_LOG_INFO("Create Gui Class");
     ImGui_ImplGlfw_InitForVulkan(window.getHandler().get(), true);
     ImGui_ImplVulkan_InitInfo initInfo{};
@@ -18,8 +18,8 @@ Gui::Gui(const VulkanDevice& device,
     initInfo.Device = device.logicalDevice;
     initInfo.QueueFamily = device.queueFamilyIndices.graphicFamily.value();
     initInfo.Queue = device.getGraphicQueue();
-    //m_pipelineCache = device.logicalDevice.createPipelineCacheUnique(vk::PipelineCacheCreateInfo());
-    //initInfo.PipelineCache = m_pipelineCache.get();
+    m_pipelineCache = device.logicalDevice.createPipelineCacheUnique(vk::PipelineCacheCreateInfo());
+    initInfo.PipelineCache = m_pipelineCache.get();
     m_descriptorPool = createDescriptorPool(device.logicalDevice,
                                             { vk::DescriptorPoolSize(vk::DescriptorType::eSampler, 2),
                                               vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, 2),
@@ -45,7 +45,7 @@ Gui::Gui(const VulkanDevice& device,
         if (vkResult == VK_SUCCESS) {
             return;
         }
-        TH_API_LOG_INFO("CheckVkResultFn: {}", static_cast<int>(vkResult));
+        TH_API_LOG_ERROR("CheckVkResultFn: {}", static_cast<int>(vkResult));
     };
     ImGui_ImplVulkan_Init(&initInfo);
 }
@@ -69,7 +69,7 @@ void Gui::start() {
 }
 
 Gui::~Gui() noexcept {
-    TH_API_LOG_INFO("Destroy Gui Class");
+    TH_API_LOG_INFO("Destroy Gui  ");
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
 }

@@ -84,7 +84,7 @@ void Engine::run() {
 
     windowResizedEventHandler.subscribe([&swapChain](const WindowResize& windowResized) {
         const auto [width, height] = windowResized;
-        swapChain.frameResized(vk::Extent2D{ static_cast<uint32_t>(width), static_cast<glm::uint32>(height) });
+        swapChain.frameResized(vk::Extent2D{ static_cast<uint32_t>(width), static_cast<uint32_t>(height) });
     });
 
     while (!window.shouldClose()) {

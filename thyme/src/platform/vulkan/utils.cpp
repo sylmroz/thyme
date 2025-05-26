@@ -84,9 +84,10 @@ UniqueInstance::UniqueInstance(const UniqueInstanceConfig& config) {
     enabledExtensions.emplace_back(vk::KHRPortabilityEnumerationExtensionName);
 #if !defined(NDEBUG)
     enabledExtensions.emplace_back(vk::EXTDebugUtilsExtensionName);
-    constexpr auto validationLayers = std::array{ "VK_LAYER_KHRONOS_validation" };
-    std::vector<vk::ValidationFeatureEnableEXT> enabled{ vk::ValidationFeatureEnableEXT::eSynchronizationValidation };
-    vk::ValidationFeaturesEXT validationFeatures(enabled);
+    constexpr auto layerName = "VK_LAYER_KHRONOS_validation";
+    constexpr auto validationLayers = std::array{ layerName };
+    constexpr auto enabled = std::array{ vk::ValidationFeatureEnableEXT::eSynchronizationValidation };
+    const vk::ValidationFeaturesEXT validationFeatures(enabled);
     const vk::StructureChain instanceCreateInfo(
             vk::InstanceCreateInfo{ vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR,
                                     &applicationInfo,
@@ -106,7 +107,10 @@ UniqueInstance::UniqueInstance(const UniqueInstanceConfig& config) {
 #endif
     } catch (const vk::SystemError& err) {
         const auto message =
-                fmt::format("Failed to create vulkan instance. Message: {}, Code: {}", err.what(), err.code().value());
+                fmt::format("Failed to create vulkan instance.\n Message: {}\n Code message: {}\n Code: {}",
+                            err.what(),
+                            err.code().message(),
+                            err.code().value());
         TH_API_LOG_ERROR(message);
         throw std::runtime_error(message);
     }
@@ -174,30 +178,6 @@ SwapChainSupportDetails::SwapChainSupportDetails(const vk::PhysicalDevice& devic
     capabilities = device.getSurfaceCapabilitiesKHR(surface);
     formats = device.getSurfaceFormatsKHR(surface);
     presentModes = device.getSurfacePresentModesKHR(surface);
-}
-
-static auto getMaxUsableSampleCount(const vk::PhysicalDevice& device) -> vk::SampleCountFlagBits {
-    const auto counts = device.getProperties().limits.framebufferColorSampleCounts
-                        & device.getProperties().limits.framebufferDepthSampleCounts;
-    if (counts & vk::SampleCountFlagBits::e64) {
-        return vk::SampleCountFlagBits::e64;
-    }
-    if (counts & vk::SampleCountFlagBits::e32) {
-        return vk::SampleCountFlagBits::e32;
-    }
-    if (counts & vk::SampleCountFlagBits::e16) {
-        return vk::SampleCountFlagBits::e16;
-    }
-    if (counts & vk::SampleCountFlagBits::e8) {
-        return vk::SampleCountFlagBits::e8;
-    }
-    if (counts & vk::SampleCountFlagBits::e4) {
-        return vk::SampleCountFlagBits::e4;
-    }
-    if (counts & vk::SampleCountFlagBits::e2) {
-        return vk::SampleCountFlagBits::e2;
-    }
-    return vk::SampleCountFlagBits::e1;
 }
 
 FrameDataList::FrameDataList(const vk::Device logicalDevice, const uint32_t maxFrames) noexcept {

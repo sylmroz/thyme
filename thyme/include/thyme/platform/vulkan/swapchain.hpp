@@ -110,7 +110,7 @@ private:
     uint32_t m_currentImageIndex{ 0 };
     vk::SurfaceKHR m_surface;
     vk::Extent2D m_swapChainExtent;
-    vk::Extent2D m_fallBackExtent{};
+    vk::Extent2D m_fallBackExtent;
     VulkanGraphicContext m_context;
     VulkanDevice m_device;
     SwapChainData m_swapChainData;
