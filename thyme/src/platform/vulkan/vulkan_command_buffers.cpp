@@ -4,12 +4,11 @@ namespace th::vulkan {
 
 VulkanCommandBuffer::VulkanCommandBuffer(const vk::Device device, const vk::CommandPool commandPool,
                                          const vk::Queue graphicQueue)
-    : m_device{ device }, m_commandPool{ commandPool }, m_graphicQueue{ graphicQueue } {
+    : m_device{ device }, m_graphicQueue{ graphicQueue } {
     m_fence = m_device.createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
     m_commandBuffer = m_device.allocateCommandBuffers(
-                                      vk::CommandBufferAllocateInfo(m_commandPool, vk::CommandBufferLevel::ePrimary, 1))
+                                      vk::CommandBufferAllocateInfo(commandPool, vk::CommandBufferLevel::ePrimary, 1))
                               .front();
-    m_semaphore = m_device.createSemaphoreUnique(vk::SemaphoreCreateInfo());
 }
 
 void VulkanCommandBuffer::reset() {
@@ -27,14 +26,13 @@ void VulkanCommandBuffer::reset() {
     m_commandBuffer.reset();
 }
 
-vk::Semaphore VulkanCommandBuffer::submit(const vk::PipelineStageFlags stage) {
+void VulkanCommandBuffer::submit(const vk::PipelineStageFlags stage, const vk::Semaphore renderSemaphore) {
     m_submitted = true;
     m_commandBuffer.end();
     const auto dependants = m_dependSemaphores | std::views::transform([](auto& semaphore) { return semaphore.get(); })
                             | std::ranges::to<std::vector>();
-    const auto submitInfo = vk::SubmitInfo(dependants, { stage }, { m_commandBuffer }, { m_semaphore.get() });
+    const auto submitInfo = vk::SubmitInfo(dependants, { stage }, { m_commandBuffer }, { renderSemaphore });
     m_graphicQueue.submit(submitInfo, m_fence.get());
-    return m_semaphore.get();
 }
 
 VulkanCommandBuffersPool::VulkanCommandBuffersPool(const vk::Device device, const vk::CommandPool commandPool,

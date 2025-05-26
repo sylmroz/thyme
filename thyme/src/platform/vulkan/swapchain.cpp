@@ -57,7 +57,11 @@ VulkanSwapChain::VulkanSwapChain(const VulkanDevice& device, const vk::SurfaceKH
                                           .imageCount = context.imageCount },
                        swapChainExtent,
                        surface },
-      m_commandBuffersPool{ commandPool } {}
+      m_commandBuffersPool{ commandPool } {
+    std::generate_n(std::back_inserter(m_imageRenderingSemaphore), context.imageCount, [device]() {
+        return device.logicalDevice.createSemaphoreUnique(vk::SemaphoreCreateInfo());
+    });
+}
 
 bool VulkanSwapChain::prepareFrame() {
     if (hasResized() && !recreateSwapChain()) {
@@ -91,7 +95,11 @@ void VulkanSwapChain::frameResized(const vk::Extent2D resolution) {
 void VulkanSwapChain::prepareRenderMode() {
     const auto commandBuffer = m_commandBuffersPool->get().getBuffer();
     setCommandBufferFrameSize(commandBuffer, m_swapChainExtent);
-    transitImageLayout(commandBuffer, getCurrentSwapChainFrame().image, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, 1);
+    transitImageLayout(commandBuffer,
+                       getCurrentSwapChainFrame().image,
+                       vk::ImageLayout::eUndefined,
+                       vk::ImageLayout::eColorAttachmentOptimal,
+                       1);
 }
 
 void VulkanSwapChain::preparePresentMode() {
@@ -106,7 +114,8 @@ void VulkanSwapChain::preparePresentMode() {
 void VulkanSwapChain::submitFrame() {
     const auto presentationQueue = m_device.getPresentationQueue();
     const auto swapChain = m_swapChainData.getSwapChain();
-    const auto renderFinishedSemaphore = m_commandBuffersPool->submit();
+    const auto renderFinishedSemaphore = m_imageRenderingSemaphore[m_currentImageIndex].get();
+    m_commandBuffersPool->submit(renderFinishedSemaphore);
     try {
         const auto queuePresentResult = presentationQueue.presentKHR(
                 vk::PresentInfoKHR({ renderFinishedSemaphore }, { swapChain }, { m_currentImageIndex }));

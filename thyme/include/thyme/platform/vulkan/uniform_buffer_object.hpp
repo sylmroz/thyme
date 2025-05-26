@@ -1,10 +1,7 @@
 #pragma once
 
-#include <thyme/platform/vulkan/utils.hpp>
 #include <thyme/platform/vulkan/vulkan_buffer.hpp>
 #include <thyme/platform/vulkan/vulkan_device.hpp>
-
-#include <utility>
 
 namespace th::vulkan {
 

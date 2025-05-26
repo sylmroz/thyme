@@ -115,6 +115,8 @@ private:
     VulkanDevice m_device;
     SwapChainData m_swapChainData;
     VulkanCommandBuffersPool* m_commandBuffersPool;
+
+    std::vector<vk::UniqueSemaphore> m_imageRenderingSemaphore;
 };
 
 }// namespace th::vulkan

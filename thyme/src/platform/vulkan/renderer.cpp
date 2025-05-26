@@ -90,13 +90,12 @@ void VulkanRenderer::draw() {
                                                  { colorAttachment },
                                                  &depthAttachment);
     const auto commandBuffer = m_commandBuffersPool->get().getBuffer();
-    //transitDepthImageLayout(commandBuffer);
     commandBuffer.beginRendering(renderingInfo);
     for (const auto& pipeline : m_pipelines) {
         pipeline->draw(commandBuffer);
     }
-    //m_gui.start();
-    //m_gui.draw(commandBuffer);
+    m_gui.start();
+    m_gui.draw(commandBuffer);
     commandBuffer.endRendering();
     m_swapChain.preparePresentMode();
     m_swapChain.submitFrame();

@@ -27,7 +27,7 @@ public:
         m_commandBuffer.begin(vk::CommandBufferBeginInfo());
     }
 
-    vk::Semaphore submit(vk::PipelineStageFlags stage);
+    void submit(vk::PipelineStageFlags stage, vk::Semaphore renderSemaphore);
 
     void waitFor(vk::UniqueSemaphore& dependSemaphore) {
         m_dependSemaphores.emplace_back(std::move(dependSemaphore));
@@ -43,7 +43,6 @@ private:
     vk::UniqueSemaphore m_semaphore;
 
     vk::Device m_device;
-    vk::CommandPool m_commandPool;
     vk::Queue m_graphicQueue;
     std::vector<vk::UniqueSemaphore> m_dependSemaphores;
 
@@ -68,13 +67,12 @@ public:
         current.waitFor(dependSemaphore);
     }
 
-    vk::Semaphore submit() {
-        const auto semaphore = get().submit(vk::PipelineStageFlagBits::eColorAttachmentOutput);
+    void submit(const vk::Semaphore renderSemaphore) {
+        get().submit(vk::PipelineStageFlagBits::eColorAttachmentOutput, renderSemaphore);
         m_current = (m_current + 1) % m_commandBuffers.size();
-        return semaphore;
     }
 
-    void flush() {
+    void flush() const {
         std::vector<vk::Fence> fences;
         for (const auto& buffer : m_commandBuffers) {
             if (buffer.isSubmitted()) {
@@ -86,9 +84,9 @@ public:
     }
 
 private:
-    std::vector<VulkanCommandBuffer> m_commandBuffers;
     std::size_t m_current{ 0 };
     vk::Device m_device;
+    std::vector<VulkanCommandBuffer> m_commandBuffers;
 };
 
 }// namespace th::vulkan
