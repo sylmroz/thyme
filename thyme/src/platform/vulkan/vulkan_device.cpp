@@ -2,23 +2,37 @@
 
 namespace th::vulkan {
 
-static constexpr auto s_deviceExtensions =
-        std::array{ vk::KHRSwapchainExtensionName, vk::KHRDynamicRenderingExtensionName };
+static constexpr auto g_sDeviceExtensions = std::array{ vk::KHRSwapchainExtensionName,
+                                                        vk::KHRDynamicRenderingExtensionName,
+                                                        vk::KHRSynchronization2ExtensionName,
+                                                        vk::KHRBufferDeviceAddressExtensionName };
 
 [[nodiscard]] vk::UniqueDevice PhysicalDevicesManager::PhysicalDevice::createLogicalDevice() const {
     const std::set indices = { queueFamilyIndices.graphicFamily.value(), queueFamilyIndices.presentFamily.value() };
     std::vector<vk::DeviceQueueCreateInfo> deviceQueueCreateInfos;
     for (const auto ind : indices) {
         float queuePriority{ 1.0 };
-        deviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), ind, 1, &queuePriority);
+        deviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateInfo{
+                .queueFamilyIndex = ind,
+                .queueCount = 1,
+                .pQueuePriorities = &queuePriority,
+        });
     }
 
     const auto features = physicalDevice.getFeatures();
-    constexpr auto dynamicRenderingFeatures = vk::PhysicalDeviceDynamicRenderingFeaturesKHR(true);
+    constexpr auto vulkan13Features =
+            vk::PhysicalDeviceVulkan13Features{ .synchronization2 = true, .dynamicRendering = true };
+    constexpr auto vulkan12Features =
+            vk::PhysicalDeviceVulkan12Features{ .descriptorIndexing = true, .bufferDeviceAddress = true };
+    ;
     const auto deviceCreateInfo = vk::StructureChain(
-            vk::DeviceCreateInfo(
-                    vk::DeviceCreateFlags(), deviceQueueCreateInfos, nullptr, s_deviceExtensions, &features),
-            dynamicRenderingFeatures);
+            vk::DeviceCreateInfo{ .queueCreateInfoCount = static_cast<uint32_t>(deviceQueueCreateInfos.size()),
+                                  .pQueueCreateInfos = deviceQueueCreateInfos.data(),
+                                  .enabledExtensionCount = static_cast<uint32_t>(g_sDeviceExtensions.size()),
+                                  .ppEnabledExtensionNames = g_sDeviceExtensions.data(),
+                                  .pEnabledFeatures = &features },
+            vulkan13Features,
+            vulkan12Features);
 
     return physicalDevice.createDeviceUnique(deviceCreateInfo.get<vk::DeviceCreateInfo>());
 }
@@ -29,7 +43,7 @@ PhysicalDevicesManager::PhysicalDevicesManager(const vk::Instance instance, cons
 
 static bool deviceHasAllRequiredExtensions(const vk::PhysicalDevice& physicalDevice) {
     const auto& availableDeviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
-    return std::ranges::all_of(s_deviceExtensions, [&availableDeviceExtensions](const auto& extension) {
+    return std::ranges::all_of(g_sDeviceExtensions, [&availableDeviceExtensions](const auto& extension) {
         return std::ranges::any_of(availableDeviceExtensions, [&extension](const auto& instanceExtension) {
             return std::string_view(extension) == std::string_view(instanceExtension.extensionName);
         });

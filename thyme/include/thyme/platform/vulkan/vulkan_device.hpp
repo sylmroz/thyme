@@ -26,8 +26,10 @@ struct VulkanDevice {
     void singleTimeCommand(F fun, Args... args) {
 
         const auto commandBuffer = std::move(logicalDevice
-                                                     .allocateCommandBuffersUnique(vk::CommandBufferAllocateInfo(
-                                                             commandPool, vk::CommandBufferLevel::ePrimary, 1))
+                                                     .allocateCommandBuffersUnique(vk::CommandBufferAllocateInfo{
+                                                             .commandPool = commandPool,
+                                                             .level = vk::CommandBufferLevel::ePrimary,
+                                                             .commandBufferCount = 1 })
                                                      .front());
         const auto graphicQueue = getGraphicQueue();
         vulkan::singleTimeCommand(commandBuffer.get(), graphicQueue, fun, args...);
@@ -52,11 +54,10 @@ class PhysicalDevicesManager {
     struct VulkanInternalDevice {
         explicit VulkanInternalDevice(const PhysicalDevice& physicalDevice)
             : physicalDevice(physicalDevice.physicalDevice), logicalDevice(physicalDevice.createLogicalDevice()),
-              queueFamilyIndices(physicalDevice.queueFamilyIndices),
-              maxMsaaSamples{ physicalDevice.maxMsaaSamples },
+              queueFamilyIndices(physicalDevice.queueFamilyIndices), maxMsaaSamples{ physicalDevice.maxMsaaSamples },
               commandPool{ logicalDevice->createCommandPoolUnique(
-                      vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-                                                queueFamilyIndices.graphicFamily.value())) } {}
+                      vk::CommandPoolCreateInfo{ .flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+                                                 .queueFamilyIndex = queueFamilyIndices.graphicFamily.value() }) } {}
         vk::PhysicalDevice physicalDevice;
         vk::UniqueDevice logicalDevice;
         QueueFamilyIndices queueFamilyIndices;

@@ -8,21 +8,29 @@ namespace th::vulkan {
 VulkanRenderTarget::VulkanRenderTarget(const vk::ImageView imageView, const vk::ImageView resolvedImageView,
                                        const vk::ImageLayout imageLayout, const vk::AttachmentLoadOp loadOp,
                                        const vk::AttachmentStoreOp storeOp, const vk::ClearValue clearValue) {
-    m_attachmentInfo = vk::RenderingAttachmentInfo(imageView,
-                                                   imageLayout,
-                                                   vk::ResolveModeFlagBits::eAverage,
-                                                   resolvedImageView,
-                                                   imageLayout,
-                                                   loadOp,
-                                                   storeOp,
-                                                   clearValue);
+    m_attachmentInfo = vk::RenderingAttachmentInfo{
+        .imageView = imageView,
+        .imageLayout = imageLayout,
+        .resolveMode = vk::ResolveModeFlagBits::eAverage,
+        .resolveImageView = resolvedImageView,
+        .resolveImageLayout = imageLayout,
+        .loadOp = loadOp,
+        .storeOp = storeOp,
+        .clearValue = clearValue,
+    };
 }
 
 VulkanRenderTarget::VulkanRenderTarget(const vk::ImageView imageView, const vk::ImageLayout imageLayout,
                                        const vk::AttachmentLoadOp loadOp, const vk::AttachmentStoreOp storeOp,
                                        const vk::ClearValue clearValue) {
-    m_attachmentInfo = vk::RenderingAttachmentInfo(
-            imageView, imageLayout, vk::ResolveModeFlagBits::eNone, {}, {}, loadOp, storeOp, clearValue);
+    m_attachmentInfo = vk::RenderingAttachmentInfo{
+        .imageView = imageView,
+        .imageLayout = imageLayout,
+        .resolveMode = vk::ResolveModeFlagBits::eNone,
+        .loadOp = loadOp,
+        .storeOp = storeOp,
+        .clearValue = clearValue,
+    };
 }
 
 // VulkanRenderingInfo::VulkanRenderingInfo(VulkanSwapChain* swapChain, const vk::SampleCountFlagBits samples)
@@ -42,7 +50,10 @@ VulkanRenderer::VulkanRenderer(const VulkanDevice& device, VulkanSwapChain& swap
                           device.maxMsaaSamples } {
     m_pipelines.emplace_back(std::make_unique<ScenePipeline>(
             device,
-            vk::PipelineRenderingCreateInfo(0, { context.surfaceFormat.format }, context.depthFormat),
+            vk::PipelineRenderingCreateInfo{ .viewMask = 0,
+                                             .colorAttachmentCount = 1,
+                                             .pColorAttachmentFormats = &context.surfaceFormat.format,
+                                             .depthAttachmentFormat = context.depthFormat },
             modelStorage,
             camera));
 }
@@ -58,37 +69,36 @@ void VulkanRenderer::draw() {
     constexpr auto clearColorValues = vk::ClearValue(vk::ClearColorValue(1.0f, 0.0f, 1.0f, 1.0f));
     constexpr auto depthClearValue = vk::ClearValue(vk::ClearDepthStencilValue(1.0f, 0));
 
-    // const auto colorRenderTarget = VulkanRenderTarget(m_colorImageMemory.getImageView(),
-    //                                                   swapChainImage.imageView,
-    //                                                   vk::ImageLayout::eColorAttachmentOptimal,
-    //                                                   vk::AttachmentLoadOp::eClear,
-    //                                                   vk::AttachmentStoreOp::eStore,
-    //                                                   clearColorValues);
 
-    const auto colorAttachment = vk::RenderingAttachmentInfo(m_colorImageMemory.getImageView(),
-                                                             vk::ImageLayout::eColorAttachmentOptimal,
-                                                             vk::ResolveModeFlagBits::eAverage,
-                                                             swapChainImage.imageView,
-                                                             vk::ImageLayout::eColorAttachmentOptimal,
-                                                             vk::AttachmentLoadOp::eClear,
-                                                             vk::AttachmentStoreOp::eStore,
-                                                             clearColorValues);
+    const auto colorAttachment = vk::RenderingAttachmentInfo{
+        .imageView = m_colorImageMemory.getImageView(),
+        .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
+        .resolveMode = vk::ResolveModeFlagBits::eAverage,
+        .resolveImageView = swapChainImage.imageView,
+        .resolveImageLayout = vk::ImageLayout::eColorAttachmentOptimal,
+        .loadOp = vk::AttachmentLoadOp::eClear,
+        .storeOp = vk::AttachmentStoreOp::eStore,
+        .clearValue = clearColorValues,
+    };
 
-    const auto depthAttachment = vk::RenderingAttachmentInfo(m_depthImageMemory.getImageView(),
-                                                             vk::ImageLayout::eDepthAttachmentOptimal,
-                                                             vk::ResolveModeFlagBits::eNone,
-                                                             {},
-                                                             {},
-                                                             vk::AttachmentLoadOp::eClear,
-                                                             vk::AttachmentStoreOp::eDontCare,
-                                                             depthClearValue);
+    const auto depthAttachment = vk::RenderingAttachmentInfo{
+        .imageView = m_depthImageMemory.getImageView(),
+        .imageLayout = vk::ImageLayout::eDepthAttachmentOptimal,
+        .resolveMode = vk::ResolveModeFlagBits::eNone,
+        .loadOp = vk::AttachmentLoadOp::eClear,
+        .storeOp = vk::AttachmentStoreOp::eDontCare,
+        .clearValue = depthClearValue,
+    };
 
-    const auto renderingInfo = vk::RenderingInfo(vk::RenderingFlagBits{},
-                                                 vk::Rect2D(vk::Offset2D(0, 0), m_swapChain.getSwapChainExtent()),
-                                                 1,
-                                                 0,
-                                                 { colorAttachment },
-                                                 &depthAttachment);
+    const auto renderingInfo = vk::RenderingInfo{
+        .renderArea =
+                vk::Rect2D{ .offset = vk::Offset2D{ .x = 0, .y = 0 }, .extent = m_swapChain.getSwapChainExtent() },
+        .layerCount = 1,
+        .viewMask = 0,
+        .colorAttachmentCount = 1,
+        .pColorAttachments = &colorAttachment,
+        .pDepthAttachment = &depthAttachment,
+    };
     const auto commandBuffer = m_commandBuffersPool->get().getBuffer();
     commandBuffer.beginRendering(renderingInfo);
     for (const auto& pipeline : m_pipelines) {

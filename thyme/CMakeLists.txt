@@ -25,6 +25,8 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	target_link_options(${PROJECT_NAME} PUBLIC $<$<CONFIG:Debug>:/INCREMENTAL>)
 endif()
 
+add_compile_definitions(VULKAN_HPP_NO_STRUCT_CONSTRUCTORS)
+
 target_sources(${PROJECT_NAME} PRIVATE
 		src/core/application.cpp
 		src/core/engine.cpp
@@ -40,11 +42,11 @@ target_sources(${PROJECT_NAME} PRIVATE
 		src/platform/vulkan/model.cpp
 		src/platform/vulkan/renderer.cpp
 		#src/platform/vulkan/shader.cpp #for now there are problems with integrating shaderc from google
-		src/platform/vulkan/swapchain.cpp
 		src/platform/vulkan/utils.cpp
 		src/platform/vulkan/vulkan_buffer.cpp
 		src/platform/vulkan/vulkan_command_buffers.cpp
 		src/platform/vulkan/vulkan_device.cpp
+		src/platform/vulkan/vulkan_swapchain.cpp
 		src/platform/vulkan/vulkan_texture.cpp
 )
 
@@ -97,6 +99,7 @@ find_package(glfw3 CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(Stb REQUIRED)
+find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 
 target_link_libraries(${PROJECT_NAME} 
     PRIVATE
@@ -105,6 +108,7 @@ target_link_libraries(${PROJECT_NAME}
         Vulkan::Vulkan
         Vulkan::Headers
 		imgui::imgui
+		GPUOpen::VulkanMemoryAllocator
 )
 
 # copy dlls to the app

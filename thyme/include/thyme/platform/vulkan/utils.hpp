@@ -39,7 +39,7 @@ private:
 };
 
 struct QueueFamilyIndices {
-    explicit QueueFamilyIndices(vk::PhysicalDevice device, vk::SurfaceKHR surface) noexcept;
+    explicit QueueFamilyIndices(vk::PhysicalDevice device, vk::SurfaceKHR surface);
 
     std::optional<uint32_t> graphicFamily;
     std::optional<uint32_t> presentFamily;
@@ -57,17 +57,17 @@ struct SwapChainSettings {
 
 class SwapChainSupportDetails {
 public:
-    explicit SwapChainSupportDetails(const vk::PhysicalDevice& device, const vk::SurfaceKHR surface);
+    explicit SwapChainSupportDetails(const vk::PhysicalDevice& device, vk::SurfaceKHR surface);
 
     vk::SurfaceCapabilitiesKHR capabilities;
     std::vector<vk::SurfaceFormatKHR> formats;
     std::vector<vk::PresentModeKHR> presentModes;
 
-    [[nodiscard]] inline bool isValid() const noexcept {
+    [[nodiscard]] bool isValid() const noexcept {
         return !formats.empty() && !presentModes.empty();
     }
 
-    [[nodiscard]] inline auto getBestSurfaceFormat() const noexcept -> vk::SurfaceFormatKHR {
+    [[nodiscard]] auto getBestSurfaceFormat() const noexcept -> vk::SurfaceFormatKHR {
         const auto suitableFormat = std::ranges::find_if(formats, [](const vk::SurfaceFormatKHR& format) {
             return format.format == vk::Format::eB8G8R8A8Srgb && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear;
         });
@@ -114,50 +114,8 @@ public:
     }
 };
 
-struct FrameData {
-    vk::Semaphore imageAvailableSemaphore;
-    vk::Semaphore renderFinishedSemaphore;
-    vk::Fence fence;
-};
-
-class FrameDataList {
-    struct InternalFrameData {
-        vk::UniqueSemaphore imageAvailableSemaphore;
-        vk::UniqueSemaphore renderFinishedSemaphore;
-        vk::UniqueFence fence;
-    };
-
-public:
-    explicit FrameDataList(vk::Device logicalDevice, uint32_t maxFrames) noexcept;
-
-    [[nodiscard]] auto getNext() noexcept -> FrameData {
-        const auto index = getNextFrameIndex();
-        const auto& [imageAvailableSemaphore, renderFinishedSemaphore, fence] = m_frameDataList[index];
-        return FrameData{
-            .imageAvailableSemaphore = imageAvailableSemaphore.get(),
-            .renderFinishedSemaphore = renderFinishedSemaphore.get(),
-            .fence = fence.get(),
-        };
-    };
-
-private:
-    std::vector<InternalFrameData> m_frameDataList;
-    uint32_t m_frameIndex{ 0 };
-
-    [[nodiscard]] uint32_t getNextFrameIndex() noexcept {
-        const auto currentFrameIndex = m_frameIndex;
-        m_frameIndex = (m_frameIndex + 1) % m_frameDataList.size();
-        return currentFrameIndex;
-    };
-};
-
-[[nodiscard]] auto createRenderPass(const vk::Device logicalDevice, const vk::Format colorFormat,
-                                    const vk::Format depthFormat, const vk::SampleCountFlagBits samples)
-        -> vk::UniqueRenderPass;
-
 struct GraphicPipelineCreateInfo {
     vk::Device logicalDevice;
-    vk::RenderPass renderPass;
     vk::PipelineLayout pipelineLayout;
     vk::SampleCountFlagBits samples;
     vk::PipelineRenderingCreateInfo pipelineRenderingCreateInfo;
@@ -177,11 +135,13 @@ struct GraphicPipelineCreateInfo {
                                             return sum + descriptorPoolSize.descriptorCount;
                                         });
 
-    return device.createDescriptorPoolUnique(
-            vk::DescriptorPoolCreateInfo(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
-                                         maxSet,
-                                         static_cast<uint32_t>(descriptorSizes.size()),
-                                         descriptorSizes.data()));
+
+    return device.createDescriptorPoolUnique(vk::DescriptorPoolCreateInfo{
+            .flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
+            .maxSets = maxSet,
+            .poolSizeCount = static_cast<uint32_t>(descriptorSizes.size()),
+            .pPoolSizes = descriptorSizes.data(),
+    });
 }
 
 template <typename F, typename... Args>
@@ -192,10 +152,10 @@ concept InvocableCommandWithCommandBuffer = requires(F f, vk::CommandBuffer comm
 template <typename F, typename... Args>
     requires(InvocableCommandWithCommandBuffer<F, Args...>)
 void singleTimeCommand(const vk::CommandBuffer commandBuffer, const vk::Queue graphicQueue, F fun, Args... args) {
-    commandBuffer.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
+    commandBuffer.begin(vk::CommandBufferBeginInfo{ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
     fun(commandBuffer, args...);
     commandBuffer.end();
-    graphicQueue.submit(vk::SubmitInfo({}, {}, { commandBuffer }), nullptr);
+    graphicQueue.submit(vk::SubmitInfo{ .commandBufferCount = 1, .pCommandBuffers = &commandBuffer }, nullptr);
     graphicQueue.waitIdle();
 }
 
@@ -205,7 +165,9 @@ void singleTimeCommand(const vk::Device device, const vk::CommandPool commandPoo
                        Args... args) {
     const auto commandBuffer =
             std::move(device.allocateCommandBuffersUnique(
-                                    vk::CommandBufferAllocateInfo(commandPool, vk::CommandBufferLevel::ePrimary, 1))
+                                    vk::CommandBufferAllocateInfo{ .commandPool = commandPool,
+                                                                   .level = vk::CommandBufferLevel::ePrimary,
+                                                                   .commandBufferCount = 1 })
                               .front());
     singleTimeCommand(commandBuffer.get(), graphicQueue, fun, args...);
 }

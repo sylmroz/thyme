@@ -38,8 +38,11 @@ Gui::Gui(const VulkanDevice& device,
     initInfo.ImageCount = m_context.imageCount;
     initInfo.MSAASamples = static_cast<VkSampleCountFlagBits>(device.maxMsaaSamples);
     initInfo.UseDynamicRendering = true;
-    initInfo.PipelineRenderingCreateInfo =
-            vk::PipelineRenderingCreateInfo(0, { m_context.surfaceFormat.format }, m_context.depthFormat);
+    initInfo.PipelineRenderingCreateInfo = vk::PipelineRenderingCreateInfo{
+        .colorAttachmentCount = 1,
+        .pColorAttachmentFormats = &m_context.surfaceFormat.format,
+        .depthAttachmentFormat = m_context.depthFormat,
+    };
     initInfo.Allocator = nullptr;
     initInfo.CheckVkResultFn = [](const auto vkResult) {
         if (vkResult == VK_SUCCESS) {

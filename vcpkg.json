@@ -12,7 +12,8 @@
     "spdlog",
     "glm",
     "stb",
-    "vulkan-sdk-components"
+    "vulkan-sdk-components",
+    "vulkan-memory-allocator"
   ],
   "version": "0.0.1",
   "name": "thyme"

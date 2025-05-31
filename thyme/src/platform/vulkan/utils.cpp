@@ -23,17 +23,33 @@ VKAPI_ATTR void VKAPI_CALL vkDestroyDebugUtilsMessengerEXT(VkInstance instance,
                                                            VkAllocationCallbacks const* pAllocator) {
     return pfnVkDestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
 }
-static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(const vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                                    const vk::DebugUtilsMessageTypeFlagBitsEXT messageType,
-                                                    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-                                                    void*) {
+
+static VKAPI_ATTR vk::Bool32 VKAPI_CALL debugCallback(const vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                                      const vk::DebugUtilsMessageTypeFlagsEXT messageType,
+                                                      const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                                                      void*) {
     static std::map<vk::DebugUtilsMessageTypeFlagBitsEXT, std::string_view> messageTypeStringMap = {
         { vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral, "General" },
         { vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance, "Performance" },
         { vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation, "Validation" },
         { vk::DebugUtilsMessageTypeFlagBitsEXT::eDeviceAddressBinding, "Device Address Biding" },
     };
-    const auto messageTypeStr = messageTypeStringMap[messageType];
+
+    const auto messageTypeStr = [messageType] {
+        if (messageType & vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral) {
+            return messageTypeStringMap[vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral];
+        }
+        if (messageType & vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance) {
+            return messageTypeStringMap[vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance];
+        }
+        if (messageType & vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation) {
+            return messageTypeStringMap[vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation];
+        }
+        if (messageType & vk::DebugUtilsMessageTypeFlagBitsEXT::eDeviceAddressBinding) {
+            return messageTypeStringMap[vk::DebugUtilsMessageTypeFlagBitsEXT::eDeviceAddressBinding];
+        }
+        return std::string_view("Unknown");
+    }();
     const auto message = fmt::format(
             "[{}]: Name: {}, Message: {}", messageTypeStr, pCallbackData->pMessageIdName, pCallbackData->pMessage);
     switch (messageSeverity) {
@@ -46,17 +62,19 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(const vk::DebugUtilsMessageS
     return VK_FALSE;
 }
 
+
 vk::DebugUtilsMessengerCreateInfoEXT createDebugUtilsMessengerCreateInfo() {
-    const auto flags =
+    constexpr auto flags =
             vk::DebugUtilsMessageSeverityFlagBitsEXT::eError | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning
             | vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
-    const auto typeFlags = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral
-                           | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance
-                           | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation;
-    return vk::DebugUtilsMessengerCreateInfoEXT(vk::DebugUtilsMessengerCreateFlagsEXT(),
-                                                flags,
-                                                typeFlags,
-                                                reinterpret_cast<PFN_vkDebugUtilsMessengerCallbackEXT>(debugCallback));
+    constexpr auto typeFlags = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral
+                               | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance
+                               | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation;
+    return vk::DebugUtilsMessengerCreateInfoEXT{
+        .messageSeverity = flags,
+        .messageType = typeFlags,
+        .pfnUserCallback = debugCallback,
+    };
 }
 
 #endif
@@ -77,8 +95,13 @@ static bool deviceHasAllRequiredExtensions(const vk::PhysicalDevice& physicalDev
 
 UniqueInstance::UniqueInstance(const UniqueInstanceConfig& config) {
     constexpr auto appVersion = vk::makeApiVersion(0, version::major, version::minor, version::patch);
-    const vk::ApplicationInfo applicationInfo(
-            config.appName.data(), appVersion, config.engineName.data(), appVersion, vk::HeaderVersionComplete);
+    const auto applicationInfo = vk::ApplicationInfo{
+        .pApplicationName = config.appName.data(),
+        .applicationVersion = appVersion,
+        .pEngineName = config.engineName.data(),
+        .engineVersion = appVersion,
+        .apiVersion = vk::HeaderVersionComplete,
+    };
 
     auto enabledExtensions = config.instanceExtension;
     enabledExtensions.emplace_back(vk::KHRPortabilityEnumerationExtensionName);
@@ -87,17 +110,28 @@ UniqueInstance::UniqueInstance(const UniqueInstanceConfig& config) {
     constexpr auto layerName = "VK_LAYER_KHRONOS_validation";
     constexpr auto validationLayers = std::array{ layerName };
     constexpr auto enabled = std::array{ vk::ValidationFeatureEnableEXT::eSynchronizationValidation };
-    const vk::ValidationFeaturesEXT validationFeatures(enabled);
+    const auto validationFeatures = vk::ValidationFeaturesEXT{
+        .enabledValidationFeatureCount = enabled.size(),
+        .pEnabledValidationFeatures = enabled.data(),
+    };
     const vk::StructureChain instanceCreateInfo(
-            vk::InstanceCreateInfo{ vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR,
-                                    &applicationInfo,
-                                    validationLayers,
-                                    enabledExtensions },
+            vk::InstanceCreateInfo{
+                    .flags = vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR,
+                    .pApplicationInfo = &applicationInfo,
+                    .enabledLayerCount = validationLayers.size(),
+                    .ppEnabledLayerNames = validationLayers.data(),
+                    .enabledExtensionCount = static_cast<uint32_t>(enabledExtensions.size()),
+                    .ppEnabledExtensionNames = enabledExtensions.data(),
+            },
             createDebugUtilsMessengerCreateInfo(),
             validationFeatures);
 #else
     const vk::StructureChain instanceCreateInfo(vk::InstanceCreateInfo{
-            vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR, &applicationInfo, nullptr, enabledExtensions });
+            .flags = vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR,
+            .pApplicationInfo = &applicationInfo,
+            .enabledExtensionCount = static_cast<uint32_t>(enabledExtensions.size()),
+            .ppEnabledExtensionNames = enabledExtensions.data(),
+    });
 #endif
 
     try {
@@ -154,7 +188,7 @@ void UniqueInstance::setupDebugMessenger(const std::vector<const char*>& extensi
 }
 #endif
 
-QueueFamilyIndices::QueueFamilyIndices(const vk::PhysicalDevice device, const vk::SurfaceKHR surface) noexcept {
+QueueFamilyIndices::QueueFamilyIndices(const vk::PhysicalDevice device, const vk::SurfaceKHR surface) {
     const auto& queueFamilies = device.getQueueFamilyProperties2();
     for (uint32_t i{ 0 }; i < queueFamilies.size(); i++) {
         const auto& queueFamily = queueFamilies[i];
@@ -180,144 +214,93 @@ SwapChainSupportDetails::SwapChainSupportDetails(const vk::PhysicalDevice& devic
     presentModes = device.getSurfacePresentModesKHR(surface);
 }
 
-FrameDataList::FrameDataList(const vk::Device logicalDevice, const uint32_t maxFrames) noexcept {
-    for (uint32_t i{ 0 }; i < maxFrames; ++i) {
-        m_frameDataList.emplace_back(InternalFrameData{
-                .imageAvailableSemaphore = logicalDevice.createSemaphoreUnique(vk::SemaphoreCreateInfo()),
-                .renderFinishedSemaphore = logicalDevice.createSemaphoreUnique(vk::SemaphoreCreateInfo()),
-                .fence = logicalDevice.createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled)),
-        });
-    }
-}
-
-auto createRenderPass(const vk::Device logicalDevice, const vk::Format colorFormat, const vk::Format depthFormat,
-                      const vk::SampleCountFlagBits samples) -> vk::UniqueRenderPass {
-    constexpr auto colorAttachmentRef = vk::AttachmentReference(0, vk::ImageLayout::eColorAttachmentOptimal);
-    constexpr auto depthAttachmentRef = vk::AttachmentReference(1, vk::ImageLayout::eDepthStencilAttachmentOptimal);
-    constexpr auto colorAttachmentResolveRef = vk::AttachmentReference(2, vk::ImageLayout::eColorAttachmentOptimal);
-    const auto subpassDescription = vk::SubpassDescription(vk::SubpassDescriptionFlagBits(),
-                                                           vk::PipelineBindPoint::eGraphics,
-                                                           {},
-                                                           { colorAttachmentRef },
-                                                           { colorAttachmentResolveRef },
-                                                           &depthAttachmentRef);
-
-    constexpr auto subpassDependency = vk::SubpassDependency(
-            vk::SubpassExternal,
-            0,
-            vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests,
-            vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests,
-            vk::AccessFlagBits::eNone,
-            vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite);
-
-    const auto colorAttachment = vk::AttachmentDescription(vk::AttachmentDescriptionFlagBits(),
-                                                           colorFormat,
-                                                           samples,
-                                                           vk::AttachmentLoadOp::eClear,
-                                                           vk::AttachmentStoreOp::eStore,
-                                                           vk::AttachmentLoadOp::eDontCare,
-                                                           vk::AttachmentStoreOp::eDontCare,
-                                                           vk::ImageLayout::eUndefined,
-                                                           vk::ImageLayout::eColorAttachmentOptimal);
-
-    const auto depthAttachment = vk::AttachmentDescription(vk::AttachmentDescriptionFlagBits(),
-                                                           depthFormat,
-                                                           samples,
-                                                           vk::AttachmentLoadOp::eClear,
-                                                           vk::AttachmentStoreOp::eDontCare,
-                                                           vk::AttachmentLoadOp::eDontCare,
-                                                           vk::AttachmentStoreOp::eDontCare,
-                                                           vk::ImageLayout::eUndefined,
-                                                           vk::ImageLayout::eDepthStencilAttachmentOptimal);
-    const auto colorAttachmentResolve = vk::AttachmentDescription(vk::AttachmentDescriptionFlagBits(),
-                                                                  colorFormat,
-                                                                  vk::SampleCountFlagBits::e1,
-                                                                  vk::AttachmentLoadOp::eDontCare,
-                                                                  vk::AttachmentStoreOp::eStore,
-                                                                  vk::AttachmentLoadOp::eDontCare,
-                                                                  vk::AttachmentStoreOp::eDontCare,
-                                                                  vk::ImageLayout::eUndefined,
-                                                                  vk::ImageLayout::ePresentSrcKHR);
-
-    const auto attachments = std::array{ colorAttachment, depthAttachment, colorAttachmentResolve };
-    return logicalDevice.createRenderPassUnique(vk::RenderPassCreateInfo(
-            vk::RenderPassCreateFlagBits(), attachments, { subpassDescription }, { subpassDependency }));
-}
-
 auto createGraphicsPipeline(const GraphicPipelineCreateInfo& graphicPipelineCreateInfo) -> vk::UniquePipeline {
-    const auto& [logicalDevice, renderPass, pipelineLayout, samples, pipelineRenderingCreateInfo, shaderStages] =
+    const auto& [logicalDevice, pipelineLayout, samples, pipelineRenderingCreateInfo, shaderStages] =
             graphicPipelineCreateInfo;
     constexpr auto dynamicStates = std::array{ vk::DynamicState::eViewport, vk::DynamicState::eScissor };
-    const auto dynamicStateCreateInfo =
-            vk::PipelineDynamicStateCreateInfo(vk::PipelineDynamicStateCreateFlagBits(), dynamicStates);
+    const auto dynamicStateCreateInfo = vk::PipelineDynamicStateCreateInfo{
+        .dynamicStateCount = static_cast<uint32_t>(dynamicStates.size()),
+        .pDynamicStates = dynamicStates.data(),
+    };
     constexpr auto bindingDescription = getBindingDescription();
     constexpr auto attributeDescriptions = getAttributeDescriptions();
-    const auto vertexInputStateCreateInfo = vk::PipelineVertexInputStateCreateInfo(
-            vk::PipelineVertexInputStateCreateFlagBits(), { bindingDescription }, attributeDescriptions);
-    constexpr auto inputAssemblyStateCreateInfo = vk::PipelineInputAssemblyStateCreateInfo(
-            vk::PipelineInputAssemblyStateCreateFlagBits(), vk::PrimitiveTopology::eTriangleList, vk::False);
-    constexpr auto viewportState =
-            vk::PipelineViewportStateCreateInfo(vk::PipelineViewportStateCreateFlagBits(), 1, nullptr, 1, nullptr);
-    constexpr auto rasterizer = vk::PipelineRasterizationStateCreateInfo(vk::PipelineRasterizationStateCreateFlagBits(),
-                                                                         vk::False,
-                                                                         vk::False,
-                                                                         vk::PolygonMode::eFill,
-                                                                         vk::CullModeFlagBits::eBack,
-                                                                         vk::FrontFace::eCounterClockwise,
-                                                                         vk::False,
-                                                                         0.0f,
-                                                                         0.0f,
-                                                                         0.0f,
-                                                                         1.0f);
-    const auto multisampling = vk::PipelineMultisampleStateCreateInfo(
-            vk::PipelineMultisampleStateCreateFlagBits(), samples, vk::False, 1.0f, nullptr, vk::False, vk::False);
-    constexpr auto colorBlendAttachments = vk::PipelineColorBlendAttachmentState(
-            vk::False,
-            vk::BlendFactor::eOne,
-            vk::BlendFactor::eZero,
-            vk::BlendOp::eAdd,
-            vk::BlendFactor::eOne,
-            vk::BlendFactor::eZero,
-            vk::BlendOp::eAdd,
-            vk::ColorComponentFlagBits::eA | vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG
-                    | vk::ColorComponentFlagBits::eB);
+    const auto vertexInputStateCreateInfo = vk::PipelineVertexInputStateCreateInfo{
+        .vertexBindingDescriptionCount = 1,
+        .pVertexBindingDescriptions = &bindingDescription,
+        .vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size()),
+        .pVertexAttributeDescriptions = attributeDescriptions.data(),
+    };
+    constexpr auto inputAssemblyStateCreateInfo = vk::PipelineInputAssemblyStateCreateInfo{
+        .topology = vk::PrimitiveTopology::eTriangleList,
+        .primitiveRestartEnable = vk::False,
+    };
+    constexpr auto viewportState = vk::PipelineViewportStateCreateInfo{
+        .viewportCount = 1,
+        .scissorCount = 1,
+    };
+    constexpr auto rasterizer = vk::PipelineRasterizationStateCreateInfo{
+        .depthClampEnable = vk::False,
+        .rasterizerDiscardEnable = vk::False,
+        .polygonMode = vk::PolygonMode::eFill,
+        .cullMode = vk::CullModeFlagBits::eBack,
+        .frontFace = vk::FrontFace::eCounterClockwise,
+        .depthBiasEnable = vk::False,
+        .depthBiasConstantFactor = 0.0f,
+        .depthBiasClamp = 0.0f,
+        .depthBiasSlopeFactor = 0.0f,
+        .lineWidth = 1.0f,
+    };
+    const auto multisampling = vk::PipelineMultisampleStateCreateInfo{
+        .rasterizationSamples = samples,
+        .sampleShadingEnable = vk::False,
+        .minSampleShading = 1.0f,
+        .alphaToCoverageEnable = vk::False,
+        .alphaToOneEnable = vk::False,
+    };
+    constexpr auto colorBlendAttachments = vk::PipelineColorBlendAttachmentState{
+        .blendEnable = vk::False,
+        .srcColorBlendFactor = vk::BlendFactor::eOne,
+        .dstColorBlendFactor = vk::BlendFactor::eZero,
+        .colorBlendOp = vk::BlendOp::eAdd,
+        .srcAlphaBlendFactor = vk::BlendFactor::eOne,
+        .dstAlphaBlendFactor = vk::BlendFactor::eZero,
+        .alphaBlendOp = vk::BlendOp::eAdd,
+        .colorWriteMask = vk::ColorComponentFlagBits::eA | vk::ColorComponentFlagBits::eR
+                          | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB
+    };
     const auto colorBlendStateCreateInfo =
-            vk::PipelineColorBlendStateCreateInfo(vk::PipelineColorBlendStateCreateFlagBits(),
-                                                  vk::False,
-                                                  vk::LogicOp::eClear,
-                                                  { colorBlendAttachments },
-                                                  std::array{ 0.0f, 0.0f, 0.0f, 0.0f });
+            vk::PipelineColorBlendStateCreateInfo{ .logicOpEnable = vk::False,
+                                                   .logicOp = vk::LogicOp::eCopy,
+                                                   .attachmentCount = 1,
+                                                   .pAttachments = &colorBlendAttachments,
+                                                   .blendConstants = std::array{ 0.0f, 0.0f, 0.0f, 0.0f } };
     constexpr auto deptStencilStateCreateInfo =
-            vk::PipelineDepthStencilStateCreateInfo(vk::PipelineDepthStencilStateCreateFlagBits(),
-                                                    vk::True,
-                                                    vk::True,
-                                                    vk::CompareOp::eLess,
-                                                    vk::False,
-                                                    vk::False,
-                                                    {},
-                                                    {},
-                                                    0.0f,
-                                                    1.0f);
+            vk::PipelineDepthStencilStateCreateInfo{ .depthTestEnable = vk::True,
+                                                     .depthWriteEnable = vk::True,
+                                                     .depthCompareOp = vk::CompareOp::eLess,
+                                                     .depthBoundsTestEnable = vk::False,
+                                                     .stencilTestEnable = vk::False,
+                                                     .front = {},
+                                                     .back = {},
+                                                     .minDepthBounds = 0.0f,
+                                                     .maxDepthBounds = 1.0f };
 
     return logicalDevice
             .createGraphicsPipelineUnique({},
-                                          vk::GraphicsPipelineCreateInfo(vk::PipelineCreateFlagBits(),
-                                                                         shaderStages,
-                                                                         &vertexInputStateCreateInfo,
-                                                                         &inputAssemblyStateCreateInfo,
-                                                                         nullptr,
-                                                                         &viewportState,
-                                                                         &rasterizer,
-                                                                         &multisampling,
-                                                                         &deptStencilStateCreateInfo,
-                                                                         &colorBlendStateCreateInfo,
-                                                                         &dynamicStateCreateInfo,
-                                                                         pipelineLayout,
-                                                                         {},
-                                                                         {},
-                                                                         {},
-                                                                         {},
-                                                                         &pipelineRenderingCreateInfo))
+                                          vk::GraphicsPipelineCreateInfo{
+                                                  .pNext = &pipelineRenderingCreateInfo,
+                                                  .stageCount = static_cast<uint32_t>(shaderStages.size()),
+                                                  .pStages = shaderStages.data(),
+                                                  .pVertexInputState = &vertexInputStateCreateInfo,
+                                                  .pInputAssemblyState = &inputAssemblyStateCreateInfo,
+                                                  .pViewportState = &viewportState,
+                                                  .pRasterizationState = &rasterizer,
+                                                  .pMultisampleState = &multisampling,
+                                                  .pDepthStencilState = &deptStencilStateCreateInfo,
+                                                  .pColorBlendState = &colorBlendStateCreateInfo,
+                                                  .pDynamicState = &dynamicStateCreateInfo,
+                                                  .layout = pipelineLayout,
+                                          })
             .value;
 }
 
@@ -329,14 +312,20 @@ void transitImageLayout(const vk::CommandBuffer commandBuffer, const vk::Image i
     const auto [srcAccessFlag, dstAccessFlag] = accessFlagsTransition;
     const auto [oldLayout, newLayout] = layoutTransition;
     const auto [srcStages, dstStages] = stageTransition;
-    const auto barrier = vk::ImageMemoryBarrier(srcAccessFlag,
-                                                dstAccessFlag,
-                                                oldLayout,
-                                                newLayout,
-                                                vk::QueueFamilyIgnored,
-                                                vk::QueueFamilyIgnored,
-                                                image,
-                                                vk::ImageSubresourceRange(aspectFlags, 0, mipLevels, 0, 1));
+    const auto barrier = vk::ImageMemoryBarrier{ .srcAccessMask = srcAccessFlag,
+                                                 .dstAccessMask = dstAccessFlag,
+                                                 .oldLayout = oldLayout,
+                                                 .newLayout = newLayout,
+                                                 .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                                                 .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                                                 .image = image,
+                                                 .subresourceRange = vk::ImageSubresourceRange{
+                                                         .aspectMask = aspectFlags,
+                                                         .baseMipLevel = 0,
+                                                         .levelCount = mipLevels,
+                                                         .baseArrayLayer = 0,
+                                                         .layerCount = 1,
+                                                 } };
     commandBuffer.pipelineBarrier(srcStages, dstStages, vk::DependencyFlags(), 0, nullptr, 0, nullptr, 1, &barrier);
 }
 

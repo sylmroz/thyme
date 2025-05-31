@@ -1,17 +1,20 @@
-#include <thyme/platform/vulkan/swapchain.hpp>
+#include <thyme/platform/vulkan/vulkan_swapchain.hpp>
 
 namespace th::vulkan {
 
 SwapChainFrames::SwapChainFrames(const vk::Device device, const vk::SwapchainKHR swapChain, const vk::Format format) {
     m_images = device.getSwapchainImagesKHR(swapChain);
     for (const auto image : m_images) {
-        m_imageViews.emplace_back(device.createImageViewUnique(
-                vk::ImageViewCreateInfo(vk::ImageViewCreateFlags(),
-                                        image,
-                                        vk::ImageViewType::e2D,
-                                        format,
-                                        vk::ComponentMapping(),
-                                        vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1))));
+        m_imageViews.emplace_back(device.createImageViewUnique(vk::ImageViewCreateInfo{
+                .image = image,
+                .viewType = vk::ImageViewType::e2D,
+                .format = format,
+                .subresourceRange = vk::ImageSubresourceRange{ .aspectMask = vk::ImageAspectFlagBits::eColor,
+                                                               .baseMipLevel = 0,
+                                                               .levelCount = 1,
+                                                               .baseArrayLayer = 0,
+                                                               .layerCount = 1 },
+        }));
     }
 }
 
@@ -21,19 +24,18 @@ auto SwapChainData::createSwapChain(const VulkanDevice& device, const SwapChainS
     const auto& [surfaceFormat, presetMode, imageCount] = swapChainSettings;
     const auto capabilities = device.physicalDevice.getSurfaceCapabilitiesKHR(surface);
     const auto swapChainCreateInfo = [&] {
-        auto info = vk::SwapchainCreateInfoKHR(vk::SwapchainCreateFlagsKHR(),
-                                               surface,
-                                               imageCount,
-                                               surfaceFormat.format,
-                                               surfaceFormat.colorSpace,
-                                               swapChainExtent,
-                                               1,
-                                               vk::ImageUsageFlagBits::eColorAttachment);
-        info.preTransform = capabilities.currentTransform;
-        info.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
-        info.presentMode = presetMode;
-        info.clipped = vk::True;
-        info.oldSwapchain = oldSwapChain;
+        auto info = vk::SwapchainCreateInfoKHR{ .surface = surface,
+                                                .minImageCount = imageCount,
+                                                .imageFormat = surfaceFormat.format,
+                                                .imageColorSpace = surfaceFormat.colorSpace,
+                                                .imageExtent = swapChainExtent,
+                                                .imageArrayLayers = 1,
+                                                .imageUsage = vk::ImageUsageFlagBits::eColorAttachment,
+                                                .preTransform = capabilities.currentTransform,
+                                                .compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,
+                                                .presentMode = presetMode,
+                                                .clipped = vk::True,
+                                                .oldSwapchain = oldSwapChain };
         if (device.queueFamilyIndices.graphicFamily.value() != device.queueFamilyIndices.presentFamily.value()) {
             const auto indices = std::array{ device.queueFamilyIndices.graphicFamily.value(),
                                              device.queueFamilyIndices.presentFamily.value() };
@@ -117,8 +119,13 @@ void VulkanSwapChain::submitFrame() {
     const auto renderFinishedSemaphore = m_imageRenderingSemaphore[m_currentImageIndex].get();
     m_commandBuffersPool->submit(renderFinishedSemaphore);
     try {
-        const auto queuePresentResult = presentationQueue.presentKHR(
-                vk::PresentInfoKHR({ renderFinishedSemaphore }, { swapChain }, { m_currentImageIndex }));
+        const auto queuePresentResult = presentationQueue.presentKHR(vk::PresentInfoKHR(vk::PresentInfoKHR{
+                .waitSemaphoreCount = 1,
+                .pWaitSemaphores = &renderFinishedSemaphore,
+                .swapchainCount = 1,
+                .pSwapchains = &swapChain,
+                .pImageIndices = &m_currentImageIndex,
+        }));
         if (queuePresentResult == vk::Result::eErrorOutOfDateKHR || queuePresentResult == vk::Result::eSuboptimalKHR) {
             recreateSwapChain();
         }
@@ -146,8 +153,8 @@ bool VulkanSwapChain::recreateSwapChain() {
         const auto [width, height] = resolution;
         const auto minImageExtent = capabilities.minImageExtent;
         const auto maxImageExtent = capabilities.maxImageExtent;
-        return vk::Extent2D{ std::clamp(width, minImageExtent.width, maxImageExtent.width),
-                             std::clamp(height, minImageExtent.height, maxImageExtent.height) };
+        return vk::Extent2D{ .width = std::clamp(width, minImageExtent.width, maxImageExtent.width),
+                             .height = std::clamp(height, minImageExtent.height, maxImageExtent.height) };
     }();
     if (m_swapChainExtent.width == 0 || m_swapChainExtent.height == 0) {
         return false;

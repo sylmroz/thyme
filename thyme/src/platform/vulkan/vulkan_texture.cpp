@@ -6,22 +6,21 @@ namespace th::vulkan {
 
 [[nodiscard]] static auto createImageSampler(const vk::Device device, const float maxSamplerAnisotropy,
                                              const uint32_t mipLevels) -> vk::UniqueSampler {
-    return device.createSamplerUnique(vk::SamplerCreateInfo(vk::SamplerCreateFlags(),
-                                                            vk::Filter::eLinear,
-                                                            vk::Filter::eLinear,
-                                                            vk::SamplerMipmapMode::eLinear,
-                                                            vk::SamplerAddressMode::eRepeat,
-                                                            vk::SamplerAddressMode::eRepeat,
-                                                            vk::SamplerAddressMode::eRepeat,
-                                                            0.0f,
-                                                            vk::True,
-                                                            maxSamplerAnisotropy,
-                                                            vk::False,
-                                                            vk::CompareOp::eAlways,
-                                                            0.0f,
-                                                            static_cast<float>(mipLevels),
-                                                            vk::BorderColor::eIntOpaqueBlack,
-                                                            vk::False));
+    return device.createSamplerUnique(vk::SamplerCreateInfo{ .magFilter = vk::Filter::eLinear,
+                                                             .minFilter = vk::Filter::eLinear,
+                                                             .mipmapMode = vk::SamplerMipmapMode::eLinear,
+                                                             .addressModeU = vk::SamplerAddressMode::eRepeat,
+                                                             .addressModeV = vk::SamplerAddressMode::eRepeat,
+                                                             .addressModeW = vk::SamplerAddressMode::eRepeat,
+                                                             .mipLodBias = 0.0f,
+                                                             .anisotropyEnable = vk::True,
+                                                             .maxAnisotropy = maxSamplerAnisotropy,
+                                                             .compareEnable = vk::False,
+                                                             .compareOp = vk::CompareOp::eAlways,
+                                                             .minLod = 0.0f,
+                                                             .maxLod = static_cast<float>(mipLevels),
+                                                             .borderColor = vk::BorderColor::eIntOpaqueBlack,
+                                                             .unnormalizedCoordinates = vk::False });
 }
 
 ImageMemory::ImageMemory(const VulkanDevice& device, const vk::Extent2D resolution, const vk::Format format,
@@ -38,30 +37,34 @@ void ImageMemory::resize(const vk::Extent2D resolution) {
         return;
     }
     m_resolution = resolution;
-    m_image = m_device.logicalDevice.createImageUnique(
-            vk::ImageCreateInfo(vk::ImageCreateFlags(),
-                                vk::ImageType::e2D,
-                                m_format,
-                                vk::Extent3D(m_resolution.width, m_resolution.height, 1),
-                                m_mipLevels,
-                                1,
-                                m_msaa,
-                                vk::ImageTiling::eOptimal,
-                                m_imageUsageFlags,
-                                vk::SharingMode::eExclusive));
+    const auto createInfo = vk::ImageCreateInfo{
+        .imageType = vk::ImageType::e2D,
+        .format = m_format,
+        .extent = vk::Extent3D{ .width = m_resolution.width, .height = m_resolution.height, .depth = 1 },
+        .mipLevels = m_mipLevels,
+        .arrayLayers = 1,
+        .samples = m_msaa,
+        .tiling = vk::ImageTiling::eOptimal,
+        .usage = m_imageUsageFlags,
+        .sharingMode = vk::SharingMode::eExclusive,
+    };
+    m_image = m_device.logicalDevice.createImageUnique(createInfo);
     vk::MemoryRequirements memoryRequirements;
     m_device.logicalDevice.getImageMemoryRequirements(m_image.get(), &memoryRequirements);
-    m_memory = m_device.logicalDevice.allocateMemoryUnique(vk::MemoryAllocateInfo(
-            memoryRequirements.size,
-            findMemoryType(m_device.physicalDevice, memoryRequirements.memoryTypeBits, m_memoryPropertyFlags)));
+    m_memory = m_device.logicalDevice.allocateMemoryUnique(vk::MemoryAllocateInfo{
+            .allocationSize = memoryRequirements.size,
+            .memoryTypeIndex = findMemoryType(
+                    m_device.physicalDevice, memoryRequirements.memoryTypeBits, m_memoryPropertyFlags) });
     m_device.logicalDevice.bindImageMemory(m_image.get(), m_memory.get(), 0);
     m_imageView = m_device.logicalDevice.createImageViewUnique(
-            vk::ImageViewCreateInfo(vk::ImageViewCreateFlags(),
-                                    m_image.get(),
-                                    vk::ImageViewType::e2D,
-                                    m_format,
-                                    vk::ComponentMapping(),
-                                    vk::ImageSubresourceRange(m_aspectFlags, 0, m_mipLevels, 0, 1)));
+            vk::ImageViewCreateInfo{ .image = m_image.get(),
+                                     .viewType = vk::ImageViewType::e2D,
+                                     .format = m_format,
+                                     .subresourceRange = vk::ImageSubresourceRange{ .aspectMask = m_aspectFlags,
+                                                                                    .baseMipLevel = 0,
+                                                                                    .levelCount = m_mipLevels,
+                                                                                    .baseArrayLayer = 0,
+                                                                                    .layerCount = 1 } });
 }
 void ImageMemory::transitImageLayout(ImageLayoutTransition layoutTransition) {
     m_device.singleTimeCommand(
@@ -144,15 +147,15 @@ void Vulkan2DTexture::generateMipmaps() const {
     singleTimeCommand(device, commandPool, graphicsQueue, [&](const vk::CommandBuffer& commandBuffer) {
         const auto getImageBarrier =
                 [image = m_imageMemory.getImage()](const uint32_t mipLevel) -> vk::ImageMemoryBarrier {
-            return vk::ImageMemoryBarrier(
-                    vk::AccessFlagBits::eTransferWrite,
-                    vk::AccessFlagBits::eTransferRead,
-                    vk::ImageLayout::eTransferDstOptimal,
-                    vk::ImageLayout::eTransferSrcOptimal,
-                    vk::QueueFamilyIgnored,
-                    vk::QueueFamilyIgnored,
-                    image,
-                    vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, mipLevel, 1, 0, 1));
+            return vk::ImageMemoryBarrier({ .srcAccessMask = vk::AccessFlagBits::eTransferWrite,
+                                            .dstAccessMask = vk::AccessFlagBits::eTransferRead,
+                                            .oldLayout = vk::ImageLayout::eTransferDstOptimal,
+                                            .newLayout = vk::ImageLayout::eTransferSrcOptimal,
+                                            .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                                            .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                                            .image = image,
+                                            .subresourceRange = vk::ImageSubresourceRange(
+                                                    vk::ImageAspectFlagBits::eColor, mipLevel, 1, 0, 1) });
         };
         const auto getImageBlit =
                 [](const uint32_t mipLevel, const int mipWidth, const int mipHeight) -> vk::ImageBlit {

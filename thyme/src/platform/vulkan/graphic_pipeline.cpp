@@ -33,9 +33,12 @@ ScenePipeline::ScenePipeline(const VulkanDevice& device,
     constexpr auto bindings = std::array{ uboBinding, samplerLayoutBinding };
 
     m_descriptorSetLayout = device.logicalDevice.createDescriptorSetLayoutUnique(
-            vk::DescriptorSetLayoutCreateInfo(vk::DescriptorSetLayoutCreateFlags{}, bindings));
-    m_pipelineLayout = device.logicalDevice.createPipelineLayoutUnique(
-            vk::PipelineLayoutCreateInfo(vk::PipelineLayoutCreateFlags(), 1, &(m_descriptorSetLayout.get())));
+            vk::DescriptorSetLayoutCreateInfo(vk::DescriptorSetLayoutCreateInfo{
+                    .bindingCount = static_cast<uint32_t>(bindings.size()), .pBindings = bindings.data() }));
+    m_pipelineLayout = device.logicalDevice.createPipelineLayoutUnique(vk::PipelineLayoutCreateInfo{
+            .setLayoutCount = 1,
+            .pSetLayouts = &(m_descriptorSetLayout.get()),
+    });
     m_descriptorPool = createDescriptorPool(
             device.logicalDevice,
             { vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, m_models.size()),
@@ -43,25 +46,25 @@ ScenePipeline::ScenePipeline(const VulkanDevice& device,
 
     const auto descriptorSetLayouts = std::vector{ m_models.size(), m_descriptorSetLayout.get() };
     m_descriptorSets = device.logicalDevice.allocateDescriptorSets(
-            vk::DescriptorSetAllocateInfo(m_descriptorPool.get(), descriptorSetLayouts));
+            vk::DescriptorSetAllocateInfo{ .descriptorPool = m_descriptorPool.get(),
+                                           .descriptorSetCount = static_cast<uint32_t>(descriptorSetLayouts.size()),
+                                           .pSetLayouts = descriptorSetLayouts.data() });
 
     const auto currentDir = std::filesystem::current_path();
     const auto shaderPath = currentDir / "../../../../thyme/include/thyme/platform/shaders/spv";
     const auto shaderAbsolutePath = std::filesystem::absolute(shaderPath);
     const auto vertShader = readFile(shaderAbsolutePath / "triangle.vert.spv");
     const auto fragShader = readFile(shaderAbsolutePath / "triangle.frag.spv");
-    const auto vertexShaderModule = device.logicalDevice.createShaderModuleUnique(vk::ShaderModuleCreateInfo(
-            vk::ShaderModuleCreateFlagBits(), vertShader.size(), reinterpret_cast<const uint32_t*>(vertShader.data())));
-    const auto fragmentShaderModule = device.logicalDevice.createShaderModuleUnique(vk::ShaderModuleCreateInfo(
-            vk::ShaderModuleCreateFlagBits(), fragShader.size(), reinterpret_cast<const uint32_t*>(fragShader.data())));
-    const auto vertexShaderStageInfo = vk::PipelineShaderStageCreateInfo(vk::PipelineShaderStageCreateFlagBits(),
-                                                                         vk::ShaderStageFlagBits::eVertex,
-                                                                         vertexShaderModule.get(),
-                                                                         "main");
-    const auto fragmentShaderStageInfo = vk::PipelineShaderStageCreateInfo(vk::PipelineShaderStageCreateFlagBits(),
-                                                                           vk::ShaderStageFlagBits::eFragment,
-                                                                           fragmentShaderModule.get(),
-                                                                           "main");
+    const auto vertexShaderModule = device.logicalDevice.createShaderModuleUnique(vk::ShaderModuleCreateInfo{
+            .codeSize = vertShader.size(), .pCode = reinterpret_cast<const uint32_t*>(vertShader.data()) });
+    const auto fragmentShaderModule = device.logicalDevice.createShaderModuleUnique(vk::ShaderModuleCreateInfo{
+            .codeSize = fragShader.size(), .pCode = reinterpret_cast<const uint32_t*>(fragShader.data()) });
+    const auto vertexShaderStageInfo = vk::PipelineShaderStageCreateInfo{ .stage = vk::ShaderStageFlagBits::eVertex,
+                                                                          .module = vertexShaderModule.get(),
+                                                                          .pName = "main" };
+    const auto fragmentShaderStageInfo = vk::PipelineShaderStageCreateInfo{ .stage = vk::ShaderStageFlagBits::eFragment,
+                                                                            .module = fragmentShaderModule.get(),
+                                                                            .pName = "main" };
     const auto shaderStages = std::vector{ vertexShaderStageInfo, fragmentShaderStageInfo };
 
     m_pipeline = createGraphicsPipeline(
@@ -75,12 +78,23 @@ ScenePipeline::ScenePipeline(const VulkanDevice& device,
         const auto descriptorBufferInfo = model.getUniformBufferObject().getDescriptorBufferInfos();
         const auto descriptorImageInfo =
                 model.getTexture().getDescriptorImageInfo(vk::ImageLayout::eShaderReadOnlyOptimal);
-        const auto writeDescriptorSets = std::array{
-            vk::WriteDescriptorSet(
-                    descriptorSet, 0, 0, vk::DescriptorType::eUniformBuffer, {}, { descriptorBufferInfo }),
-            vk::WriteDescriptorSet(
-                    descriptorSet, 1, 0, vk::DescriptorType::eCombinedImageSampler, { descriptorImageInfo }, {})
-        };
+        const auto writeDescriptorSets =
+                std::array{ vk::WriteDescriptorSet{
+                                    .dstSet = descriptorSet,
+                                    .dstBinding = 0,
+                                    .dstArrayElement = 0,
+                                    .descriptorCount = 1,
+                                    .descriptorType = vk::DescriptorType::eUniformBuffer,
+                                    .pBufferInfo = &descriptorBufferInfo,
+                            },
+                            vk::WriteDescriptorSet{
+                                    .dstSet = descriptorSet,
+                                    .dstBinding = 1,
+                                    .dstArrayElement = 0,
+                                    .descriptorCount = 1,
+                                    .descriptorType = vk::DescriptorType::eCombinedImageSampler,
+                                    .pImageInfo = &descriptorImageInfo,
+                            } };
         device.logicalDevice.updateDescriptorSets(writeDescriptorSets, {});
     }
 }

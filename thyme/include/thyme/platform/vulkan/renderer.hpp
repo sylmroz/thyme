@@ -3,8 +3,8 @@
 #include <thyme/platform/glfw_window.hpp>
 #include <thyme/platform/vulkan/graphic_pipeline.hpp>
 #include <thyme/platform/vulkan/gui.hpp>
-#include <thyme/platform/vulkan/swapchain.hpp>
 #include <thyme/platform/vulkan/utils.hpp>
+#include <thyme/platform/vulkan/vulkan_swapchain.hpp>
 #include <thyme/renderer/renderer.hpp>
 #include <thyme/scene/camera.hpp>
 #include <thyme/scene/model.hpp>

@@ -5,9 +5,13 @@ namespace th::vulkan {
 VulkanCommandBuffer::VulkanCommandBuffer(const vk::Device device, const vk::CommandPool commandPool,
                                          const vk::Queue graphicQueue)
     : m_device{ device }, m_graphicQueue{ graphicQueue } {
-    m_fence = m_device.createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
-    m_commandBuffer = m_device.allocateCommandBuffers(
-                                      vk::CommandBufferAllocateInfo(commandPool, vk::CommandBufferLevel::ePrimary, 1))
+    m_fence = m_device.createFenceUnique(vk::FenceCreateInfo{ .flags = vk::FenceCreateFlagBits::eSignaled });
+
+    m_commandBuffer = m_device.allocateCommandBuffers(vk::CommandBufferAllocateInfo{
+                                                              .commandPool = commandPool,
+                                                              .level = vk::CommandBufferLevel::ePrimary,
+                                                              .commandBufferCount = 1,
+                                                      })
                               .front();
 }
 
@@ -31,8 +35,17 @@ void VulkanCommandBuffer::submit(const vk::PipelineStageFlags stage, const vk::S
     m_commandBuffer.end();
     const auto dependants = m_dependSemaphores | std::views::transform([](auto& semaphore) { return semaphore.get(); })
                             | std::ranges::to<std::vector>();
-    const auto submitInfo = vk::SubmitInfo(dependants, { stage }, { m_commandBuffer }, { renderSemaphore });
-    m_graphicQueue.submit(submitInfo, m_fence.get());
+    m_graphicQueue.submit(
+            vk::SubmitInfo{
+                    .waitSemaphoreCount = static_cast<uint32_t>(m_dependSemaphores.size()),
+                    .pWaitSemaphores = dependants.data(),
+                    .pWaitDstStageMask = &stage,
+                    .commandBufferCount = 1,
+                    .pCommandBuffers = &m_commandBuffer,
+                    .signalSemaphoreCount = 1,
+                    .pSignalSemaphores = &renderSemaphore,
+            },
+            m_fence.get());
 }
 
 VulkanCommandBuffersPool::VulkanCommandBuffersPool(const vk::Device device, const vk::CommandPool commandPool,
