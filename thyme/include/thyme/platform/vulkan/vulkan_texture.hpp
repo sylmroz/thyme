@@ -8,6 +8,9 @@
 
 namespace th::vulkan {
 
+void copyImage(vk::CommandBuffer commandBuffer, vk::Image srcImage, vk::Extent3D srcResolution, vk::Image dstImage);
+void blitImage(vk::CommandBuffer commandBuffer, vk::Image srcImage, vk::Extent3D srcResolution, vk::Image dstImage, vk::Extent3D dstResolution);
+
 class ImageMemory {
 public:
     ImageMemory(const VulkanDevice& device, vk::Extent2D resolution, vk::Format format,
@@ -29,6 +32,7 @@ public:
     void resize(vk::Extent2D resolution);
 
     void transitImageLayout(ImageLayoutTransition layoutTransition);
+    void transitImageLayout(vk::CommandBuffer commandBuffer, ImageLayoutTransition layoutTransition);
 
 private:
     vk::UniqueImage m_image;

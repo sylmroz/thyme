@@ -30,7 +30,7 @@ auto SwapChainData::createSwapChain(const VulkanDevice& device, const SwapChainS
                                                 .imageColorSpace = surfaceFormat.colorSpace,
                                                 .imageExtent = swapChainExtent,
                                                 .imageArrayLayers = 1,
-                                                .imageUsage = vk::ImageUsageFlagBits::eColorAttachment,
+                                                .imageUsage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst,
                                                 .preTransform = capabilities.currentTransform,
                                                 .compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,
                                                 .presentMode = presetMode,

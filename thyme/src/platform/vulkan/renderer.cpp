@@ -73,9 +73,7 @@ void VulkanRenderer::draw() {
     const auto colorAttachment = vk::RenderingAttachmentInfo{
         .imageView = m_colorImageMemory.getImageView(),
         .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
-        .resolveMode = vk::ResolveModeFlagBits::eAverage,
-        .resolveImageView = swapChainImage.imageView,
-        .resolveImageLayout = vk::ImageLayout::eColorAttachmentOptimal,
+        .resolveMode = vk::ResolveModeFlagBits::eNone,
         .loadOp = vk::AttachmentLoadOp::eClear,
         .storeOp = vk::AttachmentStoreOp::eStore,
         .clearValue = clearColorValues,
@@ -104,8 +102,32 @@ void VulkanRenderer::draw() {
     for (const auto& pipeline : m_pipelines) {
         pipeline->draw(commandBuffer);
     }
+    commandBuffer.endRendering();
+
+    const auto guiColorAttachment = vk::RenderingAttachmentInfo{
+        .imageView = m_colorImageMemory.getImageView(),
+        .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
+        .resolveMode = vk::ResolveModeFlagBits::eAverage,
+        .resolveImageView = swapChainImage.imageView,
+        .resolveImageLayout = vk::ImageLayout::eColorAttachmentOptimal,
+        .loadOp = vk::AttachmentLoadOp::eLoad,
+        .storeOp = vk::AttachmentStoreOp::eStore,
+    };
+
+    const auto guiRenderingInfo = vk::RenderingInfo{
+        .renderArea =
+                vk::Rect2D{ .offset = vk::Offset2D{ .x = 0, .y = 0 }, .extent = m_swapChain.getSwapChainExtent() },
+        .layerCount = 1,
+        .viewMask = 0,
+        .colorAttachmentCount = 1,
+        .pColorAttachments = &guiColorAttachment,
+    };
+
+    commandBuffer.beginRendering(guiRenderingInfo);
+
     m_gui.start();
     m_gui.draw(commandBuffer);
+
     commandBuffer.endRendering();
     m_swapChain.preparePresentMode();
     m_swapChain.submitFrame();

@@ -21,17 +21,17 @@ Gui::Gui(const VulkanDevice& device,
     m_pipelineCache = device.logicalDevice.createPipelineCacheUnique(vk::PipelineCacheCreateInfo());
     initInfo.PipelineCache = m_pipelineCache.get();
     m_descriptorPool = createDescriptorPool(device.logicalDevice,
-                                            { vk::DescriptorPoolSize(vk::DescriptorType::eSampler, 2),
-                                              vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, 2),
-                                              vk::DescriptorPoolSize(vk::DescriptorType::eSampledImage, 2),
-                                              vk::DescriptorPoolSize(vk::DescriptorType::eStorageImage, 2),
-                                              vk::DescriptorPoolSize(vk::DescriptorType::eUniformTexelBuffer, 2),
-                                              vk::DescriptorPoolSize(vk::DescriptorType::eStorageTexelBuffer, 2),
-                                              vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, 2),
-                                              vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, 2),
-                                              vk::DescriptorPoolSize(vk::DescriptorType::eUniformBufferDynamic, 2),
-                                              vk::DescriptorPoolSize(vk::DescriptorType::eStorageBufferDynamic, 2),
-                                              vk::DescriptorPoolSize(vk::DescriptorType::eInputAttachment, 2) });
+                                            { vk::DescriptorPoolSize(vk::DescriptorType::eSampler, 1000),
+                                              vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, 1000),
+                                              vk::DescriptorPoolSize(vk::DescriptorType::eSampledImage, 1000),
+                                              vk::DescriptorPoolSize(vk::DescriptorType::eStorageImage, 1000),
+                                              vk::DescriptorPoolSize(vk::DescriptorType::eUniformTexelBuffer, 1000),
+                                              vk::DescriptorPoolSize(vk::DescriptorType::eStorageTexelBuffer, 1000),
+                                              vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, 1000),
+                                              vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, 1000),
+                                              vk::DescriptorPoolSize(vk::DescriptorType::eUniformBufferDynamic, 1000),
+                                              vk::DescriptorPoolSize(vk::DescriptorType::eStorageBufferDynamic, 1000),
+                                              vk::DescriptorPoolSize(vk::DescriptorType::eInputAttachment, 1000) });
     initInfo.DescriptorPool = m_descriptorPool.get();
     initInfo.Subpass = VK_SUBPASS_EXTERNAL;
     initInfo.MinImageCount = m_context.imageCount;
@@ -40,8 +40,7 @@ Gui::Gui(const VulkanDevice& device,
     initInfo.UseDynamicRendering = true;
     initInfo.PipelineRenderingCreateInfo = vk::PipelineRenderingCreateInfo{
         .colorAttachmentCount = 1,
-        .pColorAttachmentFormats = &m_context.surfaceFormat.format,
-        .depthAttachmentFormat = m_context.depthFormat,
+        .pColorAttachmentFormats = &m_context.surfaceFormat.format
     };
     initInfo.Allocator = nullptr;
     initInfo.CheckVkResultFn = [](const auto vkResult) {
@@ -52,6 +51,7 @@ Gui::Gui(const VulkanDevice& device,
     };
     ImGui_ImplVulkan_Init(&initInfo);
 }
+
 void Gui::draw(const vk::CommandBuffer commandBuffer) {
     bool showDemoWindow = true;
     ImGui::ShowDemoWindow(&showDemoWindow);

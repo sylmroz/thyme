@@ -4,7 +4,6 @@
 #include <vector>
 
 #include <fmt/format.h>
-#include <glm/vec3.hpp>
 #include <vulkan/vulkan.hpp>
 
 #include <thyme/core/common_structs.hpp>
@@ -226,7 +225,7 @@ void transitImageLayout(vk::CommandBuffer commandBuffer, vk::Image image, ImageL
                         ImagePipelineStageTransition stageTransition, ImageAccessFlagsTransition accessFlagsTransition,
                         vk::ImageAspectFlags aspectFlags, uint32_t mipLevels);
 
-inline void copyBufferToImage(vk::Device device, const vk::CommandPool commandPool, vk::Queue graphicQueue,
+inline void copyBufferToImage(vk::Device device, const vk::CommandPool commandPool, const vk::Queue graphicQueue,
                               const vk::Buffer buffer, const vk::Image image, const Resolution resolution) {
     singleTimeCommand(device, commandPool, graphicQueue, [&](const vk::CommandBuffer commandBuffer) {
         const auto region = vk::BufferImageCopy(0,

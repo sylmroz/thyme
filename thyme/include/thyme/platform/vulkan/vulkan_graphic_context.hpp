@@ -9,6 +9,7 @@ struct VulkanGraphicContext {
     uint32_t maxFramesInFlight;
     uint32_t imageCount;
     vk::Format depthFormat;
+    vk::Format colorFormat;
     vk::SurfaceFormatKHR surfaceFormat;
     vk::PresentModeKHR presentMode;
 };

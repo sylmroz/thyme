@@ -23,6 +23,65 @@ namespace th::vulkan {
                                                              .unnormalizedCoordinates = vk::False });
 }
 
+void copyImage(const vk::CommandBuffer commandBuffer, const vk::Image srcImage, const vk::Extent3D resolution,
+               const vk::Image dstImage) {
+    const auto copyRegion = vk::ImageCopy2{
+        .extent = resolution,
+    };
+    commandBuffer.copyImage2(vk::CopyImageInfo2{ .srcImage = srcImage,
+                                                 .srcImageLayout = vk::ImageLayout::eTransferSrcOptimal,
+                                                 .dstImage = dstImage,
+                                                 .dstImageLayout = vk::ImageLayout::eTransferDstOptimal,
+                                                 .regionCount = 1,
+                                                 .pRegions = &copyRegion });
+}
+
+void blitImage(const vk::CommandBuffer commandBuffer, const vk::Image srcImage, const vk::Extent3D srcResolution,
+               const vk::Image dstImage, const vk::Extent3D dstResolution) {
+
+    const auto blitRegion = vk::ImageBlit2{
+        .srcSubresource =
+                vk::ImageSubresourceLayers{
+                        .aspectMask = vk::ImageAspectFlagBits::eColor,
+                        .mipLevel = 0,
+                        .baseArrayLayer = 0,
+                        .layerCount = 1,
+                },
+        .srcOffsets =
+                std::array{
+                        vk::Offset3D{},
+                        vk::Offset3D{ .x = static_cast<int32_t>(srcResolution.width),
+                                      .y = static_cast<int32_t>(srcResolution.height),
+                                      .z = static_cast<int32_t>(srcResolution.depth) },
+                },
+        .dstSubresource =
+                vk::ImageSubresourceLayers{
+                        .aspectMask = vk::ImageAspectFlagBits::eColor,
+                        .mipLevel = 0,
+                        .baseArrayLayer = 0,
+                        .layerCount = 1,
+                },
+        .dstOffsets =
+                std::array{
+                        vk::Offset3D{},
+                        vk::Offset3D{ .x = static_cast<int32_t>(dstResolution.width),
+                                      .y = static_cast<int32_t>(dstResolution.height),
+                                      .z = static_cast<int32_t>(dstResolution.depth) },
+                },
+    };
+
+    const auto blitInfo = vk::BlitImageInfo2{
+        .srcImage = srcImage,
+        .srcImageLayout = vk::ImageLayout::eTransferSrcOptimal,
+        .dstImage = dstImage,
+        .dstImageLayout = vk::ImageLayout::eTransferDstOptimal,
+        .regionCount = 1,
+        .pRegions = &blitRegion,
+        .filter = vk::Filter::eLinear,
+    };
+    commandBuffer.blitImage2(blitInfo);
+}
+
 ImageMemory::ImageMemory(const VulkanDevice& device, const vk::Extent2D resolution, const vk::Format format,
                          const vk::ImageUsageFlags imageUsageFlags, const vk::MemoryPropertyFlags memoryPropertyFlags,
                          const vk::ImageAspectFlags aspectFlags, const vk::SampleCountFlagBits msaa,
@@ -73,6 +132,11 @@ void ImageMemory::transitImageLayout(ImageLayoutTransition layoutTransition) {
                         commandBuffer, image, layoutTransition.oldLayout, layoutTransition.newLayout, mipLevels);
             });
 }
+void ImageMemory::transitImageLayout(const vk::CommandBuffer commandBuffer,
+                                     const ImageLayoutTransition layoutTransition) {
+    vulkan::transitImageLayout(
+            commandBuffer, m_image.get(), layoutTransition.oldLayout, layoutTransition.newLayout, m_mipLevels);
+}
 
 DepthImageMemory::DepthImageMemory(const VulkanDevice& device, const vk::Extent2D resolution, const vk::Format format,
                                    const vk::SampleCountFlagBits msaa)
@@ -82,7 +146,8 @@ DepthImageMemory::DepthImageMemory(const VulkanDevice& device, const vk::Extent2
 ColorImageMemory::ColorImageMemory(const VulkanDevice& device, const vk::Extent2D resolution, const vk::Format format,
                                    const vk::SampleCountFlagBits msaa)
     : ImageMemory(device, resolution, format,
-                  vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment,
+                  vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst
+                           | vk::ImageUsageFlagBits::eColorAttachment,
                   vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor, msaa, 1) {}
 
 Vulkan2DTexture::Vulkan2DTexture(const VulkanDevice& device, const TextureData& texture, const vk::Format format)

@@ -94,7 +94,7 @@ public:
     void preparePresentMode();
     void submitFrame() override;
 
-    vk::Extent2D getSwapChainExtent() const noexcept {
+    [[nodiscard]] auto getSwapChainExtent() const noexcept -> vk::Extent2D {
         return m_swapChainExtent;
     }
 

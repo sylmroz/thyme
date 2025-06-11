@@ -27,7 +27,7 @@ GlfwWindow::GlfwWindow(const WindowConfig& config) : Window{ config } {
                           });
     glfwSetWindowUserPointer(m_window.get(), this);
 
-    glfwSetFramebufferSizeCallback(m_window.get(), [](GLFWwindow* window, int width, int height) {
+    glfwSetFramebufferSizeCallback(m_window.get(), [](GLFWwindow* window, const int width, const int height) {
         const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
         const auto state = (width == 0 || height == 0) ? WindowState::minimalized : WindowState::maximalized;
         if (state != app->m_windowState) {
@@ -57,9 +57,31 @@ GlfwWindow::GlfwWindow(const WindowConfig& config) : Window{ config } {
         const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
         app->config.eventSubject.next(MouseWheel{ { x, y } });
     });
+
+    glfwSetKeyCallback(m_window.get(), [](GLFWwindow* window, int key, int scancode, int action, int mods) {
+        const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
+        const auto& eventSubject = app->config.eventSubject;
+        if (action == GLFW_PRESS) {
+            eventSubject.next(KeyPressed(static_cast<KeyCode>(key)));
+        } else if (action == GLFW_RELEASE) {
+            eventSubject.next(KeyReleased(static_cast<KeyCode>(key)));
+        } else if (action == GLFW_REPEAT) {
+            eventSubject.next(KeyRepeated(static_cast<KeyCode>(key)));
+        }
+    });
+
+    glfwSetMouseButtonCallback(m_window.get(), [](GLFWwindow* window, int button, int action, int mods) {
+        const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
+        const auto& eventSubject = app->config.eventSubject;
+        if (action == GLFW_PRESS) {
+            eventSubject.next(MouseButtonPress(static_cast<MouseButton>(button)));
+        } else if (action == GLFW_RELEASE) {
+            eventSubject.next(MouseButtonReleased(static_cast<MouseButton>(button)));
+        }
+    });
 }
 
-std::vector<std::string> th::VulkanGlfwWindow::getRequiredInstanceExtensions() noexcept {
+auto VulkanGlfwWindow::getRequiredInstanceExtensions() noexcept -> std::vector<std::string> {
     uint32_t instanceExtensionCount{ 0 };
     auto* instanceExtensionBuffer = glfwGetRequiredInstanceExtensions(&instanceExtensionCount);
     std::vector<std::string> instanceExtension;

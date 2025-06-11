@@ -32,16 +32,16 @@ struct THYME_API WindowMaximalize{};
 
 struct THYME_API MousePosition {
     glm::vec2 pos;
-    std::string toString() const {
+    auto toString() const -> std::string {
         return fmt::format("MousePosition {{ x: {}, y: {}}}", pos.x, pos.y);
     }
 };
 
-struct THYME_API MouseButtonDown {
+struct THYME_API MouseButtonPress {
     MouseButton button;
 };
 
-struct THYME_API MouseButtonUp {
+struct THYME_API MouseButtonReleased {
     MouseButton button;
 };
 
@@ -53,7 +53,7 @@ struct THYME_API KeyPressed {
     KeyCode code;
 };
 
-struct THYME_API KeyPressedRepeated {
+struct THYME_API KeyRepeated {
     KeyCode code;
 };
 
@@ -63,9 +63,9 @@ struct THYME_API KeyReleased {
 
 using WindowEvent = std::variant<WindowResize, WindowClose, WindowMinimalize, WindowMaximalize>;
 
-using MouseEvent = std::variant<MousePosition, MouseWheel, MouseButtonDown, MouseButtonUp>;
+using MouseEvent = std::variant<MousePosition, MouseWheel, MouseButtonPress, MouseButtonReleased>;
 
-using KeyEvent = std::variant<KeyPressed, KeyReleased>;
+using KeyEvent = std::variant<KeyPressed, KeyReleased, KeyRepeated>;
 
 using Event = std::variant<WindowResize,
                            WindowClose,
@@ -73,15 +73,16 @@ using Event = std::variant<WindowResize,
                            WindowMaximalize,
                            MousePosition,
                            MouseWheel,
-                           MouseButtonDown,
-                           MouseButtonUp,
+                           MouseButtonPress,
+                           MouseButtonReleased,
                            KeyPressed,
-                           KeyPressedRepeated,
+                           KeyRepeated,
                            KeyReleased>;
 
 template <typename EventType>
 class THYME_API EventHandler {
     using event_fn = std::function<void(EventType)>;
+
 public:
     void next(const EventType& event) const noexcept {
         for (const auto& f : m_handlers | std::views::keys) {
@@ -113,10 +114,10 @@ using WindowMinimalizedEventHandler = EventHandler<WindowMinimalize>;
 using WindowMaximalizedEventHandler = EventHandler<WindowMaximalize>;
 using MousePositionEventHandler = EventHandler<MousePosition>;
 using MouseWheelEventHandler = EventHandler<MouseWheel>;
-using MouseButtonDownEventHandler = EventHandler<MouseButtonDown>;
-using MouseButtonUpEventHandler = EventHandler<MouseButtonUp>;
+using MouseButtonDownEventHandler = EventHandler<MouseButtonPress>;
+using MouseButtonUpEventHandler = EventHandler<MouseButtonReleased>;
 using KeyPressedEventHandler = EventHandler<KeyPressed>;
-using KeyPressedRepeatedEventHandler = EventHandler<KeyPressedRepeated>;
+using KeyRepeatedEventHandler = EventHandler<KeyRepeated>;
 
 template <typename Event>
 struct EventDispatcherHelper: NoCopyable {

@@ -28,28 +28,7 @@ static VKAPI_ATTR vk::Bool32 VKAPI_CALL debugCallback(const vk::DebugUtilsMessag
                                                       const vk::DebugUtilsMessageTypeFlagsEXT messageType,
                                                       const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData,
                                                       void*) {
-    static std::map<vk::DebugUtilsMessageTypeFlagBitsEXT, std::string_view> messageTypeStringMap = {
-        { vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral, "General" },
-        { vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance, "Performance" },
-        { vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation, "Validation" },
-        { vk::DebugUtilsMessageTypeFlagBitsEXT::eDeviceAddressBinding, "Device Address Biding" },
-    };
-
-    const auto messageTypeStr = [messageType] {
-        if (messageType & vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral) {
-            return messageTypeStringMap[vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral];
-        }
-        if (messageType & vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance) {
-            return messageTypeStringMap[vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance];
-        }
-        if (messageType & vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation) {
-            return messageTypeStringMap[vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation];
-        }
-        if (messageType & vk::DebugUtilsMessageTypeFlagBitsEXT::eDeviceAddressBinding) {
-            return messageTypeStringMap[vk::DebugUtilsMessageTypeFlagBitsEXT::eDeviceAddressBinding];
-        }
-        return std::string_view("Unknown");
-    }();
+    const auto messageTypeStr = vk::to_string(messageType);
     const auto message = fmt::format(
             "[{}]: Name: {}, Message: {}", messageTypeStr, pCallbackData->pMessageIdName, pCallbackData->pMessage);
     switch (messageSeverity) {
@@ -63,7 +42,7 @@ static VKAPI_ATTR vk::Bool32 VKAPI_CALL debugCallback(const vk::DebugUtilsMessag
 }
 
 
-vk::DebugUtilsMessengerCreateInfoEXT createDebugUtilsMessengerCreateInfo() {
+auto createDebugUtilsMessengerCreateInfo() -> vk::DebugUtilsMessengerCreateInfoEXT {
     constexpr auto flags =
             vk::DebugUtilsMessageSeverityFlagBitsEXT::eError | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning
             | vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
@@ -80,18 +59,6 @@ vk::DebugUtilsMessengerCreateInfoEXT createDebugUtilsMessengerCreateInfo() {
 #endif
 
 namespace th::vulkan {
-
-static constexpr auto s_deviceExtensions =
-        std::array{ vk::KHRSwapchainExtensionName, vk::KHRDynamicRenderingExtensionName };
-
-static bool deviceHasAllRequiredExtensions(const vk::PhysicalDevice& physicalDevice) {
-    const auto& availableDeviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
-    return std::ranges::all_of(s_deviceExtensions, [&availableDeviceExtensions](const auto& extension) {
-        return std::ranges::any_of(availableDeviceExtensions, [&extension](const auto& instanceExtension) {
-            return std::string_view(extension) == std::string_view(instanceExtension.extensionName);
-        });
-    });
-}
 
 UniqueInstance::UniqueInstance(const UniqueInstanceConfig& config) {
     constexpr auto appVersion = vk::makeApiVersion(0, version::major, version::minor, version::patch);
@@ -361,7 +328,7 @@ void transitImageLayout(const vk::CommandBuffer commandBuffer, const vk::Image i
                 commandBuffer,
                 image,
                 layoutTransition,
-                ImagePipelineStageTransition{ .oldStage = vk::PipelineStageFlagBits::eBottomOfPipe,
+                ImagePipelineStageTransition{ .oldStage = vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eNone,
                                               .newStage = vk::PipelineStageFlagBits::eColorAttachmentOutput },
                 ImageAccessFlagsTransition{ .oldAccess = vk::AccessFlagBits::eNone,
                                             .newAccess = vk::AccessFlagBits::eColorAttachmentWrite },
@@ -381,7 +348,16 @@ void transitImageLayout(const vk::CommandBuffer commandBuffer, const vk::Image i
                            mipLevels);
         return;
     }
-    throw std::runtime_error("failed to transit image layout!");
+    transitImageLayout(commandBuffer,
+                       image,
+                       layoutTransition,
+                       ImagePipelineStageTransition{ .oldStage = vk::PipelineStageFlagBits::eAllCommands,
+                                                     .newStage = vk::PipelineStageFlagBits::eAllCommands },
+                       ImageAccessFlagsTransition{ .oldAccess = vk::AccessFlagBits::eMemoryWrite,
+                                                   .newAccess = vk::AccessFlagBits::eMemoryWrite
+                                                                | vk::AccessFlagBits::eMemoryRead },
+                       vk::ImageAspectFlagBits::eColor,
+                       mipLevels);
 }
 
 auto findSupportedImageFormat(const vk::PhysicalDevice device, const std::span<const vk::Format> formats,
