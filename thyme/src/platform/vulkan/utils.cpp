@@ -296,9 +296,9 @@ void transitImageLayout(const vk::CommandBuffer commandBuffer, const vk::Image i
     commandBuffer.pipelineBarrier(srcStages, dstStages, vk::DependencyFlags(), 0, nullptr, 0, nullptr, 1, &barrier);
 }
 
-void transitImageLayout(const vk::CommandBuffer commandBuffer, const vk::Image image, const vk::ImageLayout oldLayout,
-                        const vk::ImageLayout newLayout, const uint32_t mipLevels) {
-    const auto layoutTransition = ImageLayoutTransition{ .oldLayout = oldLayout, .newLayout = newLayout };
+void transitImageLayout(const vk::CommandBuffer commandBuffer, const vk::Image image,
+                        const ImageLayoutTransition layoutTransition, const uint32_t mipLevels) {
+    const auto [oldLayout, newLayout] = layoutTransition;
     if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal) {
         transitImageLayout(commandBuffer,
                            image,
@@ -328,7 +328,8 @@ void transitImageLayout(const vk::CommandBuffer commandBuffer, const vk::Image i
                 commandBuffer,
                 image,
                 layoutTransition,
-                ImagePipelineStageTransition{ .oldStage = vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eNone,
+                ImagePipelineStageTransition{ .oldStage = vk::PipelineStageFlagBits::eColorAttachmentOutput
+                                                          | vk::PipelineStageFlagBits::eNone,
                                               .newStage = vk::PipelineStageFlagBits::eColorAttachmentOutput },
                 ImageAccessFlagsTransition{ .oldAccess = vk::AccessFlagBits::eNone,
                                             .newAccess = vk::AccessFlagBits::eColorAttachmentWrite },

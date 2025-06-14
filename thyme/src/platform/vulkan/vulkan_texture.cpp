@@ -82,7 +82,7 @@ void blitImage(const vk::CommandBuffer commandBuffer, const vk::Image srcImage, 
     commandBuffer.blitImage2(blitInfo);
 }
 
-ImageMemory::ImageMemory(const VulkanDevice& device, const vk::Extent2D resolution, const vk::Format format,
+ImageMemory::ImageMemory(const VulkanDevice& device, const vk::Extent3D resolution, const vk::Format format,
                          const vk::ImageUsageFlags imageUsageFlags, const vk::MemoryPropertyFlags memoryPropertyFlags,
                          const vk::ImageAspectFlags aspectFlags, const vk::SampleCountFlagBits msaa,
                          const uint32_t mipLevels)
@@ -92,14 +92,18 @@ ImageMemory::ImageMemory(const VulkanDevice& device, const vk::Extent2D resoluti
 }
 
 void ImageMemory::resize(const vk::Extent2D resolution) {
-    if (resolution.width == m_resolution.width && resolution.height == m_resolution.height) {
+    resize(vk::Extent3D{ .width = resolution.width, .height = resolution.height, .depth = 1 });
+}
+
+void ImageMemory::resize(const vk::Extent3D resolution) {
+    if (resolution == m_extent) {
         return;
     }
-    m_resolution = resolution;
+    m_extent = resolution;
     const auto createInfo = vk::ImageCreateInfo{
         .imageType = vk::ImageType::e2D,
         .format = m_format,
-        .extent = vk::Extent3D{ .width = m_resolution.width, .height = m_resolution.height, .depth = 1 },
+        .extent = m_extent,
         .mipLevels = m_mipLevels,
         .arrayLayers = 1,
         .samples = m_msaa,
@@ -128,31 +132,39 @@ void ImageMemory::resize(const vk::Extent2D resolution) {
 void ImageMemory::transitImageLayout(ImageLayoutTransition layoutTransition) {
     m_device.singleTimeCommand(
             [layoutTransition, image = m_image.get(), mipLevels = m_mipLevels](const vk::CommandBuffer commandBuffer) {
-                vulkan::transitImageLayout(
-                        commandBuffer, image, layoutTransition.oldLayout, layoutTransition.newLayout, mipLevels);
+                vulkan::transitImageLayout(commandBuffer, image, layoutTransition, mipLevels);
             });
 }
 void ImageMemory::transitImageLayout(const vk::CommandBuffer commandBuffer,
                                      const ImageLayoutTransition layoutTransition) {
-    vulkan::transitImageLayout(
-            commandBuffer, m_image.get(), layoutTransition.oldLayout, layoutTransition.newLayout, m_mipLevels);
+    vulkan::transitImageLayout(commandBuffer, m_image.get(), layoutTransition, m_mipLevels);
+}
+
+void ImageMemory::copyTo(const vk::CommandBuffer commandBuffer, const ImageMemory& dstImage) {
+    copyImage(commandBuffer, m_image.get(), m_extent, dstImage.getImage());
+}
+void ImageMemory::blitTo(const vk::CommandBuffer commandBuffer, const ImageMemory& dstImage) {
+    blitImage(commandBuffer, m_image.get(), m_extent, dstImage.getImage(), dstImage.getExtent());
 }
 
 DepthImageMemory::DepthImageMemory(const VulkanDevice& device, const vk::Extent2D resolution, const vk::Format format,
                                    const vk::SampleCountFlagBits msaa)
-    : ImageMemory(device, resolution, format, vk::ImageUsageFlagBits::eDepthStencilAttachment,
-                  vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eDepth, msaa, 1) {}
+    : ImageMemory(device, vk::Extent3D{ .width = resolution.width, .height = resolution.height, .depth = 1 }, format,
+                  vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal,
+                  vk::ImageAspectFlagBits::eDepth, msaa, 1) {}
 
 ColorImageMemory::ColorImageMemory(const VulkanDevice& device, const vk::Extent2D resolution, const vk::Format format,
                                    const vk::SampleCountFlagBits msaa)
-    : ImageMemory(device, resolution, format,
+    : ImageMemory(device, vk::Extent3D{ .width = resolution.width, .height = resolution.height, .depth = 1 }, format,
                   vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst
-                           | vk::ImageUsageFlagBits::eColorAttachment,
+                          | vk::ImageUsageFlagBits::eColorAttachment,
                   vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor, msaa, 1) {}
 
 Vulkan2DTexture::Vulkan2DTexture(const VulkanDevice& device, const TextureData& texture, const vk::Format format)
     : m_imageMemory{ ImageMemory(device,
-                                 vk::Extent2D(texture.getResolution().width, texture.getResolution().height),
+                                 vk::Extent3D{ .width = texture.getResolution().width,
+                                               .height = texture.getResolution().height,
+                                               .depth = 1 },
                                  format,
                                  vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst
                                          | vk::ImageUsageFlagBits::eSampled,
@@ -169,7 +181,7 @@ Vulkan2DTexture::Vulkan2DTexture(const VulkanDevice& device, const TextureData& 
 
 void Vulkan2DTexture::setData(const TextureData& texture) {
     m_extent = vk::Extent2D(texture.getResolution().width, texture.getResolution().height);
-    m_imageMemory.resize(m_extent);
+    m_imageMemory.resize(vk::Extent3D{ .width = m_extent.width, .height = m_extent.height, .depth = 1 });
     m_mipLevels = texture.getMipLevels();
 
     const auto data = texture.getData();

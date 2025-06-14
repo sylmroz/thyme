@@ -40,7 +40,7 @@ Gui::Gui(const VulkanDevice& device,
     initInfo.UseDynamicRendering = true;
     initInfo.PipelineRenderingCreateInfo = vk::PipelineRenderingCreateInfo{
         .colorAttachmentCount = 1,
-        .pColorAttachmentFormats = &m_context.surfaceFormat.format
+        .pColorAttachmentFormats = &m_context.colorFormat,
     };
     initInfo.Allocator = nullptr;
     initInfo.CheckVkResultFn = [](const auto vkResult) {

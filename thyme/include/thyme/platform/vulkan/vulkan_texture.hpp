@@ -13,7 +13,7 @@ void blitImage(vk::CommandBuffer commandBuffer, vk::Image srcImage, vk::Extent3D
 
 class ImageMemory {
 public:
-    ImageMemory(const VulkanDevice& device, vk::Extent2D resolution, vk::Format format,
+    ImageMemory(const VulkanDevice& device, vk::Extent3D resolution, vk::Format format,
                 vk::ImageUsageFlags imageUsageFlags, vk::MemoryPropertyFlags memoryPropertyFlags,
                 vk::ImageAspectFlags aspectFlags, vk::SampleCountFlagBits msaa, uint32_t mipLevels);
 
@@ -29,10 +29,18 @@ public:
         return m_imageView.get();
     }
 
+    [[nodiscard]] auto getExtent() const noexcept -> vk::Extent3D {
+        return m_extent;
+    }
+
     void resize(vk::Extent2D resolution);
+    void resize(vk::Extent3D resolution);
 
     void transitImageLayout(ImageLayoutTransition layoutTransition);
     void transitImageLayout(vk::CommandBuffer commandBuffer, ImageLayoutTransition layoutTransition);
+
+    void copyTo(vk::CommandBuffer commandBuffer, const ImageMemory& dstImage);
+    void blitTo(vk::CommandBuffer commandBuffer, const ImageMemory& dstImage);
 
 private:
     vk::UniqueImage m_image;
@@ -45,7 +53,7 @@ private:
     vk::ImageAspectFlags m_aspectFlags;
     vk::SampleCountFlagBits m_msaa;
     uint32_t m_mipLevels{ 1 };
-    vk::Extent2D m_resolution{};
+    vk::Extent3D m_extent{};
 
     VulkanDevice m_device;
 };

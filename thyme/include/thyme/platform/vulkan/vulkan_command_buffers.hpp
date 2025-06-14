@@ -14,11 +14,11 @@ class VulkanCommandBuffer {
 public:
     VulkanCommandBuffer(vk::Device device, vk::CommandPool commandPool, vk::Queue graphicQueue);
 
-    vk::CommandBuffer getBuffer() const {
+    [[nodiscard]] auto getBuffer() const -> vk::CommandBuffer{
         return m_commandBuffer;
     }
 
-    vk::Fence getFence() const {
+    [[nodiscard]] auto getFence() const -> vk::Fence {
         return m_fence.get();
     }
 
@@ -33,11 +33,13 @@ public:
         m_dependSemaphores.emplace_back(std::move(dependSemaphore));
     }
 
-    bool isSubmitted() const {
+    auto isSubmitted() const -> bool {
         return m_submitted;
     }
 
 private:
+    bool m_submitted{ true };
+
     vk::UniqueFence m_fence;
     vk::CommandBuffer m_commandBuffer;
     vk::UniqueSemaphore m_semaphore;
@@ -45,15 +47,13 @@ private:
     vk::Device m_device;
     vk::Queue m_graphicQueue;
     std::vector<vk::UniqueSemaphore> m_dependSemaphores;
-
-    bool m_submitted{ true };
 };
 
 class VulkanCommandBuffersPool {
 public:
     VulkanCommandBuffersPool(vk::Device device, vk::CommandPool commandPool, vk::Queue graphicQueue,
                              std::size_t capacity);
-    VulkanCommandBuffer& get() {
+    [[nodiscard]] auto get() -> VulkanCommandBuffer& {
         auto& currentBuffer = m_commandBuffers[m_current];
         if (currentBuffer.isSubmitted()) {
             currentBuffer.reset();

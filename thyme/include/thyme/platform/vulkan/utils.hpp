@@ -218,8 +218,8 @@ struct ImageAccessFlagsTransition {
     vk::AccessFlags newAccess;
 };
 
-void transitImageLayout(vk::CommandBuffer commandBuffer, vk::Image image, vk::ImageLayout oldLayout,
-                        vk::ImageLayout newLayout, uint32_t mipLevels);
+void transitImageLayout(vk::CommandBuffer commandBuffer, vk::Image image, ImageLayoutTransition layoutTransition,
+                        uint32_t mipLevels);
 
 void transitImageLayout(vk::CommandBuffer commandBuffer, vk::Image image, ImageLayoutTransition layoutTransition,
                         ImagePipelineStageTransition stageTransition, ImageAccessFlagsTransition accessFlagsTransition,

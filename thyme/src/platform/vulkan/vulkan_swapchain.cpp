@@ -30,7 +30,8 @@ auto SwapChainData::createSwapChain(const VulkanDevice& device, const SwapChainS
                                                 .imageColorSpace = surfaceFormat.colorSpace,
                                                 .imageExtent = swapChainExtent,
                                                 .imageArrayLayers = 1,
-                                                .imageUsage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst,
+                                                .imageUsage = vk::ImageUsageFlagBits::eColorAttachment
+                                                              | vk::ImageUsageFlagBits::eTransferDst,
                                                 .preTransform = capabilities.currentTransform,
                                                 .compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,
                                                 .presentMode = presetMode,
@@ -99,8 +100,17 @@ void VulkanSwapChain::prepareRenderMode() {
     setCommandBufferFrameSize(commandBuffer, m_swapChainExtent);
     transitImageLayout(commandBuffer,
                        getCurrentSwapChainFrame().image,
-                       vk::ImageLayout::eUndefined,
-                       vk::ImageLayout::eColorAttachmentOptimal,
+                       ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eUndefined,
+                                              .newLayout = vk::ImageLayout::eTransferDstOptimal },
+                       ImagePipelineStageTransition{ .oldStage = vk::PipelineStageFlagBits::eTopOfPipe
+                                                                 | vk::PipelineStageFlagBits::eColorAttachmentOutput
+                                                                 | vk::PipelineStageFlagBits::eTransfer,
+                                                     .newStage = vk::PipelineStageFlagBits::eColorAttachmentOutput
+                                                                 | vk::PipelineStageFlagBits::eTransfer },
+                       ImageAccessFlagsTransition{ .oldAccess = vk::AccessFlagBits::eMemoryWrite,
+                                                   .newAccess = vk::AccessFlagBits::eMemoryWrite
+                                                                | vk::AccessFlagBits::eMemoryRead },
+                       vk::ImageAspectFlagBits::eColor,
                        1);
 }
 
@@ -108,8 +118,8 @@ void VulkanSwapChain::preparePresentMode() {
     const auto commandBuffer = m_commandBuffersPool->get().getBuffer();
     transitImageLayout(commandBuffer,
                        m_swapChainData.getSwapChainFrame(m_currentImageIndex).image,
-                       vk::ImageLayout::eColorAttachmentOptimal,
-                       vk::ImageLayout::ePresentSrcKHR,
+                       ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eTransferDstOptimal,
+                                              .newLayout = vk::ImageLayout::ePresentSrcKHR },
                        1);
 }
 

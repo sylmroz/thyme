@@ -73,5 +73,6 @@ private:
 
     DepthImageMemory m_depthImageMemory;
     ColorImageMemory m_colorImageMemory;
+    ColorImageMemory m_resolveColorImageMemory;
 };
 }// namespace th::vulkan

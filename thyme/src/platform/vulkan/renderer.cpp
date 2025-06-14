@@ -44,15 +44,16 @@ VulkanRenderer::VulkanRenderer(const VulkanDevice& device, VulkanSwapChain& swap
                                VulkanCommandBuffersPool* commandBuffersPool) noexcept
     : m_gui{ gui }, m_swapChain{ swapChain }, m_commandBuffersPool{ commandBuffersPool },
       m_depthImageMemory{ device, swapChain.getSwapChainExtent(), context.depthFormat, device.maxMsaaSamples },
-      m_colorImageMemory{ device,
-                          swapChain.getSwapChainExtent(),
-                          context.surfaceFormat.format,
-                          device.maxMsaaSamples } {
+      m_colorImageMemory{ device, swapChain.getSwapChainExtent(), context.colorFormat, device.maxMsaaSamples },
+      m_resolveColorImageMemory{ device,
+                                 swapChain.getSwapChainExtent(),
+                                 context.colorFormat,
+                                 vk::SampleCountFlagBits::e1 }{
     m_pipelines.emplace_back(std::make_unique<ScenePipeline>(
             device,
             vk::PipelineRenderingCreateInfo{ .viewMask = 0,
                                              .colorAttachmentCount = 1,
-                                             .pColorAttachmentFormats = &context.surfaceFormat.format,
+                                             .pColorAttachmentFormats = &context.colorFormat,
                                              .depthAttachmentFormat = context.depthFormat },
             modelStorage,
             camera));
@@ -63,8 +64,10 @@ void VulkanRenderer::draw() {
         return;
     }
     m_colorImageMemory.resize(m_swapChain.getSwapChainExtent());
+    m_resolveColorImageMemory.resize(m_swapChain.getSwapChainExtent());
     m_depthImageMemory.resize(m_swapChain.getSwapChainExtent());
-    m_swapChain.prepareRenderMode();
+    const auto commandBuffer = m_commandBuffersPool->get().getBuffer();
+    setCommandBufferFrameSize(commandBuffer, m_swapChain.getSwapChainExtent());
     const auto swapChainImage = m_swapChain.getCurrentSwapChainFrame();
     constexpr auto clearColorValues = vk::ClearValue(vk::ClearColorValue(1.0f, 0.0f, 1.0f, 1.0f));
     constexpr auto depthClearValue = vk::ClearValue(vk::ClearDepthStencilValue(1.0f, 0));
@@ -97,18 +100,21 @@ void VulkanRenderer::draw() {
         .pColorAttachments = &colorAttachment,
         .pDepthAttachment = &depthAttachment,
     };
-    const auto commandBuffer = m_commandBuffersPool->get().getBuffer();
     commandBuffer.beginRendering(renderingInfo);
     for (const auto& pipeline : m_pipelines) {
         pipeline->draw(commandBuffer);
     }
     commandBuffer.endRendering();
 
+    m_resolveColorImageMemory.transitImageLayout(
+            commandBuffer,
+            ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eUndefined,
+                                   .newLayout = vk::ImageLayout::eColorAttachmentOptimal });
     const auto guiColorAttachment = vk::RenderingAttachmentInfo{
         .imageView = m_colorImageMemory.getImageView(),
         .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
         .resolveMode = vk::ResolveModeFlagBits::eAverage,
-        .resolveImageView = swapChainImage.imageView,
+        .resolveImageView = m_resolveColorImageMemory.getImageView(),
         .resolveImageLayout = vk::ImageLayout::eColorAttachmentOptimal,
         .loadOp = vk::AttachmentLoadOp::eLoad,
         .storeOp = vk::AttachmentStoreOp::eStore,
@@ -129,6 +135,19 @@ void VulkanRenderer::draw() {
     m_gui.draw(commandBuffer);
 
     commandBuffer.endRendering();
+
+    m_resolveColorImageMemory.transitImageLayout(
+            commandBuffer,
+            ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eColorAttachmentOptimal,
+                                   .newLayout = vk::ImageLayout::eTransferSrcOptimal });
+
+    m_swapChain.prepareRenderMode();
+
+    const auto blitSize = vk::Extent3D{ .width = m_swapChain.getSwapChainExtent().width,
+                                        .height = m_swapChain.getSwapChainExtent().height,
+                                        .depth = 1 };
+    blitImage(commandBuffer, m_resolveColorImageMemory.getImage(), blitSize, swapChainImage.image, blitSize);
+
     m_swapChain.preparePresentMode();
     m_swapChain.submitFrame();
 }
