@@ -48,6 +48,14 @@ target_sources(${PROJECT_NAME} PRIVATE
 		src/platform/vulkan/vulkan_device.cpp
 		src/platform/vulkan/vulkan_swapchain.cpp
 		src/platform/vulkan/vulkan_texture.cpp
+
+		../thirdparty/imgui/imgui.cpp
+		../thirdparty/imgui/imgui_demo.cpp
+		../thirdparty/imgui/imgui_draw.cpp
+		../thirdparty/imgui/imgui_tables.cpp
+		../thirdparty/imgui/imgui_widgets.cpp
+		../thirdparty/imgui/backends/imgui_impl_glfw.cpp
+		../thirdparty/imgui/backends/imgui_impl_vulkan.cpp
 )
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
@@ -59,6 +67,8 @@ target_include_directories(${PROJECT_NAME}
 		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 		$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
 		$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+		../thirdparty/imgui
+		../thirdparty/imgui/backends
 	PRIVATE
 		${Stb_INCLUDE_DIR}
 )
@@ -97,7 +107,7 @@ target_precompile_headers(${PROJECT_NAME}
 find_package(spdlog REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
-find_package(imgui CONFIG REQUIRED)
+#find_package(imgui CONFIG REQUIRED)
 find_package(Stb REQUIRED)
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 
@@ -107,7 +117,7 @@ target_link_libraries(${PROJECT_NAME}
         glfw
         Vulkan::Vulkan
         Vulkan::Headers
-		imgui::imgui
+		#imgui::imgui
 		GPUOpen::VulkanMemoryAllocator
 )
 
