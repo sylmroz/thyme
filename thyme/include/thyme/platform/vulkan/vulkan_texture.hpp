@@ -73,7 +73,7 @@ public:
 class Vulkan2DTexture {
 public:
     Vulkan2DTexture(const VulkanDevice& device, const TextureData& texture,
-                    vk::Format format = vk::Format::eR8G8B8A8Srgb);
+                    vk::Format format = vk::Format::eR8G8B8A8Unorm);
 
     [[nodiscard]] auto getImage() const noexcept -> vk::Image {
         return m_imageMemory.getImage();
