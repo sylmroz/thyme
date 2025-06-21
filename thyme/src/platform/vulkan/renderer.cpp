@@ -48,7 +48,7 @@ VulkanRenderer::VulkanRenderer(const VulkanDevice& device, VulkanSwapChain& swap
       m_resolveColorImageMemory{ device,
                                  swapChain.getSwapChainExtent(),
                                  context.colorFormat,
-                                 vk::SampleCountFlagBits::e1 }{
+                                 vk::SampleCountFlagBits::e1 } {
     m_pipelines.emplace_back(std::make_unique<ScenePipeline>(
             device,
             vk::PipelineRenderingCreateInfo{ .viewMask = 0,
@@ -60,18 +60,18 @@ VulkanRenderer::VulkanRenderer(const VulkanDevice& device, VulkanSwapChain& swap
 }
 
 void VulkanRenderer::draw() {
-    if (!m_swapChain.prepareFrame()) {
-        return;
-    }
     m_colorImageMemory.resize(m_swapChain.getSwapChainExtent());
     m_resolveColorImageMemory.resize(m_swapChain.getSwapChainExtent());
     m_depthImageMemory.resize(m_swapChain.getSwapChainExtent());
+
+    if (!m_swapChain.prepareFrame()) {
+        return;
+    }
+
     const auto commandBuffer = m_commandBuffersPool->get().getBuffer();
     setCommandBufferFrameSize(commandBuffer, m_swapChain.getSwapChainExtent());
-    const auto swapChainImage = m_swapChain.getCurrentSwapChainFrame();
     constexpr auto clearColorValues = vk::ClearValue(vk::ClearColorValue(1.0f, 0.0f, 1.0f, 1.0f));
     constexpr auto depthClearValue = vk::ClearValue(vk::ClearDepthStencilValue(1.0f, 0));
-
 
     const auto colorAttachment = vk::RenderingAttachmentInfo{
         .imageView = m_colorImageMemory.getImageView(),
@@ -100,6 +100,7 @@ void VulkanRenderer::draw() {
         .pColorAttachments = &colorAttachment,
         .pDepthAttachment = &depthAttachment,
     };
+
     commandBuffer.beginRendering(renderingInfo);
     for (const auto& pipeline : m_pipelines) {
         pipeline->draw(commandBuffer);
@@ -110,6 +111,7 @@ void VulkanRenderer::draw() {
             commandBuffer,
             ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eUndefined,
                                    .newLayout = vk::ImageLayout::eColorAttachmentOptimal });
+
     const auto guiColorAttachment = vk::RenderingAttachmentInfo{
         .imageView = m_colorImageMemory.getImageView(),
         .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
@@ -141,15 +143,8 @@ void VulkanRenderer::draw() {
             ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eColorAttachmentOptimal,
                                    .newLayout = vk::ImageLayout::eTransferSrcOptimal });
 
-    m_swapChain.prepareRenderMode();
 
-    const auto blitSize = vk::Extent3D{ .width = m_swapChain.getSwapChainExtent().width,
-                                        .height = m_swapChain.getSwapChainExtent().height,
-                                        .depth = 1 };
-    blitImage(commandBuffer, m_resolveColorImageMemory.getImage(), blitSize, swapChainImage.image, blitSize);
-
-    m_swapChain.preparePresentMode();
-    m_swapChain.submitFrame();
+    m_swapChain.renderImage(m_resolveColorImageMemory.getImage());
 }
 
 }// namespace th::vulkan

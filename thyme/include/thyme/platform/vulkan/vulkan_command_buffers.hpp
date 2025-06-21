@@ -11,34 +11,31 @@
 namespace th::vulkan {
 
 class VulkanCommandBuffer {
+    enum class State {
+        Idle,
+        Recording,
+        Submitted
+    };
 public:
     VulkanCommandBuffer(vk::Device device, vk::CommandPool commandPool, vk::Queue graphicQueue);
 
-    [[nodiscard]] auto getBuffer() const -> vk::CommandBuffer{
-        return m_commandBuffer;
-    }
+    [[nodiscard]] auto getBuffer() -> vk::CommandBuffer;
 
     [[nodiscard]] auto getFence() const -> vk::Fence {
         return m_fence.get();
     }
 
     void reset();
-    void start() const {
-        m_commandBuffer.begin(vk::CommandBufferBeginInfo());
-    }
-
+    void start();
     void submit(vk::PipelineStageFlags stage, vk::Semaphore renderSemaphore);
+    void waitFor(vk::UniqueSemaphore& dependSemaphore);
 
-    void waitFor(vk::UniqueSemaphore& dependSemaphore) {
-        m_dependSemaphores.emplace_back(std::move(dependSemaphore));
-    }
-
-    auto isSubmitted() const -> bool {
-        return m_submitted;
+    [[nodiscard]] auto isSubmitted() const -> bool {
+        return m_state == State::Submitted;
     }
 
 private:
-    bool m_submitted{ true };
+    State m_state{ State::Idle };
 
     vk::UniqueFence m_fence;
     vk::CommandBuffer m_commandBuffer;
@@ -55,10 +52,6 @@ public:
                              std::size_t capacity);
     [[nodiscard]] auto get() -> VulkanCommandBuffer& {
         auto& currentBuffer = m_commandBuffers[m_current];
-        if (currentBuffer.isSubmitted()) {
-            currentBuffer.reset();
-            currentBuffer.start();
-        }
         return currentBuffer;
     }
 
@@ -72,15 +65,10 @@ public:
         m_current = (m_current + 1) % m_commandBuffers.size();
     }
 
-    void flush() const {
-        std::vector<vk::Fence> fences;
-        for (const auto& buffer : m_commandBuffers) {
-            if (buffer.isSubmitted()) {
-                fences.emplace_back(buffer.getFence());
-            }
+    void flush() {
+        for (auto& buffer : m_commandBuffers) {
+            buffer.reset();
         }
-        [[maybe_unused]] const auto result =
-                m_device.waitForFences(fences, vk::True, std::numeric_limits<uint64_t>::max());
     }
 
 private:

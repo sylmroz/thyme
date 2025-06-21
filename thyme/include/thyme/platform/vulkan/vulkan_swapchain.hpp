@@ -89,10 +89,12 @@ public:
     VulkanSwapChain(const VulkanDevice& device, vk::SurfaceKHR surface, const VulkanGraphicContext& context,
                     vk::Extent2D swapChainExtent, VulkanCommandBuffersPool* commandPool);
     void frameResized(vk::Extent2D resolution);
-    bool prepareFrame() override;
+    auto prepareFrame() -> bool override;
     void prepareRenderMode();
     void preparePresentMode();
     void submitFrame() override;
+
+    void renderImage(vk::Image image);
 
     [[nodiscard]] auto getSwapChainExtent() const noexcept -> vk::Extent2D {
         return m_swapChainExtent;
@@ -102,8 +104,8 @@ public:
         return m_swapChainData.getSwapChainFrame(m_currentImageIndex);
     }
 
-private:
     bool hasResized() const;
+private:
     bool recreateSwapChain();
 
 private:

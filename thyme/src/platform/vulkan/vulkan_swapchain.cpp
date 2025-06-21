@@ -67,10 +67,6 @@ VulkanSwapChain::VulkanSwapChain(const VulkanDevice& device, const vk::SurfaceKH
 }
 
 bool VulkanSwapChain::prepareFrame() {
-    if (hasResized() && !recreateSwapChain()) {
-        return false;
-    }
-
     auto imageAvailableSemaphore = m_device.logicalDevice.createSemaphoreUnique(vk::SemaphoreCreateInfo());
     const auto imageIndexResult = [&] {
         try {
@@ -147,6 +143,15 @@ void VulkanSwapChain::submitFrame() {
         recreateSwapChain();
     }
 }
+void VulkanSwapChain::renderImage(const vk::Image image) {
+    prepareRenderMode();
+    const auto blitSize =
+            vk::Extent3D{ .width = getSwapChainExtent().width, .height = getSwapChainExtent().height, .depth = 1 };
+    blitImage(m_commandBuffersPool->get().getBuffer(), image, blitSize, getCurrentSwapChainFrame().image, blitSize);
+    preparePresentMode();
+    submitFrame();
+}
+
 bool VulkanSwapChain::hasResized() const {
     const auto caps = m_device.physicalDevice.getSurfaceCapabilitiesKHR(m_surface);
     return caps.currentExtent.width != m_swapChainExtent.width || caps.currentExtent.height != m_swapChainExtent.height;
