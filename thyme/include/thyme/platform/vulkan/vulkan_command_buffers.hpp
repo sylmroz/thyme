@@ -37,12 +37,12 @@ public:
 private:
     State m_state{ State::Idle };
 
-    vk::UniqueFence m_fence;
-    vk::CommandBuffer m_commandBuffer;
-    vk::UniqueSemaphore m_semaphore;
-
     vk::Device m_device;
     vk::Queue m_graphicQueue;
+
+    vk::CommandBuffer m_commandBuffer;
+    vk::UniqueFence m_fence;
+    vk::UniqueSemaphore m_semaphore;
     std::vector<vk::UniqueSemaphore> m_dependSemaphores;
 };
 

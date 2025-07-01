@@ -40,7 +40,9 @@ public:
     void transitImageLayout(vk::CommandBuffer commandBuffer, ImageLayoutTransition layoutTransition);
 
     void copyTo(vk::CommandBuffer commandBuffer, const ImageMemory& dstImage);
+    void copyTo(vk::CommandBuffer commandBuffer, vk::Image image);
     void blitTo(vk::CommandBuffer commandBuffer, const ImageMemory& dstImage);
+    void blitTo(vk::CommandBuffer commandBuffer, vk::Image dstImage, vk::Extent3D dstResolution);
 
 private:
     vk::UniqueImage m_image;

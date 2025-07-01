@@ -60,13 +60,12 @@ VulkanRenderer::VulkanRenderer(const VulkanDevice& device, VulkanSwapChain& swap
 }
 
 void VulkanRenderer::draw() {
-    m_colorImageMemory.resize(m_swapChain.getSwapChainExtent());
-    m_resolveColorImageMemory.resize(m_swapChain.getSwapChainExtent());
-    m_depthImageMemory.resize(m_swapChain.getSwapChainExtent());
-
     if (!m_swapChain.prepareFrame()) {
         return;
     }
+    m_colorImageMemory.resize(m_swapChain.getSwapChainExtent());
+    m_resolveColorImageMemory.resize(m_swapChain.getSwapChainExtent());
+    m_depthImageMemory.resize(m_swapChain.getSwapChainExtent());
 
     const auto commandBuffer = m_commandBuffersPool->get().getBuffer();
     setCommandBufferFrameSize(commandBuffer, m_swapChain.getSwapChainExtent());

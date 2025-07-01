@@ -143,8 +143,17 @@ void ImageMemory::transitImageLayout(const vk::CommandBuffer commandBuffer,
 void ImageMemory::copyTo(const vk::CommandBuffer commandBuffer, const ImageMemory& dstImage) {
     copyImage(commandBuffer, m_image.get(), m_extent, dstImage.getImage());
 }
+
+void ImageMemory::copyTo(const vk::CommandBuffer commandBuffer, const vk::Image dstImage) {
+    copyImage(commandBuffer, m_image.get(), m_extent, dstImage);
+}
+
 void ImageMemory::blitTo(const vk::CommandBuffer commandBuffer, const ImageMemory& dstImage) {
     blitImage(commandBuffer, m_image.get(), m_extent, dstImage.getImage(), dstImage.getExtent());
+}
+
+void ImageMemory::blitTo(const vk::CommandBuffer commandBuffer, const vk::Image dstImage, const vk::Extent3D dstResolution) {
+    blitImage(commandBuffer, m_image.get(), m_extent, dstImage, dstResolution);
 }
 
 DepthImageMemory::DepthImageMemory(const VulkanDevice& device, const vk::Extent2D resolution, const vk::Format format,
