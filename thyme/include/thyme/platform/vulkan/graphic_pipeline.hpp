@@ -19,7 +19,7 @@ public:
     GraphicPipeline& operator=(const GraphicPipeline&) = delete;
     GraphicPipeline& operator=(GraphicPipeline&&) = delete;
 
-    virtual void draw(vk::CommandBuffer commandBuffer) const = 0;
+    virtual void draw(vk::CommandBuffer commandBuffer, const std::vector<VulkanModel>& models) const = 0;
     virtual ~GraphicPipeline() = default;
 };
 
@@ -27,23 +27,18 @@ class ScenePipeline final: public GraphicPipeline {
 public:
     explicit ScenePipeline(const VulkanDevice& device,
                            const vk::PipelineRenderingCreateInfo& pipelineRenderingCreateInfo,
-                           scene::ModelStorage& modelStorage, scene::Camera& camera);
+                           std::vector<VulkanModel>& models, const UniformBufferObject<renderer::CameraMatrices>& cameraMatrices);
 
-    virtual void draw(vk::CommandBuffer commandBuffer) const override;
+    void draw(vk::CommandBuffer commandBuffer, const std::vector<VulkanModel>& models) const override;
 
 private:
     vk::UniquePipeline m_pipeline;
     vk::UniquePipelineLayout m_pipelineLayout;
 
-    std::vector<VulkanModel> m_models;
-    scene::Camera& m_camera;
-
     vk::UniqueDescriptorSetLayout m_descriptorSetLayout;
 
     vk::UniqueDescriptorPool m_descriptorPool;
     std::vector<vk::DescriptorSet> m_descriptorSets;
-
-    void updateUBO() const;
 };
 
 }// namespace th::vulkan

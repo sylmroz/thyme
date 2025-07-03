@@ -38,6 +38,16 @@ VulkanRenderTarget::VulkanRenderTarget(const vk::ImageView imageView, const vk::
 //     m_colorMemory = ColorImageMemory()
 // }
 
+void updateUBO(const scene::Camera& camera, const UniformBufferObject<renderer::CameraMatrices>& cameraMatrices,
+               std::vector<VulkanModel>& models, scene::ModelStorage& model_storage) {
+    cameraMatrices.update(
+            renderer::CameraMatrices{ .view = camera.getViewMatrix(), .projection = camera.getProjectionMatrix() });
+    for (auto [vlkModel, model] : std::views::zip(models, model_storage)) {
+        model.animate();
+        vlkModel.getUniformBufferObject().update(model.transformation.getTransformMatrix());
+    }
+}
+
 VulkanRenderer::VulkanRenderer(const VulkanDevice& device, VulkanSwapChain& swapChain,
                                scene::ModelStorage& modelStorage, scene::Camera& camera, Gui& gui,
                                const VulkanGraphicContext& context,
@@ -48,21 +58,27 @@ VulkanRenderer::VulkanRenderer(const VulkanDevice& device, VulkanSwapChain& swap
       m_resolveColorImageMemory{ device,
                                  swapChain.getSwapChainExtent(),
                                  context.colorFormat,
-                                 vk::SampleCountFlagBits::e1 } {
+                                 vk::SampleCountFlagBits::e1 },
+      m_camera{ camera }, m_modelStorage{ modelStorage }, m_cameraMatrices{ device } {
+
+    for (const auto& model : modelStorage) {
+        m_models.emplace_back(model, device);
+    }
     m_pipelines.emplace_back(std::make_unique<ScenePipeline>(
             device,
             vk::PipelineRenderingCreateInfo{ .viewMask = 0,
                                              .colorAttachmentCount = 1,
                                              .pColorAttachmentFormats = &context.colorFormat,
                                              .depthAttachmentFormat = context.depthFormat },
-            modelStorage,
-            camera));
+            m_models,
+            m_cameraMatrices));
 }
 
 void VulkanRenderer::draw() {
     if (!m_swapChain.prepareFrame()) {
         return;
     }
+    updateUBO(m_camera, m_cameraMatrices, m_models, m_modelStorage);
     m_colorImageMemory.resize(m_swapChain.getSwapChainExtent());
     m_resolveColorImageMemory.resize(m_swapChain.getSwapChainExtent());
     m_depthImageMemory.resize(m_swapChain.getSwapChainExtent());
@@ -102,7 +118,7 @@ void VulkanRenderer::draw() {
 
     commandBuffer.beginRendering(renderingInfo);
     for (const auto& pipeline : m_pipelines) {
-        pipeline->draw(commandBuffer);
+        pipeline->draw(commandBuffer, m_models);
     }
     commandBuffer.endRendering();
 

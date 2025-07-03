@@ -20,7 +20,7 @@ public:
     [[nodiscard]] auto getIndexMemoryBuffer() const noexcept -> const BufferMemory& {
         return m_indexMemoryBuffer;
     }
-    [[nodiscard]] auto getUniformBufferObject() const noexcept -> const UniformBufferObject<renderer::MVP>& {
+    [[nodiscard]] auto getUniformBufferObject() const noexcept -> const UniformBufferObject<glm::mat4>& {
         return m_uniformBufferObject;
     }
     [[nodiscard]] auto getTexture() const noexcept -> const Vulkan2DTexture& {
@@ -30,12 +30,12 @@ public:
         return m_indicesSize;
     }
 
-    void draw(const vk::CommandBuffer commandBuffer) const noexcept;
+    void draw(vk::CommandBuffer commandBuffer) const noexcept;
 
 private:
     BufferMemory m_vertexMemoryBuffer;
     BufferMemory m_indexMemoryBuffer;
-    UniformBufferObject<renderer::MVP> m_uniformBufferObject;
+    UniformBufferObject<glm::mat4> m_uniformBufferObject;
     Vulkan2DTexture m_texture;
     uint32_t m_indicesSize;
 };

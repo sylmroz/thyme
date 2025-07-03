@@ -56,6 +56,10 @@ target_sources(${PROJECT_NAME} PRIVATE
 		../thirdparty/imgui/imgui_widgets.cpp
 		../thirdparty/imgui/backends/imgui_impl_glfw.cpp
 		../thirdparty/imgui/backends/imgui_impl_vulkan.cpp
+	PUBLIC
+		FILE_SET CXX_MODULES
+		BASE_DIRS ${Vulkan_INCLUDE_DIR}
+		FILES ${Vulkan_INCLUDE_DIR}/vulkan/vulkan.cppm
 )
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)

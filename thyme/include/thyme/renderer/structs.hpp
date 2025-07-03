@@ -16,4 +16,9 @@ struct Vertex {
     glm::vec2 texCoord;
 };
 
+struct CameraMatrices {
+    glm::mat4 view;
+    glm::mat4 projection;
+};
+
 }// namespace th::renderer

@@ -72,7 +72,7 @@ void Gui::start() {
 }
 
 Gui::~Gui() noexcept {
-    TH_API_LOG_INFO("Destroy Gui  ");
+    TH_API_LOG_INFO("Destroy Gui");
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
 }

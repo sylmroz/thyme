@@ -39,7 +39,6 @@ private:
 //     std::optional<ColorImageMemory> m_colorMemory;
 //     std::optional<DepthImageMemory> m_depthMemory;
 // };
-
 class VulkanRenderer final: public renderer::Renderer {
 public:
     explicit VulkanRenderer(const VulkanDevice& device, VulkanSwapChain& swapChain, scene::ModelStorage& modelStorage,
@@ -74,5 +73,11 @@ private:
     DepthImageMemory m_depthImageMemory;
     ColorImageMemory m_colorImageMemory;
     ColorImageMemory m_resolveColorImageMemory;
+
+    std::vector<VulkanModel> m_models;
+    std::reference_wrapper<scene::Camera> m_camera;
+
+    std::reference_wrapper<scene::ModelStorage> m_modelStorage;
+    UniformBufferObject<renderer::CameraMatrices> m_cameraMatrices;
 };
 }// namespace th::vulkan

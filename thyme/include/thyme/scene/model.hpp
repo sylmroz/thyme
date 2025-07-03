@@ -26,11 +26,15 @@ public:
     std::string name;
     Mesh mesh;
     TextureData texture;// TODO! make array of textures
+    std::function<void(Model&)> onAnimate;
+    void animate() {
+        onAnimate(*this);
+    }
 };
 
 class THYME_API ModelStorage {
 public:
-    inline void addModel(const Model& model) {
+    inline auto addModel(const Model& model) -> Model& {
         TH_API_LOG_INFO("Adding model (name: {}, vertices: {}, indices: {})",
                         model.name,
                         model.mesh.vertices.size(),
@@ -41,7 +45,7 @@ public:
             TH_API_LOG_WARN(msg);
             throw std::runtime_error(msg);
         }
-        m_models.emplace_back(model);
+        return m_models.emplace_back(model);
     }
 
     inline void deleteModel(const std::string_view name) noexcept {

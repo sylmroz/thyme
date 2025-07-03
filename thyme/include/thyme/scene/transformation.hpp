@@ -13,7 +13,8 @@ public:
     }
 
     inline void rotate(const float angle, const glm::vec3 axis) noexcept {
-        transformMatrix = glm::rotate(transformMatrix, angle, axis);
+        //glm::rotate(glm::mat4(1.0f), deltaTime * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+        transformMatrix = glm::rotate(glm::mat4(1.0f), angle, axis);
     }
 
     inline void scale(const glm::vec3 factor) noexcept {
