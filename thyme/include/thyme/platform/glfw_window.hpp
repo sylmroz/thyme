@@ -46,14 +46,14 @@ class THYME_API VulkanGlfwWindow final: public GlfwWindow {
 public:
     explicit VulkanGlfwWindow(const WindowConfig& config) : GlfwWindow(config) {}
 
-    [[nodiscard]] static std::vector<std::string> getRequiredInstanceExtensions() noexcept;
+    [[nodiscard]] static auto getExtensions() noexcept -> std::vector<std::string>;
 
     [[nodiscard]] auto getSurface(const vk::Instance instance) const {
         VkSurfaceKHR surface{ nullptr };
         if (const auto result = glfwCreateWindowSurface(instance, this->getHandler().get(), nullptr, &surface);
             result != VK_SUCCESS) {
             throw std::runtime_error(
-                    fmt::format("GLFW cannot create VkSurface! Error: {}", static_cast<uint32_t>(result)));
+                    std::format("GLFW cannot create VkSurface! Error: {}", static_cast<uint32_t>(result)));
         }
         return vk::UniqueSurfaceKHR(surface, instance);
     }

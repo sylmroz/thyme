@@ -13,18 +13,17 @@ struct VulkanDevice {
     QueueFamilyIndices queueFamilyIndices;
     vk::SampleCountFlagBits maxMsaaSamples;
 
-    auto getGraphicQueue() const noexcept -> vk::Queue {
+    [[nodiscard]] auto getGraphicQueue() const noexcept -> vk::Queue {
         return logicalDevice.getQueue(queueFamilyIndices.graphicFamily.value(), 0);
     }
 
-    auto getPresentationQueue() const noexcept -> vk::Queue {
+    [[nodiscard]] auto getPresentationQueue() const noexcept -> vk::Queue {
         return logicalDevice.getQueue(queueFamilyIndices.presentFamily.value(), 0);
     }
 
     template <typename F, typename... Args>
         requires(InvocableCommandWithCommandBuffer<F, Args...>)
     void singleTimeCommand(F fun, Args... args) {
-
         const auto commandBuffer = std::move(logicalDevice
                                                      .allocateCommandBuffersUnique(vk::CommandBufferAllocateInfo{
                                                              .commandPool = commandPool,
@@ -48,7 +47,7 @@ class PhysicalDevicesManager {
         QueueFamilyIndices queueFamilyIndices;
         vk::SampleCountFlagBits maxMsaaSamples;
 
-        [[nodiscard]] vk::UniqueDevice createLogicalDevice() const;
+        [[nodiscard]] auto createLogicalDevice() const -> vk::UniqueDevice;
     };
 
     struct VulkanInternalDevice {
@@ -64,11 +63,11 @@ class PhysicalDevicesManager {
         vk::SampleCountFlagBits maxMsaaSamples;
         vk::UniqueCommandPool commandPool;
 
-        auto getGraphicQueue() const noexcept -> vk::Queue {
+        [[nodiscard]] auto getGraphicQueue() const noexcept -> vk::Queue {
             return logicalDevice->getQueue(queueFamilyIndices.graphicFamily.value(), 0);
         }
 
-        auto getPresentationQueue() const noexcept -> vk::Queue {
+        [[nodiscard]] auto getPresentationQueue() const noexcept -> vk::Queue {
             return logicalDevice->getQueue(queueFamilyIndices.presentFamily.value(), 0);
         }
     };

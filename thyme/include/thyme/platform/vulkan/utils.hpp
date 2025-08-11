@@ -38,14 +38,17 @@ private:
 };
 
 struct QueueFamilyIndices {
-    explicit QueueFamilyIndices(vk::PhysicalDevice device, vk::SurfaceKHR surface);
+    explicit QueueFamilyIndices(vk::PhysicalDevice device, std::optional<vk::SurfaceKHR> surface);
 
     std::optional<uint32_t> graphicFamily;
     std::optional<uint32_t> presentFamily;
 
-    [[nodiscard]] constexpr bool isCompleted() const noexcept {
-        return graphicFamily.has_value() && presentFamily.has_value();
+    [[nodiscard]] constexpr auto isCompleted() const noexcept -> bool {
+        return graphicFamily.has_value() && (m_requested_surface_support ? presentFamily.has_value() : true);
     }
+
+private:
+    bool m_requested_surface_support;
 };
 
 struct SwapChainSettings {

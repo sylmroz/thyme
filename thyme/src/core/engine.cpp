@@ -9,10 +9,14 @@
 #include <thyme/platform/vulkan/vulkan_graphic_context.hpp>
 #include <thyme/platform/vulkan/vulkan_layer.hpp>
 
-#include <ranges>
 #include <vector>
 
 #include <imgui.h>
+
+import th.render_system.framework;
+import th.render_system.framework_factory;
+
+import th.render_system.vulkan.framework;
 
 namespace th {
 
@@ -29,7 +33,6 @@ Engine::Engine(const EngineConfig& engineConfig, vulkan::VulkanLayerStack& layer
 
 void Engine::run() {
     TH_API_LOG_INFO("Start {} engine", m_engineConfig.engineName);
-
     WindowResizedEventHandler windowResizedEventHandler;
     EventSubject windowEvents;
     windowEvents.subscribe([&layers = m_layers, &windowResizedEventHandler](const Event& event) {
@@ -50,20 +53,15 @@ void Engine::run() {
     });
     VulkanGlfwWindow window(WindowConfig{ m_engineConfig, windowEvents });
 
-    const auto glfwExtensions = VulkanGlfwWindow::getRequiredInstanceExtensions();
-    // clang-format off
-    const auto enabledExtensions = glfwExtensions
-            | std::views::transform([](auto const& layerName) { return layerName.c_str(); })
-            | std::ranges::to<std::vector<const char*>>();
-    // clang-format on
 
-    const auto instance =
-            vulkan::UniqueInstance(vulkan::UniqueInstanceConfig{ .engineName = m_engineConfig.engineName,
-                                                                 .appName = m_engineConfig.appName,
-                                                                 .instanceExtension = enabledExtensions });
-    const auto surface = window.getSurface(instance.getInstance());
+    const auto initInfo = render_system::Framework::InitInfo{
+        .appName = m_engineConfig.appName,
+        .engineName = m_engineConfig.engineName,
+    };
+    const auto framework = render_system::vulkan::Framework::create<decltype(window)>(initInfo);
+    const auto surface = window.getSurface(framework.getInstance());
 
-    const auto physicalDevicesManager = vulkan::PhysicalDevicesManager(instance.getInstance(), surface.get());
+    const auto physicalDevicesManager = vulkan::PhysicalDevicesManager(framework.getInstance(), surface.get());
 
     const auto& device = physicalDevicesManager.getSelectedDevice();
     const auto swapChainDetails = vulkan::SwapChainSupportDetails(device.physicalDevice, surface.get());
@@ -76,7 +74,7 @@ void Engine::run() {
                                           .presentMode = swapChainDetails.getBestPresetMode() };
 
 
-    vulkan::Gui gui(device, window, vulkanGraphicContext, instance.getInstance());
+    vulkan::Gui gui(device, window, vulkanGraphicContext, framework.getInstance());
     auto buffersPool = vulkan::VulkanCommandBuffersPool(
             device.logicalDevice, device.commandPool, device.getGraphicQueue(), vulkanGraphicContext.maxFramesInFlight);
     vulkan::VulkanSwapChain swapChain(device,

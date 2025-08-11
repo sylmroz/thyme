@@ -25,7 +25,11 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	target_link_options(${PROJECT_NAME} PUBLIC $<$<CONFIG:Debug>:/INCREMENTAL>)
 endif()
 
-add_compile_definitions(VULKAN_HPP_NO_STRUCT_CONSTRUCTORS)
+add_compile_definitions(VULKAN_HPP_NO_STRUCT_CONSTRUCTORS GLM_FORCE_RADIANS GLM_FORCE_DEPTH_ZERO_TO_ONE)
+
+add_subdirectory(core)
+add_subdirectory(platform)
+add_subdirectory(render_system)
 
 target_sources(${PROJECT_NAME} PRIVATE
 		src/core/application.cpp

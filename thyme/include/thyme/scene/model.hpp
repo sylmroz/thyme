@@ -55,7 +55,7 @@ public:
         }
     }
 
-    inline inline void deleteModel(const Model& model) noexcept {
+    inline void deleteModel(const Model& model) noexcept {
         deleteModel(model.name);
     }
 

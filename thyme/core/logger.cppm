@@ -1,6 +1,4 @@
-#pragma once
-
-#include <thyme/export_macros.hpp>
+module;
 
 #include <spdlog/logger.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -8,10 +6,13 @@
 
 #include <memory>
 #include <source_location>
+#include <string>
 
-namespace th {
+export module th.core.logger;
 
-enum struct LogLevel {
+namespace th::core {
+
+export enum struct LogLevel {
     trace,
     debug,
     info,
@@ -29,19 +30,18 @@ constexpr auto toSpdLogLevel(const LogLevel level) -> spdlog::level::level_enum 
         case LogLevel::warn: return spdlog::level::warn;
         case LogLevel::error: return spdlog::level::err;
         case LogLevel::critical: return spdlog::level::critical;
-        default: return spdlog::level::off;
+        case LogLevel::off: return spdlog::level::off;
     }
     std::unreachable();
 }
 
-template <class... Args>
+export template <class... Args>
 struct basic_format_with_source_location {
     template <class Str>
         requires std::convertible_to<const Str&, spdlog::format_string_t<Args...>>
     consteval basic_format_with_source_location(const Str fmt,
                                                 const std::source_location& loc = std::source_location::current())
-        : m_fmt( std::move(fmt) ),
-    location(loc.file_name(), loc.line(), loc.function_name()) {}
+        : m_fmt(std::move(fmt)), location(loc.file_name(), static_cast<int>(loc.line()), loc.function_name()) {}
 
     [[nodiscard]] constexpr auto get_location() const {
         return location;
@@ -59,7 +59,7 @@ private:
 template <class... _Args>
 using format_with_source_location = basic_format_with_source_location<std::type_identity_t<_Args>...>;
 
-class THYME_API Logger {
+export class Logger {
 public:
     Logger(const LogLevel level, const std::string_view loggerName) {
         logger = spdlog::stdout_color_mt(std::string(loggerName));
@@ -101,10 +101,10 @@ public:
     std::shared_ptr<spdlog::logger> logger;
 };
 
-class ThymeLogger {
+export class ThymeLogger {
 public:
     static void init(const LogLevel level) noexcept {
-        s_logger = std::make_unique<Logger>(level, "Thyme");
+        s_logger = std::make_unique<Logger>(level, "ThymeApi");
     }
 
     static auto getLogger() -> Logger* {
@@ -115,7 +115,7 @@ private:
     inline static std::unique_ptr<Logger> s_logger{ nullptr };
 };
 
-class THYME_API AppLogger {
+export class AppLogger {
 public:
     static void init(const LogLevel level) noexcept {
         s_logger = std::make_unique<Logger>(level, "App");
@@ -129,18 +129,4 @@ private:
     inline static std::unique_ptr<Logger> s_logger{ nullptr };
 };
 
-#define TH_API_LOG_TRACE(...) SPDLOG_LOGGER_TRACE(::th::ThymeLogger::getLogger()->logger, __VA_ARGS__);
-#define TH_API_LOG_DEBUG(...) SPDLOG_LOGGER_DEBUG(::th::ThymeLogger::getLogger()->logger, __VA_ARGS__);
-#define TH_API_LOG_INFO(...) SPDLOG_LOGGER_INFO(::th::ThymeLogger::getLogger()->logger, __VA_ARGS__);
-#define TH_API_LOG_WARN(...) SPDLOG_LOGGER_WARN(::th::ThymeLogger::getLogger()->logger, __VA_ARGS__);
-#define TH_API_LOG_ERROR(...) SPDLOG_LOGGER_ERROR(::th::ThymeLogger::getLogger()->logger, __VA_ARGS__);
-#define TH_API_LOG_CRITICAL(...) SPDLOG_LOGGER_CRITICAL(::th::ThymeLogger::getLogger()->logger, __VA_ARGS__);
-
-#define TH_APP_LOG_TRACE(...) SPDLOG_LOGGER_TRACE(::th::AppLogger::getLogger()->logger, __VA_ARGS__);
-#define TH_APP_LOG_DEBUG(...) SPDLOG_LOGGER_DEBUG(::th::AppLogger::getLogger()->logger, __VA_ARGS__);
-#define TH_APP_LOG_INFO(...) SPDLOG_LOGGER_INFO(::th::AppLogger::getLogger()->logger, __VA_ARGS__);
-#define TH_APP_LOG_WARN(...) SPDLOG_LOGGER_WARN(::th::AppLogger::getLogger()->logger, __VA_ARGS__);
-#define TH_APP_LOG_ERROR(...) SPDLOG_LOGGER_ERROR(::th::AppLogger::getLogger()->logger, __VA_ARGS__);
-#define TH_APP_LOG_CRITICAL(...) SPDLOG_LOGGER_CRITICAL(::th::AppLogger::getLogger()->logger, __VA_ARGS__);
-
-}// namespace th
+}// namespace th::core

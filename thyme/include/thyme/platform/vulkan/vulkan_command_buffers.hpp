@@ -2,11 +2,8 @@
 #define VULKAN_COMMAND_BUFFERS_HPP
 
 #include <vulkan/vulkan.hpp>
-
-#include <ranges>
 #include <vector>
 
-#include "thyme/core/logger.hpp"
 
 namespace th::vulkan {
 

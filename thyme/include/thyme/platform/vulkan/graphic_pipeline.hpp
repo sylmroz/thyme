@@ -3,7 +3,6 @@
 #include <thyme/platform/vulkan/model.hpp>
 #include <thyme/platform/vulkan/utils.hpp>
 #include <thyme/platform/vulkan/vulkan_device.hpp>
-#include <thyme/scene/camera.hpp>
 
 #include <vulkan/vulkan.hpp>
 

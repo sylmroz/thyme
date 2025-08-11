@@ -81,13 +81,10 @@ GlfwWindow::GlfwWindow(const WindowConfig& config) : Window{ config } {
     });
 }
 
-auto VulkanGlfwWindow::getRequiredInstanceExtensions() noexcept -> std::vector<std::string> {
+auto VulkanGlfwWindow::getExtensions() noexcept -> std::vector<std::string> {
     uint32_t instanceExtensionCount{ 0 };
     auto* instanceExtensionBuffer = glfwGetRequiredInstanceExtensions(&instanceExtensionCount);
-    std::vector<std::string> instanceExtension;
-    instanceExtension.reserve(instanceExtensionCount);
-    for (uint32_t i{ 0 }; i < instanceExtensionCount; ++i) {
-        instanceExtension.emplace_back(instanceExtensionBuffer[i]);
-    }
-    return instanceExtension;
+    std::vector<std::string> instanceExtensions(instanceExtensionCount);
+    std::copy_n(instanceExtensionBuffer, instanceExtensionCount, instanceExtensions.begin());
+    return instanceExtensions;
 }

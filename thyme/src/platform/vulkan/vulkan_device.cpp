@@ -7,7 +7,7 @@ static constexpr auto g_sDeviceExtensions = std::array{ vk::KHRSwapchainExtensio
                                                         vk::KHRSynchronization2ExtensionName,
                                                         vk::KHRBufferDeviceAddressExtensionName };
 
-[[nodiscard]] vk::UniqueDevice PhysicalDevicesManager::PhysicalDevice::createLogicalDevice() const {
+[[nodiscard]] auto PhysicalDevicesManager::PhysicalDevice::createLogicalDevice() const -> vk::UniqueDevice {
     const std::set indices = { queueFamilyIndices.graphicFamily.value(), queueFamilyIndices.presentFamily.value() };
     std::vector<vk::DeviceQueueCreateInfo> deviceQueueCreateInfos;
     for (const auto ind : indices) {

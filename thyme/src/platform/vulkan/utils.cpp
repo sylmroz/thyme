@@ -1,11 +1,10 @@
 #include <thyme/platform/vulkan/utils.hpp>
 
-#include "thyme/core/logger.hpp"
-#include "thyme/version.hpp"
+#include <thyme/core/logger.hpp>
+#include <thyme/version.hpp>
 
 #include <map>
 #include <set>
-#include <vulkan/vulkan.hpp>
 
 #if !defined(NDEBUG)
 PFN_vkCreateDebugUtilsMessengerEXT pfnVkCreateDebugUtilsMessengerEXT;
@@ -29,7 +28,7 @@ static VKAPI_ATTR vk::Bool32 VKAPI_CALL debugCallback(const vk::DebugUtilsMessag
                                                       const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData,
                                                       void*) {
     const auto messageTypeStr = vk::to_string(messageType);
-    const auto message = fmt::format(
+    const auto message = std::format(
             "[{}]: Name: {}, Message: {}", messageTypeStr, pCallbackData->pMessageIdName, pCallbackData->pMessage);
     switch (messageSeverity) {
         case vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose: TH_API_LOG_TRACE(message); break;
@@ -155,7 +154,8 @@ void UniqueInstance::setupDebugMessenger(const std::vector<const char*>& extensi
 }
 #endif
 
-QueueFamilyIndices::QueueFamilyIndices(const vk::PhysicalDevice device, const vk::SurfaceKHR surface) {
+QueueFamilyIndices::QueueFamilyIndices(const vk::PhysicalDevice device, const std::optional<vk::SurfaceKHR> surface)
+    : m_requested_surface_support{ surface.has_value() } {
     const auto& queueFamilies = device.getQueueFamilyProperties2();
     for (uint32_t i{ 0 }; i < queueFamilies.size(); i++) {
         const auto& queueFamily = queueFamilies[i];
@@ -166,7 +166,9 @@ QueueFamilyIndices::QueueFamilyIndices(const vk::PhysicalDevice device, const vk
         if (queueFamilyProperties.queueFlags & vk::QueueFlagBits::eGraphics) {
             graphicFamily = i;
         }
-        if (device.getSurfaceSupportKHR(i, surface) != 0u) {
+        if (queueFamilyProperties.queueFlags & vk::QueueFlagBits::eCompute) {}
+        if (queueFamilyProperties.queueFlags & vk::QueueFlagBits::eTransfer) {}
+        if (surface.has_value() ? device.getSurfaceSupportKHR(i, surface.value()) : true) {
             presentFamily = i;
         }
         if (isCompleted()) {

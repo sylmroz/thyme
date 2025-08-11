@@ -1,5 +1,9 @@
 #include <thyme/platform/vulkan/vulkan_command_buffers.hpp>
 
+#include <thyme/core/logger.hpp>
+
+#include <ranges>
+
 namespace th::vulkan {
 
 VulkanCommandBuffer::VulkanCommandBuffer(const vk::Device device, const vk::CommandPool commandPool,

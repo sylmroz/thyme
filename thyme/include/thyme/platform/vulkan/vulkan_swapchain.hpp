@@ -9,6 +9,8 @@
 #include <thyme/platform/vulkan/vulkan_texture.hpp>
 #include <thyme/renderer/swapchain.hpp>
 
+import th.render_system.swap_chain;
+
 namespace th::vulkan {
 
 struct SwapChainFrame {
@@ -62,7 +64,7 @@ public:
         return m_swapChain.get();
     }
 
-    [[nodiscard]] std::size_t getSwapChainFramesCount() const noexcept {
+    [[nodiscard]] auto getSwapChainFramesCount() const noexcept -> std::size_t {
         return m_swapChainFrames.getSwapChainFramesCount();
     }
 
@@ -84,7 +86,7 @@ private:
                                               vk::SwapchainKHR oldSwapChain) -> vk::UniqueSwapchainKHR;
 };
 
-class VulkanSwapChain final: public renderer::SwapChain {
+class VulkanSwapChain final: public render_system::SwapChain {
 public:
     VulkanSwapChain(const VulkanDevice& device, vk::SurfaceKHR surface, const VulkanGraphicContext& context,
                     vk::Extent2D swapChainExtent, VulkanCommandBuffersPool* commandPool);
@@ -104,9 +106,10 @@ public:
         return m_swapChainData.getSwapChainFrame(m_currentImageIndex);
     }
 
-    bool hasResized() const;
+    auto hasResized() const -> bool;
+
 private:
-    bool recreateSwapChain();
+    auto recreateSwapChain() -> bool;
 
 private:
     uint32_t m_currentImageIndex{ 0 };

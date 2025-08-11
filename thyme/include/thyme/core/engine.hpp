@@ -10,13 +10,13 @@
 namespace th {
 
 enum struct THYME_API BackendType {
-    vulkan
+    Vulkan
 };
 
 struct THYME_API EngineConfig {
     uint32_t width{ 1920 };
     uint32_t height{ 1080 };
-    BackendType backend{ BackendType::vulkan };
+    BackendType backend{ BackendType::Vulkan };
     std::string engineName{ "Thyme" };
     std::string appName;
 };

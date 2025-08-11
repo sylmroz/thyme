@@ -1,5 +1,4 @@
 #include <thyme/core/application.hpp>
-#include <thyme/core/logger.hpp>
 
 #include <variant>
 
@@ -8,6 +7,8 @@
 
 #include <thyme/core/core.hpp>
 #include <thyme/platform/vulkan/vulkan_layer.hpp>
+
+import th.core.logger;
 
 class ExampleLayer final: public th::vulkan::VulkanOverlayLayer {
     struct MyEventDispatcher final: th::EventDispatcher<th::WindowResize, th::MousePosition> {
@@ -77,8 +78,8 @@ private:
 };
 
 int main() {
-    th::AppLogger::init(spdlog::level::info);
-    TH_APP_LOG_INFO("Hello from app");
+    th::core::AppLogger::init(th::core::LogLevel::info);
+    th::core::AppLogger::getLogger()->info("Hello from app");
     ExampleApp app;
     app.name = "AppThyme";
     app.run();

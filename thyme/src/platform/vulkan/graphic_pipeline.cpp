@@ -6,16 +6,7 @@
 #include <thyme/renderer/structs.hpp>
 #include <thyme/scene/model.hpp>
 
-#include <chrono>
 #include <filesystem>
-
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/gtc/matrix_transform.hpp>
-
-//#include <vulkan/vulkan.hpp>
-
-import vulkan_hpp;
 
 namespace th::vulkan {
 
@@ -23,7 +14,6 @@ ScenePipeline::ScenePipeline(const VulkanDevice& device,
                              const vk::PipelineRenderingCreateInfo& pipelineRenderingCreateInfo,
                              std::vector<VulkanModel>& models,
                              const UniformBufferObject<renderer::CameraMatrices>& cameraMatrices) {
-
     constexpr auto uboBinding =
             vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex);
     constexpr auto camarauboBinding =
