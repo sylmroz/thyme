@@ -10,7 +10,7 @@ export module th.platform.glfw.glfw_context;
 import th.core.logger;
 import th.platform.platform_context;
 
-namespace th::platform::glfw {
+namespace th {
 
 const auto terminate_handler = [](const std::string_view message) {
     glfwTerminate();
@@ -20,10 +20,9 @@ const auto terminate_handler = [](const std::string_view message) {
 
 export class GlfwContext {
 public:
-    struct Tag{};
-    class Backend : public Tag {
+    class VulkanBackend {
     public:
-        Backend() {
+        VulkanBackend() {
             core::ThymeLogger().getLogger()->info("Initializing GLFW Vulkan...");
             if (glfwVulkanSupported() == GLFW_FALSE) {
                 constexpr auto message = "GLFW3 does not support vulkan!";
@@ -31,11 +30,19 @@ public:
             }
             glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         }
+
+        [[nodiscard]] static auto getExtensions() noexcept -> std::vector<std::string> {
+            uint32_t instanceExtensionCount{ 0 };
+            auto* instanceExtensionBuffer = glfwGetRequiredInstanceExtensions(&instanceExtensionCount);
+            std::vector<std::string> instanceExtensions(instanceExtensionCount);
+            std::copy_n(instanceExtensionBuffer, instanceExtensionCount, instanceExtensions.begin());
+            return instanceExtensions;
+        }
     };
     GlfwContext() {
         core::ThymeLogger().getLogger()->info("Initializing GLFW...");
         glfwSetErrorCallback([](int error, const char* description) {
-            core::ThymeLogger().getLogger()->error("Error{} : msg: {}", error, description);
+            core::ThymeLogger().getLogger()->error("Error {} : msg: {}", error, description);
         });
         if (glfwInit() == GLFW_FALSE) {
             constexpr auto message = "Failed to initialize GLFW!";
@@ -54,18 +61,6 @@ public:
     }
 };
 
-export class GlfwVulkanBackend : public GlfwContext::Tag {
-public:
-    GlfwVulkanBackend() {
-        core::ThymeLogger().getLogger()->info("Initializing GLFW Vulkan...");
-        if (glfwVulkanSupported() == GLFW_FALSE) {
-            constexpr auto message = "GLFW3 does not support vulkan!";
-            terminate_handler(message);
-        }
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    }
-};
+export using GlfwVulkanPlatformContext = VulkanBackendPlatformContext<GlfwContext>;
 
-export using GlfwVulkanPlatformContext = PlatformContext<GlfwContext>;
-
-}// namespace th::platform::glfw
+}// namespace th

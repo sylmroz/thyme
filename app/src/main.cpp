@@ -1,42 +1,16 @@
-#include <thyme/core/application.hpp>
-
-#include <variant>
-
 #include <spdlog/spdlog.h>
-#include <vulkan/vulkan.hpp>
-
-#include <thyme/core/core.hpp>
-#include <thyme/platform/vulkan/vulkan_layer.hpp>
+#include <glm/glm.hpp>
+//#include <thyme/core/core.hpp>
 
 import th.core.logger;
+import th.core.application;
 
-class ExampleLayer final: public th::vulkan::VulkanOverlayLayer {
-    struct MyEventDispatcher final: th::EventDispatcher<th::WindowResize, th::MousePosition> {
-        void operator()(const th::WindowResize& event) override {
-            // TH_APP_LOG_INFO("Example Layer::onEvent {}", event.toString());
-        }
-        void operator()(const th::MousePosition& event) override {
-            // TH_APP_LOG_INFO("Example Layer::onEvent {}", event.toString());
-        }
-        using EventDispatcher::operator();
-    };
+import th.scene.model;
+import th.scene.texture_data;
 
-public:
-    explicit ExampleLayer() : OverlayLayer("example layer") {}
-    void draw(vk::CommandBuffer) override {}
-    void onAttach() override {}
-    void onDetach() override {}
-    void onEvent(const th::Event& event) override {
-        std::visit(MyEventDispatcher{}, event);
-    }
-    void start() override {}
-    void submit() override {}
-};
-
-class ExampleApp: public th::Application {
+class ExampleApp: public th::core::Application {
 public:
     ExampleApp() {
-        layers.pushLayer(&exampleLayer);
         modelStorage.addModel(th::scene::Model{
                 .name = "Grumpy 1",
                 .mesh =
@@ -46,7 +20,7 @@ public:
                                               { { 0.5f, 0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },
                                               { { -0.5f, 0.5f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } } },
                                 .indices = { 0, 1, 2, 2, 3, 0 } },
-                .texture = th::TextureData("C:\\Users\\sylwek\\Desktop\\grumpy.jpg"),
+                .texture = th::scene::TextureData("C:\\Users\\sylwek\\Desktop\\grumpy.jpg"),
                 .onAnimate = [](th::scene::Model& model) {
                     using namespace std::chrono;
                     static const auto startTime = high_resolution_clock::now();
@@ -63,7 +37,7 @@ public:
                                               { { 0.5f, 0.5f, -0.5f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },
                                               { { -0.5f, 0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } } },
                                 .indices = { 0, 1, 2, 2, 3, 0 } },
-                .texture = th::TextureData("C:\\Users\\sylwek\\Desktop\\grumpy2.jpg"),
+                .texture = th::scene::TextureData("C:\\Users\\sylwek\\Desktop\\grumpy2.jpg"),
                 .onAnimate = [](th::scene::Model& model) {
                     using namespace std::chrono;
                     static const auto startTime = high_resolution_clock::now();
@@ -72,9 +46,6 @@ public:
                     model.transformation.rotate(-deltaTime * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
                 } });
     }
-
-private:
-    ExampleLayer exampleLayer;
 };
 
 int main() {

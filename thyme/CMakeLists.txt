@@ -1,7 +1,6 @@
 project(thyme VERSION 0.0.1)
 
 set(header_path "${${PROJECT_NAME}_SOURCE_DIR}/include/thyme")
-set(source_path "${${PROJECT_NAME}_SOURCE_DIR}/src")
 
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
@@ -30,29 +29,9 @@ add_compile_definitions(VULKAN_HPP_NO_STRUCT_CONSTRUCTORS GLM_FORCE_RADIANS GLM_
 add_subdirectory(core)
 add_subdirectory(platform)
 add_subdirectory(render_system)
+add_subdirectory(scene)
 
 target_sources(${PROJECT_NAME} PRIVATE
-		src/core/application.cpp
-		src/core/engine.cpp
-		src/core/utils.cpp
-		src/scene/transformation.cpp
-		src/scene/model.cpp
-		src/scene/texture.cpp
-
-		src/platform/glfw_window.cpp
-
-		src/platform/vulkan/graphic_pipeline.cpp
-		src/platform/vulkan/gui.cpp
-		src/platform/vulkan/model.cpp
-		src/platform/vulkan/renderer.cpp
-		#src/platform/vulkan/shader.cpp #for now there are problems with integrating shaderc from google
-		src/platform/vulkan/utils.cpp
-		src/platform/vulkan/vulkan_buffer.cpp
-		src/platform/vulkan/vulkan_command_buffers.cpp
-		src/platform/vulkan/vulkan_device.cpp
-		src/platform/vulkan/vulkan_swapchain.cpp
-		src/platform/vulkan/vulkan_texture.cpp
-
 		../thirdparty/imgui/imgui.cpp
 		../thirdparty/imgui/imgui_demo.cpp
 		../thirdparty/imgui/imgui_draw.cpp
@@ -60,21 +39,17 @@ target_sources(${PROJECT_NAME} PRIVATE
 		../thirdparty/imgui/imgui_widgets.cpp
 		../thirdparty/imgui/backends/imgui_impl_glfw.cpp
 		../thirdparty/imgui/backends/imgui_impl_vulkan.cpp
-	PUBLIC
-		FILE_SET CXX_MODULES
-		BASE_DIRS ${Vulkan_INCLUDE_DIR}
-		FILES ${Vulkan_INCLUDE_DIR}/vulkan/vulkan.cppm
 )
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
 
-configure_file("${header_path}/version.hpp.in" "${header_path}/version.hpp")
+configure_file(version.hpp.in version.hpp)
 
 target_include_directories(${PROJECT_NAME}
 	PUBLIC
-		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-		$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
-		$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+		#$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+		#$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
+		#$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 		../thirdparty/imgui
 		../thirdparty/imgui/backends
 	PRIVATE
