@@ -3,26 +3,24 @@ module;
 #include <memory>
 #include <vector>
 
-export module th.render_system.vulkan.renderer;
+export module th.render_system.vulkan:renderer;
 
 import vulkan_hpp;
-
-import th.render_system.vulkan.buffer;
-import th.render_system.vulkan.command_buffers;
-import th.render_system.vulkan.device;
-import th.render_system.vulkan.graphic_pipeline;
-import th.render_system.vulkan.graphic_context;
-import th.render_system.vulkan.swap_chain;
-import th.render_system.vulkan.model;
-import th.render_system.vulkan.texture;
-import th.render_system.vulkan.uniform_buffer_object;
-import th.render_system.vulkan.utils;
-
-import th.render_system.vulkan.gui;
 
 import th.scene.camera;
 import th.scene.model;
 
+import :buffer;
+import :command_buffers;
+import :device;
+import :graphic_pipeline;
+import :graphic_context;
+import :swap_chain;
+import :model;
+import :texture;
+import :uniform_buffer_object;
+import :utils;
+import :gui;
 
 namespace th {
 

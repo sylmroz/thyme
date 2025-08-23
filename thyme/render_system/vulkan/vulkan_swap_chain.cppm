@@ -2,17 +2,17 @@ module;
 
 #include <spdlog/spdlog.h>
 
-export module th.render_system.vulkan.swap_chain;
+export module th.render_system.vulkan:swap_chain;
 
 import vulkan_hpp;
 
 import th.core.logger;
 
-import th.render_system.vulkan.device;
-import th.render_system.vulkan.graphic_context;
-import th.render_system.vulkan.utils;
-import th.render_system.vulkan.command_buffers;
-import th.render_system.vulkan.texture;
+import :device;
+import :graphic_context;
+import :utils;
+import :command_buffers;
+import :texture;
 
 namespace th {
 

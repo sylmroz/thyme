@@ -6,16 +6,16 @@ module;
 
 #include <string>
 
-export module th.render_system.vulkan.framework;
+export module th.render_system.vulkan:framework;
 
-import vulkan_hpp;
+#if !defined(NDEBUG)
+import :debug;
+#endif
 
 import th.core.logger;
 import th.core.utils;
 
-#if !defined(NDEBUG)
-import th.render_system.vulkan.debug;
-#endif
+import vulkan_hpp;
 
 namespace th {
 

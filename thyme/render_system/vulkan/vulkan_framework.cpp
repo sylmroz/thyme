@@ -7,7 +7,7 @@ module;
 #include <string_view>
 #include <vector>
 
-module th.render_system.vulkan.framework;
+module th.render_system.vulkan;
 
 #if !defined(NDEBUG)
 constexpr auto defaultEnabledExtensions =

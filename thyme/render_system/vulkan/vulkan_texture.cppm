@@ -1,12 +1,12 @@
-export module th.render_system.vulkan.texture;
+export module th.render_system.vulkan:texture;
 
-import vulkan_hpp;
-
-import th.render_system.vulkan.buffer;
-import th.render_system.vulkan.device;
-import th.render_system.vulkan.utils;
+import :buffer;
+import :device;
+import :utils;
 
 import th.scene.texture_data;
+
+import vulkan_hpp;
 
 namespace th {
 

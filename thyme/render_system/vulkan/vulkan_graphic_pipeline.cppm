@@ -2,15 +2,16 @@ module;
 
 #include <vector>
 
-export module th.render_system.vulkan.graphic_pipeline;
+export module th.render_system.vulkan:graphic_pipeline;
 
 import vulkan_hpp;
 
 import th.core.utils;
-import th.render_system.vulkan.device;
-import th.render_system.vulkan.model;
-import th.render_system.vulkan.utils;
-import th.render_system.vulkan.uniform_buffer_object;
+
+import :device;
+import :model;
+import :utils;
+import :uniform_buffer_object;
 
 import th.scene.camera;
 

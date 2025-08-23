@@ -3,7 +3,7 @@ module;
 #include <array>
 #include <exception>
 
-module th.render_system.vulkan.texture;
+module th.render_system.vulkan;
 
 namespace th {
 

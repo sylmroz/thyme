@@ -1,6 +1,8 @@
 module;
 
-module th.render_system.vulkan.model;
+module th.render_system.vulkan;
+
+import th.scene.model;
 
 namespace th {
 

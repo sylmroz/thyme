@@ -6,7 +6,7 @@ module;
 #include <format>
 #include <span>
 
-export module th.render_system.vulkan.debug;
+export module th.render_system.vulkan:debug;
 
 import vulkan_hpp;
 

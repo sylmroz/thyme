@@ -1,6 +1,6 @@
 module;
 
-export module th.render_system.vulkan.graphic_context;
+export module th.render_system.vulkan:graphic_context;
 
 import vulkan_hpp;
 

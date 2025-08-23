@@ -2,9 +2,9 @@ module;
 
 #include <vector>
 
-export module th.render_system.vulkan.device;
+export module th.render_system.vulkan:device;
 
-import th.render_system.vulkan.utils;
+import :utils;
 
 import vulkan_hpp;
 

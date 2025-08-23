@@ -5,7 +5,7 @@ module;
 
 #include <spdlog/spdlog.h>
 
-module th.render_system.vulkan.swap_chain;
+module th.render_system.vulkan;
 
 namespace th {
 

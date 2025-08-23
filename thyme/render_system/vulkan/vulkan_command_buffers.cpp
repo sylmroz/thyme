@@ -5,7 +5,7 @@ module;
 
 #include <spdlog/spdlog.h>
 
-module th.render_system.vulkan.command_buffers;
+module th.render_system.vulkan;
 
 import th.core.logger;
 

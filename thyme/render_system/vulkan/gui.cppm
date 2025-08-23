@@ -5,15 +5,16 @@ module;
 #include <imgui_impl_vulkan.h>
 #include <spdlog/spdlog.h>
 
-export module th.render_system.vulkan.gui;
+export module th.render_system.vulkan:gui;
 
-import vulkan_hpp;
+import :device;
+import :graphic_context;
+import :utils;
 
-import th.render_system.vulkan.device;
-import th.render_system.vulkan.graphic_context;
 import th.platform.glfw.glfw_window;
 import th.core.logger;
-import th.render_system.vulkan.utils;
+
+import vulkan_hpp;
 
 namespace th {
 

@@ -2,11 +2,14 @@ module;
 
 #include <algorithm>
 #include <array>
+#include <map>
+#include <set>
 #include <string_view>
+#include <vector>
 
 #include <spdlog/spdlog.h>
 
-module th.render_system.vulkan.device;
+module th.render_system.vulkan;
 
 import th.core.logger;
 
@@ -18,7 +21,7 @@ static constexpr auto g_sDeviceExtensions = std::array{ vk::KHRSwapchainExtensio
                                                         vk::KHRBufferDeviceAddressExtensionName };
 
 [[nodiscard]] auto VulkanPhysicalDevicesManager::PhysicalDevice::createLogicalDevice() const -> vk::raii::Device {
-    const std::set indices = { queueFamilyIndices.graphicFamily.value(), queueFamilyIndices.presentFamily.value() };
+    const std::set<uint32_t> indices = { queueFamilyIndices.graphicFamily.value(), queueFamilyIndices.presentFamily.value() };
     std::vector<vk::DeviceQueueCreateInfo> deviceQueueCreateInfos;
     for (const auto ind : indices) {
         float queuePriority{ 1.0 };
@@ -106,7 +109,7 @@ auto VulkanPhysicalDevicesManager::enumeratePhysicalDevices(const vk::raii::Inst
         throw std::runtime_error(message);
     }
 
-    std::ranges::sort(physicalDevices, [](const auto& device1, const auto& device2) {
+    std::sort(physicalDevices.begin(), physicalDevices.end(), [](const auto& device1, const auto& device2) {
         const auto dt1 = device1.physicalDevice.getProperties().deviceType;
         const auto dt2 = device2.physicalDevice.getProperties().deviceType;
         return priorities[dt1] > priorities[dt2];

@@ -1,9 +1,9 @@
-export module th.render_system.vulkan.buffer;
+export module th.render_system.vulkan:buffer;
 
 import vulkan_hpp;
 
-import th.render_system.vulkan.device;
-import th.render_system.vulkan.utils;
+import :device;
+import :utils;
 
 namespace th {
 

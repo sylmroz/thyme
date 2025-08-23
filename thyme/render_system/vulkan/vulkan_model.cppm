@@ -2,14 +2,14 @@ module;
 
 #include <cstdint>
 
-export module th.render_system.vulkan.model;
+export module th.render_system.vulkan:model;
 
 import vulkan_hpp;
 
-import th.render_system.vulkan.buffer;
-import th.render_system.vulkan.device;
-import th.render_system.vulkan.uniform_buffer_object;
-import th.render_system.vulkan.texture;
+import :buffer;
+import :device;
+import :uniform_buffer_object;
+import :texture;
 
 import th.scene.model;
 

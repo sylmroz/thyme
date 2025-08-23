@@ -11,15 +11,7 @@ module;
 
 export module th.core.engine;
 
-import th.render_system.vulkan.command_buffers;
-import th.render_system.vulkan.device;
-import th.render_system.vulkan.framework;
-import th.render_system.vulkan.graphic_context;
-import th.render_system.vulkan.renderer;
-import th.render_system.vulkan.swap_chain;
-import th.render_system.vulkan.utils;
-
-import th.render_system.vulkan.gui;
+import th.render_system.vulkan;
 
 import th.platform.glfw.glfw_window;
 import th.platform.window;

@@ -1,6 +1,6 @@
 module;
 
-module th.render_system.vulkan.buffer;
+module th.render_system.vulkan;
 
 namespace th {
 

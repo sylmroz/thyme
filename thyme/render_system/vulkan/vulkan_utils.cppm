@@ -3,7 +3,7 @@ module;
 #include <numeric>
 #include <vector>
 
-export module th.render_system.vulkan.utils;
+export module th.render_system.vulkan:utils;
 
 import vulkan_hpp;
 

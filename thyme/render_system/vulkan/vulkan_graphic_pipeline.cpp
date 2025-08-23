@@ -5,7 +5,9 @@ module;
 #include <filesystem>
 #include <ranges>
 
-module th.render_system.vulkan.graphic_pipeline;
+module th.render_system.vulkan;
+
+import th.scene.camera;
 
 namespace th {
 

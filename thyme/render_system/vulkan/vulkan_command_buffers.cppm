@@ -2,7 +2,7 @@ module;
 
 #include <vector>
 
-export module th.render_system.vulkan.command_buffers;
+export module th.render_system.vulkan:command_buffers;
 
 import vulkan_hpp;
 
