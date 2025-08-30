@@ -1,6 +1,5 @@
 module;
 #if !defined(NDEBUG)
-#include <spdlog/spdlog.h>
 #include <vulkan/vk_platform.h>
 
 #include <format>
@@ -57,7 +56,7 @@ inline VKAPI_ATTR auto VKAPI_CALL debugCallback(const vk::DebugUtilsMessageSever
                                      pCallbackData->pMessageIdName,
                                      pCallbackData->pMessage,
                                      messageDetails);
-    const auto logger = core::ThymeLogger::getLogger();
+    const auto logger = ThymeLogger::getLogger();
     switch (messageSeverity) {
         case vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose: logger->trace("{}", message); break;
         case vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo: logger->info("{}", message); break;

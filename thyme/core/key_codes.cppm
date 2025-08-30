@@ -4,7 +4,7 @@ module;
 
 export module th.core.key_codes;
 
-namespace th::core {
+namespace th {
 
 export enum class KeyCode : int16_t {
     space = 32,

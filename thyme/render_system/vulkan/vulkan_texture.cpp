@@ -175,7 +175,7 @@ VulkanColorImageMemory::VulkanColorImageMemory(const VulkanDevice& device, const
                                 | vk::ImageUsageFlagBits::eColorAttachment,
                         vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor, msaa, 1) {}
 
-Vulkan2DTexture::Vulkan2DTexture(const VulkanDevice& device, const scene::TextureData& texture, const vk::Format format)
+Vulkan2DTexture::Vulkan2DTexture(const VulkanDevice& device, const TextureData& texture, const vk::Format format)
     : m_imageMemory{ VulkanImageMemory(
               device,
               vk::Extent3D{ .width = texture.getResolution().x, .height = texture.getResolution().y, .depth = 1 },
@@ -193,7 +193,7 @@ Vulkan2DTexture::Vulkan2DTexture(const VulkanDevice& device, const scene::Textur
     setData(texture);
 }
 
-void Vulkan2DTexture::setData(const scene::TextureData& texture) {
+void Vulkan2DTexture::setData(const TextureData& texture) {
     m_extent = vk::Extent2D(texture.getResolution().x, texture.getResolution().y);
     m_imageMemory.resize(vk::Extent3D{ .width = m_extent.width, .height = m_extent.height, .depth = 1 });
     m_mipLevels = texture.getMipLevels();

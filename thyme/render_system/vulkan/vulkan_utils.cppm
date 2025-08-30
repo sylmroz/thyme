@@ -143,11 +143,10 @@ void singleTimeCommand(const vk::Device device, const vk::CommandPool commandPoo
 }
 
 constexpr auto getBindingDescription() -> vk::VertexInputBindingDescription {
-    return { 0, sizeof(scene::Vertex), vk::VertexInputRate::eVertex };
+    return { 0, sizeof(Vertex), vk::VertexInputRate::eVertex };
 }
 
 constexpr auto getAttributeDescriptions() -> std::array<vk::VertexInputAttributeDescription, 3> {
-    using namespace scene;
     return std::array{
         vk::VertexInputAttributeDescription(0, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, pos)),
         vk::VertexInputAttributeDescription(1, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, color)),

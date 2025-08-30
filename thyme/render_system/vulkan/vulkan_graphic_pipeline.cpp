@@ -1,7 +1,5 @@
 module;
 
-#include <spdlog/spdlog.h>
-
 #include <filesystem>
 #include <ranges>
 
@@ -14,7 +12,7 @@ namespace th {
 VulkanScenePipeline::VulkanScenePipeline(const VulkanDevice& device,
                              const vk::PipelineRenderingCreateInfo& pipelineRenderingCreateInfo,
                              std::vector<VulkanModel>& models,
-                             const VulkanUniformBuffer<scene::CameraMatrices>& cameraMatrices) {
+                             const VulkanUniformBuffer<CameraMatrices>& cameraMatrices) {
     constexpr auto uboBinding =
             vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex);
     constexpr auto cameraUboBinding =
@@ -29,9 +27,9 @@ VulkanScenePipeline::VulkanScenePipeline(const VulkanDevice& device,
 
     m_descriptorPool =
             createDescriptorPool(device.logicalDevice,
-                                 { vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, models.size()),
-                                   vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, models.size()),
-                                   vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, models.size()) });
+                                 { vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, static_cast<uint32_t>(models.size())),
+                                   vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, static_cast<uint32_t>(models.size())),
+                                   vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, static_cast<uint32_t>(models.size())) });
 
     const auto descriptorSetLayouts = std::vector{ models.size(), m_descriptorSetLayout.get() };
     m_descriptorSets = device.logicalDevice.allocateDescriptorSets(
@@ -75,8 +73,8 @@ VulkanScenePipeline::VulkanScenePipeline(const VulkanDevice& device,
     const auto currentDir = std::filesystem::current_path();
     const auto shaderPath = currentDir / "../../../../thyme/shaders/spv";
     const auto shaderAbsolutePath = std::filesystem::absolute(shaderPath);
-    const auto vertShader = core::readFile(shaderAbsolutePath / "triangle.vert.spv");
-    const auto fragShader = core::readFile(shaderAbsolutePath / "triangle.frag.spv");
+    const auto vertShader = readFile(shaderAbsolutePath / "triangle.vert.spv");
+    const auto fragShader = readFile(shaderAbsolutePath / "triangle.frag.spv");
     const auto vertexShaderModule = device.logicalDevice.createShaderModuleUnique(vk::ShaderModuleCreateInfo{
             .codeSize = vertShader.size(), .pCode = reinterpret_cast<const uint32_t*>(vertShader.data()) });
     const auto fragmentShaderModule = device.logicalDevice.createShaderModuleUnique(vk::ShaderModuleCreateInfo{

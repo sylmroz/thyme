@@ -78,7 +78,7 @@ public:
 
 export class Vulkan2DTexture {
 public:
-    Vulkan2DTexture(const VulkanDevice& device, const scene::TextureData& texture,
+    Vulkan2DTexture(const VulkanDevice& device, const TextureData& texture,
                     vk::Format format = vk::Format::eR8G8B8A8Unorm);
 
     [[nodiscard]] auto getImage() const noexcept -> vk::Image {
@@ -98,7 +98,7 @@ public:
         return { m_sampler.get(), getImageView(), imageLayout };
     }
 
-    void setData(const scene::TextureData& texture);
+    void setData(const TextureData& texture);
 
 private:
     void generateMipmaps() const;

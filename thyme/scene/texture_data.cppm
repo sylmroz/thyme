@@ -4,14 +4,13 @@ module;
 #include <mdspan>
 
 #include <glm/vec2.hpp>
-#include <spdlog/spdlog.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 export module th.scene.texture_data;
 
-export namespace th::scene {
+export namespace th {
 
 class TextureData {
 public:
@@ -56,5 +55,4 @@ TextureData::TextureData(const std::filesystem::path& file) {
     stbi_image_free(pixels);
 }
 
-
-}// namespace th::scene
+}// namespace th

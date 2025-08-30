@@ -1,9 +1,19 @@
-target_sources(${PROJECT_NAME} PUBLIC FILE_SET thyme_core TYPE CXX_MODULES FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/application.cppm
-        ${CMAKE_CURRENT_SOURCE_DIR}/engine.cppm
-        ${CMAKE_CURRENT_SOURCE_DIR}/events.cppm
-        ${CMAKE_CURRENT_SOURCE_DIR}/key_codes.cppm
-        ${CMAKE_CURRENT_SOURCE_DIR}/logger.cppm
-        ${CMAKE_CURRENT_SOURCE_DIR}/mouse_codes.cppm
-        ${CMAKE_CURRENT_SOURCE_DIR}/utils.cppm
+set(MODULE_FILES
+        application.cppm
+        engine.cppm
+        events.cppm
+        key_codes.cppm
+        logger.cppm
+        mouse_codes.cppm
+        utils.cppm
+)
+
+set(SRC_FILES
+        application.cpp
+        engine.cpp
+)
+
+target_sources(${PROJECT_NAME}
+        PUBLIC FILE_SET thyme_core TYPE CXX_MODULES FILES ${MODULE_FILES}
+        PRIVATE ${SRC_FILES}
 )

@@ -46,7 +46,7 @@ public:
     explicit VulkanScenePipeline(const VulkanDevice& device,
                                  const vk::PipelineRenderingCreateInfo& pipelineRenderingCreateInfo,
                                  std::vector<VulkanModel>& models,
-                                 const VulkanUniformBuffer<scene::CameraMatrices>& cameraMatrices);
+                                 const VulkanUniformBuffer<CameraMatrices>& cameraMatrices);
 
     void draw(vk::CommandBuffer commandBuffer, const std::vector<VulkanModel>& models) const override;
 

@@ -52,8 +52,8 @@ private:
 // };
 export class VulkanRenderer {
 public:
-    explicit VulkanRenderer(const VulkanDevice& device, VulkanSwapChain& swapChain, scene::ModelStorage& modelStorage,
-                            scene::Camera& camera, Gui& gui, const VulkanGraphicContext& context,
+    explicit VulkanRenderer(const VulkanDevice& device, VulkanSwapChain& swapChain, ModelStorage& modelStorage,
+                            Camera& camera, Gui& gui, const VulkanGraphicContext& context,
                             VulkanCommandBuffersPool& commandBuffersPool) noexcept;
 
     void draw();
@@ -85,10 +85,10 @@ private:
     VulkanColorImageMemory m_resolveColorImageMemory;
 
     std::vector<VulkanModel> m_models;
-    std::reference_wrapper<scene::Camera> m_camera;
+    std::reference_wrapper<Camera> m_camera;
 
-    std::reference_wrapper<scene::ModelStorage> m_modelStorage;
-    VulkanUniformBuffer<scene::CameraMatrices> m_cameraMatrices;
+    std::reference_wrapper<ModelStorage> m_modelStorage;
+    VulkanUniformBuffer<CameraMatrices> m_cameraMatrices;
 };
 
 }// namespace th

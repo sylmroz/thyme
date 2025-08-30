@@ -5,7 +5,7 @@ module;
 
 export module th.scene.camera;
 
-export namespace th::scene {
+export namespace th {
 
 struct CameraMatrices {
     glm::mat4 view;

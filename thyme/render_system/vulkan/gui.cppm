@@ -3,7 +3,6 @@ module;
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
-#include <spdlog/spdlog.h>
 
 export module th.render_system.vulkan:gui;
 
@@ -45,7 +44,7 @@ Gui::Gui(const VulkanDevice& device,
          const VulkanGraphicContext& context,
          const vk::Instance instance)
     : m_context{ context } {
-    core::ThymeLogger().getLogger()->debug("Create Gui Class");
+    ThymeLogger().getLogger()->debug("Create Gui Class");
     m_pipelineCache = device.logicalDevice.createPipelineCacheUnique(vk::PipelineCacheCreateInfo());
     m_descriptorPool = createDescriptorPool(device.logicalDevice,
                                             { vk::DescriptorPoolSize(vk::DescriptorType::eSampler, 1000),
@@ -83,7 +82,7 @@ Gui::Gui(const VulkanDevice& device,
         if (vkResult == VK_SUCCESS) {
             return;
         }
-        core::ThymeLogger().getLogger()->error("CheckVkResultFn: {}", static_cast<int>(vkResult));
+        ThymeLogger().getLogger()->error("CheckVkResultFn: {}", static_cast<int>(vkResult));
     };
     ImGui_ImplVulkan_Init(&initInfo);
 }
@@ -111,7 +110,7 @@ void Gui::start() const {
 }
 
 Gui::~Gui() noexcept {
-    core::ThymeLogger().getLogger()->debug("Destroy Gui Class");
+    ThymeLogger().getLogger()->debug("Destroy Gui Class");
 
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();

@@ -2,8 +2,6 @@ module;
 
 //#include "thyme/version.hpp"
 
-#include <spdlog/spdlog.h>
-
 #include <string>
 
 export module th.render_system.vulkan:framework;

@@ -42,17 +42,17 @@ RenderTarget::RenderTarget(const vk::ImageView imageView, const vk::ImageLayout 
 //     m_colorMemory = ColorImageMemory()
 // }
 
-void updateUBO(const scene::Camera& camera, const VulkanUniformBuffer<scene::CameraMatrices>& cameraMatrices,
-               std::vector<VulkanModel>& models, scene::ModelStorage& model_storage) {
+void updateUBO(const Camera& camera, const VulkanUniformBuffer<CameraMatrices>& cameraMatrices,
+               std::vector<VulkanModel>& models, ModelStorage& model_storage) {
     cameraMatrices.update(
-            scene::CameraMatrices{ .view = camera.getViewMatrix(), .projection = camera.getProjectionMatrix() });
+            CameraMatrices{ .view = camera.getViewMatrix(), .projection = camera.getProjectionMatrix() });
     for (auto [vlkModel, model] : std::views::zip(models, model_storage)) {
         model.animate();
         vlkModel.getUniformBufferObject().update(model.transformation.getTransformMatrix());
     }
 }
 
-VulkanRenderer::VulkanRenderer(const VulkanDevice& device, VulkanSwapChain& swapChain, scene::ModelStorage& modelStorage, scene::Camera& camera,
+VulkanRenderer::VulkanRenderer(const VulkanDevice& device, VulkanSwapChain& swapChain, ModelStorage& modelStorage, Camera& camera,
                    Gui& gui, const VulkanGraphicContext& context, VulkanCommandBuffersPool& commandBuffersPool) noexcept
     : m_gui{ gui }, m_swapChain{ swapChain }, m_commandBuffersPool{ commandBuffersPool },
       m_depthImageMemory{ device, swapChain.getSwapChainExtent(), context.depthFormat, device.maxMsaaSamples },

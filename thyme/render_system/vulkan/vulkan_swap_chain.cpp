@@ -3,8 +3,6 @@ module;
 #include <algorithm>
 #include <iterator>
 
-#include <spdlog/spdlog.h>
-
 module th.render_system.vulkan;
 
 namespace th {
@@ -143,7 +141,7 @@ void VulkanSwapChain::submitFrame() {
             recreateSwapChain();
         }
         if (queuePresentResult != vk::Result::eSuccess) {
-            core::ThymeLogger::getLogger()->error("Failed to present rendered result!");
+            ThymeLogger::getLogger()->error("Failed to present rendered result!");
             throw std::runtime_error("Failed to present rendered result!");
         }
     } catch (const vk::OutOfDateKHRError&) {

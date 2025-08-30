@@ -7,8 +7,6 @@ module;
 #include <string_view>
 #include <vector>
 
-#include <spdlog/spdlog.h>
-
 module th.render_system.vulkan;
 
 import th.core.logger;
@@ -105,7 +103,7 @@ auto VulkanPhysicalDevicesManager::enumeratePhysicalDevices(const vk::raii::Inst
 
     if (physicalDevices.empty()) {
         constexpr auto message = "No physical device exist which can meet all requirements!";
-        core::ThymeLogger::getLogger()->error(message);
+        ThymeLogger::getLogger()->error(message);
         throw std::runtime_error(message);
     }
 

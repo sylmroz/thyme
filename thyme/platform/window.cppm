@@ -35,15 +35,15 @@ public:
 
     WindowConfig config;
 
-    auto subscribe(core::EventSubject::event_fn&& handler) -> int {
-        return m_eventListener.subscribe(std::forward<core::EventSubject::event_fn>(handler));
+    auto subscribe(EventSubject::event_fn&& handler) -> int {
+        return m_eventListener.subscribe(std::forward<EventSubject::event_fn>(handler));
     }
 
     virtual ~Window() = default;
 
 protected:
     WindowState m_windowState{ WindowState::maximalized };
-    core::EventSubject m_eventListener;
+    EventSubject m_eventListener;
 };
 
 }// namespace th

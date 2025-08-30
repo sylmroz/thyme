@@ -1,8 +1,6 @@
 module;
 
-#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include <spdlog/spdlog.h>
 #include <vulkan/vulkan.hpp>
 
 #include <functional>
@@ -55,8 +53,6 @@ public:
     explicit VulkanGlfwWindow(const WindowConfig& config, const vk::raii::Instance& instance)
         : GlfwWindow(config), m_surface(createSurface(instance)) {}
 
-    [[nodiscard]] static auto getExtensions() noexcept -> std::vector<std::string>;
-
     [[nodiscard]] auto getSurface() -> const vk::raii::SurfaceKHR& {
         return m_surface;
     }
@@ -75,85 +71,5 @@ private:
 private:
     vk::raii::SurfaceKHR m_surface;
 };
-
-GlfwWindow::GlfwWindow(const WindowConfig& config) : Window{ config } {
-    core::ThymeLogger().getLogger()->debug("Create window with parameters: width = {}, height = {}, name = {}",
-                                           config.width,
-                                           config.height,
-                                           config.name);
-    m_window = WindowHWND(glfwCreateWindow(static_cast<int>(config.width),
-                                           static_cast<int>(config.height),
-                                           config.name.data(),
-                                           nullptr,
-                                           nullptr),
-                          [name = config.name](GLFWwindow* window) {
-                              core::ThymeLogger().getLogger()->debug("Destroying window {}", name);
-                              if (window != nullptr) {
-                                  glfwDestroyWindow(window);
-                              }
-                          });
-    glfwSetWindowUserPointer(m_window.get(), this);
-
-    glfwSetFramebufferSizeCallback(m_window.get(), [](GLFWwindow* window, const int width, const int height) {
-        const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
-        const auto state = (width == 0 || height == 0) ? WindowState::minimalized : WindowState::maximalized;
-        if (state != app->m_windowState) {
-            app->m_windowState = state;
-            if (state == WindowState::minimalized) {
-                app->m_eventListener.next(core::WindowMinimalize{});
-            } else {
-                app->m_eventListener.next(core::WindowMaximalize{});
-            }
-        }
-        if (width > 0 && height > 0) {
-            app->m_eventListener.next(core::WindowResize{ .width = width, .height = height });
-        }
-    });
-
-    glfwSetWindowCloseCallback(m_window.get(), [](GLFWwindow* window) {
-        const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
-        app->m_eventListener.next(core::WindowClose{});
-    });
-
-    glfwSetCursorPosCallback(m_window.get(), [](GLFWwindow* window, double x, double y) {
-        const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
-        app->m_eventListener.next(core::MousePosition{ { x, y } });
-    });
-
-    glfwSetScrollCallback(m_window.get(), [](GLFWwindow* window, double x, double y) {
-        const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
-        app->m_eventListener.next(core::MouseWheel{ { x, y } });
-    });
-
-    glfwSetKeyCallback(m_window.get(), [](GLFWwindow* window, int key, int scancode, int action, int mods) {
-        const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
-        const auto& eventSubject = app->m_eventListener;
-        if (action == GLFW_PRESS) {
-            eventSubject.next(core::KeyPressed(static_cast<core::KeyCode>(key)));
-        } else if (action == GLFW_RELEASE) {
-            eventSubject.next(core::KeyReleased(static_cast<core::KeyCode>(key)));
-        } else if (action == GLFW_REPEAT) {
-            eventSubject.next(core::KeyRepeated(static_cast<core::KeyCode>(key)));
-        }
-    });
-
-    glfwSetMouseButtonCallback(m_window.get(), [](GLFWwindow* window, int button, int action, int mods) {
-        const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
-        const auto& eventSubject = app->m_eventListener;
-        if (action == GLFW_PRESS) {
-            eventSubject.next(core::MouseButtonPress(static_cast<core::MouseButton>(button)));
-        } else if (action == GLFW_RELEASE) {
-            eventSubject.next(core::MouseButtonReleased(static_cast<core::MouseButton>(button)));
-        }
-    });
-}
-
-auto VulkanGlfwWindow::getExtensions() noexcept -> std::vector<std::string> {
-    uint32_t instanceExtensionCount{ 0 };
-    auto* instanceExtensionBuffer = glfwGetRequiredInstanceExtensions(&instanceExtensionCount);
-    std::vector<std::string> instanceExtensions(instanceExtensionCount);
-    std::copy_n(instanceExtensionBuffer, instanceExtensionCount, instanceExtensions.begin());
-    return instanceExtensions;
-}
 
 }// namespace th

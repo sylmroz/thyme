@@ -13,7 +13,7 @@ import th.core.key_codes;
 import th.core.utils;
 import th.core.mouse_codes;
 
-export namespace th::core {
+export namespace th {
 
 struct WindowResize {
     int width;
@@ -136,4 +136,4 @@ struct EventDispatcher: EventDispatcherHelper<Events>... {
     void operator()(auto&&) {}
 };
 
-}// namespace th::core
+}// namespace th

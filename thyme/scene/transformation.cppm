@@ -2,10 +2,9 @@ module;
 
 #include <glm/gtc/matrix_transform.hpp>
 
-
 export module th.scene.transformation;
 
-export namespace th::scene {
+export namespace th {
 
 class Transformation {
 public:
@@ -23,11 +22,11 @@ public:
         transformMatrix = glm::scale(transformMatrix, factor);
     }
 
-    [[nodiscard]] inline glm::mat4 getTransformMatrix() const noexcept {
+    [[nodiscard]] inline auto getTransformMatrix() const noexcept -> glm::mat4 {
         return transformMatrix;
     }
 
-    [[nodiscard]] inline glm::vec4 getCenterPoint() const noexcept {
+    [[nodiscard]] inline auto getCenterPoint() const noexcept -> glm::vec4 {
         return centerPoint;
     }
 

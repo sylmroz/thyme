@@ -2,7 +2,6 @@ module;
 
 #include <array>
 #include <ranges>
-#include <spdlog/spdlog.h>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -28,7 +27,7 @@ VulkanFramework::VulkanFramework(const InitInfo& info, const std::vector<std::st
       m_debug{ m_instance }
 #endif
 {
-    core::ThymeLogger::getLogger()->info("Vulkan framework initialized:\n\tAppName: {}\n\t{}\n\t{} {} {} {}",
+    ThymeLogger::getLogger()->info("Vulkan framework initialized:\n\tAppName: {}\n\t{}\n\t{} {} {} {}",
                                          info.appName,
                                          info.engineName,
                                          0,//version::major,
@@ -62,7 +61,7 @@ VulkanFramework::VulkanFramework(const InitInfo& info, const std::vector<std::st
 #if !defined(NDEBUG)
         const auto enableValidation = validateLayers(validationLayers);
         if (!enableValidation) {
-            core::ThymeLogger::getLogger()->warn("Validation layers are not available! Proceeding without them.");
+            ThymeLogger::getLogger()->warn("Validation layers are not available! Proceeding without them.");
         }
         if (enableValidation) {
             return vk::InstanceCreateInfo{
@@ -98,16 +97,16 @@ VulkanFramework::VulkanFramework(const InitInfo& info, const std::vector<std::st
 }
 
 void VulkanFramework::dumpExtensions() const {
-    core::ThymeLogger::getLogger()->info("Vulkan extensions:");
+    ThymeLogger::getLogger()->info("Vulkan extensions:");
     for (const auto& extension : m_context.enumerateInstanceExtensionProperties()) {
-        core::ThymeLogger::getLogger()->info("\t{}", std::string_view(extension.extensionName));
+        ThymeLogger::getLogger()->info("\t{}", std::string_view(extension.extensionName));
     }
 }
 
 void VulkanFramework::dumpLayers() const {
-    core::ThymeLogger::getLogger()->info("Vulkan layers:");
+    ThymeLogger::getLogger()->info("Vulkan layers:");
     for (const auto& layer : m_context.enumerateInstanceLayerProperties()) {
-        core::ThymeLogger::getLogger()->info("\t{}", std::string_view(layer.layerName));
+        ThymeLogger::getLogger()->info("\t{}", std::string_view(layer.layerName));
     }
 }
 
@@ -135,7 +134,7 @@ auto VulkanFramework::validateExtension(std::span<const char* const> requestedEx
     const auto requestedExtensionsRange = requestedExtensions | std::views::transform([](const auto& extension) {
                                               return std::string_view(extension);
                                           });
-    return core::arrayContainsArray(requestedExtensionsRange, extensionProperties);
+    return arrayContainsArray(requestedExtensionsRange, extensionProperties);
 }
 
 auto VulkanFramework::validateLayers(std::span<const char* const> requestedLayers) const -> bool {
@@ -145,7 +144,7 @@ auto VulkanFramework::validateLayers(std::span<const char* const> requestedLayer
             | std::views::transform([](const vk::LayerProperties& layer) { return std::string_view(layer.layerName); });
     const auto requestedLayersRange =
             requestedLayers | std::views::transform([](const auto& extension) { return std::string_view(extension); });
-    return core::arrayContainsArray(requestedLayersRange, layerPropertiesNames);
+    return arrayContainsArray(requestedLayersRange, layerPropertiesNames);
 }
 
 }// namespace th

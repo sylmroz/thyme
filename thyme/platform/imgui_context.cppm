@@ -1,6 +1,6 @@
 module;
 
-#include <imgui.h>>
+#include <imgui.h>
 
 export module th.platform.imgui_context;
 

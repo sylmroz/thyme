@@ -1,7 +1,3 @@
-module;
-
-#include <spdlog/spdlog.h>
-
 export module th.render_system.vulkan:swap_chain;
 
 import vulkan_hpp;
@@ -40,7 +36,7 @@ private:
     [[nodiscard]] auto getSwapChainFrameInternal(const uint32_t index) const -> SwapChainFrame {
         if (index >= m_images.size()) {
             constexpr auto message = "SwapChainFrames index out of range";
-            core::ThymeLogger::getLogger()->error(message);
+            ThymeLogger::getLogger()->error(message);
             throw std::out_of_range(message);
         }
         return SwapChainFrame{ .image = m_images[index], .imageView = m_imageViews[index].get() };

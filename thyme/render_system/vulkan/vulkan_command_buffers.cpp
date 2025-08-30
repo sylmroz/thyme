@@ -3,8 +3,6 @@ module;
 #include <ranges>
 #include <vector>
 
-#include <spdlog/spdlog.h>
-
 module th.render_system.vulkan;
 
 import th.core.logger;
@@ -30,7 +28,7 @@ void VulkanCommandBuffer::reset() {
     if (m_state == State::Submitted) {
         if (m_device.waitForFences({ m_fence.get() }, vk::True, std::numeric_limits<uint64_t>::max())
             != vk::Result::eSuccess) {
-            core::ThymeLogger().getLogger()->error("Failed to wait for a complete fence");
+            ThymeLogger().getLogger()->error("Failed to wait for a complete fence");
             throw std::runtime_error("Failed to wait for a complete fence");
         }
         m_device.resetFences({ m_fence.get() });

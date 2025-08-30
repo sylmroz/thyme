@@ -10,7 +10,7 @@ module;
 
 export module th.core.logger;
 
-namespace th::core {
+namespace th {
 
 export enum struct LogLevel {
     trace,
@@ -38,7 +38,7 @@ constexpr auto toSpdLogLevel(const LogLevel level) -> spdlog::level::level_enum 
 export template <class... Args>
 struct basic_format_with_source_location {
     template <class Str>
-        requires std::convertible_to<const Str&, spdlog::format_string_t<Args...>>
+        requires std::convertible_to<const Str&, std::format_string<Args...>>
     consteval basic_format_with_source_location(const Str fmt,
                                                 const std::source_location& loc = std::source_location::current())
         : m_fmt(std::move(fmt)), location(loc.file_name(), static_cast<int>(loc.line()), loc.function_name()) {}
@@ -52,7 +52,7 @@ struct basic_format_with_source_location {
     }
 
 private:
-    spdlog::format_string_t<Args...> m_fmt;
+    std::format_string<Args...> m_fmt;
     spdlog::source_loc location{};
 };
 
@@ -70,32 +70,38 @@ public:
 
     template <typename... Args>
     void trace(format_with_source_location<Args...> msg, Args&&... args) const noexcept {
-        logger->log(msg.get_location(), spdlog::level::trace, msg.get_format(), std::forward<Args>(args)...);
+        const auto fullMessage = std::format(msg.get_format(), std::forward<Args>(args)...);
+        logger->log(msg.get_location(), spdlog::level::trace, fullMessage);
     }
 
     template <typename... Args>
     void debug(format_with_source_location<Args...> msg, Args&&... args) const noexcept {
-        logger->log(msg.get_location(), spdlog::level::debug, msg.get_format(), std::forward<Args>(args)...);
+        const auto fullMessage = std::format(msg.get_format(), std::forward<Args>(args)...);
+        logger->log(msg.get_location(), spdlog::level::debug, fullMessage);
     }
 
     template <typename... Args>
     void info(format_with_source_location<Args...> msg, Args&&... args) const noexcept {
-        logger->log(msg.get_location(), spdlog::level::info, msg.get_format(), std::forward<Args>(args)...);
+        const auto fullMessage = std::format(msg.get_format(), std::forward<Args>(args)...);
+        logger->log(msg.get_location(), spdlog::level::info, fullMessage);
     }
 
     template <typename... Args>
     void warn(format_with_source_location<Args...> msg, Args&&... args) const noexcept {
-        logger->log(msg.get_location(), spdlog::level::warn, msg.get_format(), std::forward<Args>(args)...);
+        const auto fullMessage = std::format(msg.get_format(), std::forward<Args>(args)...);
+        logger->log(msg.get_location(), spdlog::level::warn, fullMessage);
     }
 
     template <typename... Args>
     void error(format_with_source_location<Args...> msg, Args&&... args) const noexcept {
-        logger->log(msg.get_location(), spdlog::level::err, msg.get_format(), std::forward<Args>(args)...);
+        const auto fullMessage = std::format(msg.get_format(), std::forward<Args>(args)...);
+        logger->log(msg.get_location(), spdlog::level::err, fullMessage);
     }
 
     template <typename... Args>
     void critical(format_with_source_location<Args...> msg, Args&&... args) const noexcept {
-        logger->log(msg.get_location(), spdlog::level::critical, msg.get_format(), std::forward<Args>(args)...);
+        const auto fullMessage = std::format(msg.get_format(), std::forward<Args>(args)...);
+        logger->log(msg.get_location(), spdlog::level::critical, fullMessage);
     }
 
     std::shared_ptr<spdlog::logger> logger;
@@ -129,4 +135,4 @@ private:
     inline static std::unique_ptr<Logger> s_logger{ nullptr };
 };
 
-}// namespace th::core
+}// namespace th

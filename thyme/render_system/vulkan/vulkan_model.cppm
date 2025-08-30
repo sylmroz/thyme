@@ -17,7 +17,7 @@ namespace th {
 
 export class VulkanModel {
 public:
-    VulkanModel(const scene::Model& model, const VulkanDevice& device);
+    VulkanModel(const Model& model, const VulkanDevice& device);
 
     [[nodiscard]] auto getVertexMemoryBuffer() const noexcept -> const VulkanBufferMemory& {
         return m_vertexMemoryBuffer;

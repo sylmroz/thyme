@@ -16,7 +16,7 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
 	# using Intel C++
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	target_compile_options(${PROJECT_NAME} PRIVATE
-			$<$<CONFIG:Debug>:/Wall /EHsc /ZI /MP>
+			$<$<CONFIG:Debug>:/W4 /EHsc /ZI /MP>
 			$<$<CONFIG:Release>:/GL /MP /O2>
 			$<$<CONFIG:RelWithDebInfo>:>
 			$<$<CONFIG:MinSizeRel>:>
@@ -24,7 +24,7 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	target_link_options(${PROJECT_NAME} PUBLIC $<$<CONFIG:Debug>:/INCREMENTAL>)
 endif()
 
-add_compile_definitions(VULKAN_HPP_NO_STRUCT_CONSTRUCTORS GLM_FORCE_RADIANS GLM_FORCE_DEPTH_ZERO_TO_ONE)
+add_compile_definitions(VULKAN_HPP_NO_STRUCT_CONSTRUCTORS GLM_FORCE_RADIANS GLM_FORCE_DEPTH_ZERO_TO_ONE GLFW_INCLUDE_VULKAN)
 
 add_subdirectory(core)
 add_subdirectory(platform)
@@ -55,11 +55,6 @@ target_include_directories(${PROJECT_NAME}
 	PRIVATE
 		${Stb_INCLUDE_DIR}
 )
-
-include(GenerateExportHeader)
-generate_export_header(
-    ${PROJECT_NAME} EXPORT_MACRO_NAME THYME_API BASE_NAME ${PROJECT_NAME} EXPORT_FILE_NAME
-    ${CMAKE_CURRENT_BINARY_DIR}/include/${PROJECT_NAME}/export_macros.hpp)
 
 target_precompile_headers(${PROJECT_NAME} 
     PUBLIC

@@ -15,7 +15,7 @@ import th.core.logger;
 import th.scene.texture_data;
 import th.scene.transformation;
 
-export namespace th::scene {
+export namespace th {
 
 struct Vertex {
     glm::vec3 pos;
@@ -45,14 +45,14 @@ public:
 class ModelStorage {
 public:
     inline auto addModel(const Model& model) -> Model& {
-         core::ThymeLogger::getLogger()->info("Adding model (name: {}, vertices: {}, indices: {})",
+         ThymeLogger::getLogger()->info("Adding model (name: {}, vertices: {}, indices: {})",
                         model.name,
                         model.mesh.vertices.size(),
                         model.mesh.indices.size());
         if (std::ranges::find_if(m_models, [&model](const Model& m) { return m.name == model.name; })
             != m_models.end()) {
             const auto msg = std::format("Cannot add model {}. Already exists.", model.name);
-            core::ThymeLogger::getLogger()->error("{}", msg);
+            ThymeLogger::getLogger()->error("{}", msg);
             throw std::runtime_error(msg);
         }
         return m_models.emplace_back(model);
@@ -105,4 +105,4 @@ private:
     std::vector<Model> m_models;
 };
 
-}// namespace th::scene
+}// namespace th

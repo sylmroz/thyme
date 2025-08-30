@@ -1,8 +1,6 @@
 module;
 
-#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include <spdlog/spdlog.h>
 #include <vulkan/vulkan.hpp>
 
 export module th.platform.glfw.glfw_context;
@@ -14,7 +12,7 @@ namespace th {
 
 const auto terminate_handler = [](const std::string_view message) {
     glfwTerminate();
-    core::ThymeLogger().getLogger()->error("{}", message);
+    ThymeLogger().getLogger()->error("{}", message);
     throw std::runtime_error(message.data());
 };
 
@@ -23,7 +21,7 @@ public:
     class VulkanBackend {
     public:
         VulkanBackend() {
-            core::ThymeLogger().getLogger()->info("Initializing GLFW Vulkan...");
+            ThymeLogger().getLogger()->info("Initializing GLFW Vulkan...");
             if (glfwVulkanSupported() == GLFW_FALSE) {
                 constexpr auto message = "GLFW3 does not support vulkan!";
                 terminate_handler(message);
@@ -40,9 +38,9 @@ public:
         }
     };
     GlfwContext() {
-        core::ThymeLogger().getLogger()->info("Initializing GLFW...");
+        ThymeLogger().getLogger()->info("Initializing GLFW...");
         glfwSetErrorCallback([](int error, const char* description) {
-            core::ThymeLogger().getLogger()->error("Error {} : msg: {}", error, description);
+            ThymeLogger().getLogger()->error("Error {} : msg: {}", error, description);
         });
         if (glfwInit() == GLFW_FALSE) {
             constexpr auto message = "Failed to initialize GLFW!";
@@ -57,7 +55,7 @@ public:
 
     ~GlfwContext() {
         glfwTerminate();
-        core::ThymeLogger().getLogger()->info("Terminating GLFW...");
+        ThymeLogger().getLogger()->info("Terminating GLFW...");
     }
 };
 

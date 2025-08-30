@@ -5,7 +5,7 @@ module;
 
 export module th.core.utils;
 
-namespace th::core {
+namespace th {
 
 export template <typename InnerArray, typename OuterArray>
 [[nodiscard]] constexpr auto arrayContainsArray(const InnerArray& innerArray, const OuterArray& outerArray)
@@ -32,4 +32,4 @@ export auto readFile(const std::filesystem::path& filePath) -> std::vector<char>
 }
 
 
-}// namespace th::core
+}// namespace th

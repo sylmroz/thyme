@@ -4,7 +4,7 @@ module;
 
 export module th.core.mouse_codes;
 
-namespace th::core {
+namespace th {
 
 export enum class MouseButton: uint8_t {
     button_1 = 0,
@@ -21,4 +21,4 @@ export enum class MouseButton: uint8_t {
     button_middle = button_3,
 };
 
-}// namespace th::core
+}// namespace th
