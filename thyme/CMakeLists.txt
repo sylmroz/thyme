@@ -1,7 +1,5 @@
 project(thyme VERSION 0.0.1)
 
-set(header_path "${${PROJECT_NAME}_SOURCE_DIR}/include/thyme")
-
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 set(CMAKE_CXX_SCAN_FOR_MODULES ON)
@@ -31,16 +29,6 @@ add_subdirectory(platform)
 add_subdirectory(render_system)
 add_subdirectory(scene)
 
-target_sources(${PROJECT_NAME} PRIVATE
-		../thirdparty/imgui/imgui.cpp
-		../thirdparty/imgui/imgui_demo.cpp
-		../thirdparty/imgui/imgui_draw.cpp
-		../thirdparty/imgui/imgui_tables.cpp
-		../thirdparty/imgui/imgui_widgets.cpp
-		../thirdparty/imgui/backends/imgui_impl_glfw.cpp
-		../thirdparty/imgui/backends/imgui_impl_vulkan.cpp
-)
-
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
 
 configure_file(version.hpp.in version.hpp)
@@ -50,15 +38,11 @@ target_include_directories(${PROJECT_NAME}
 		#$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 		#$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
 		#$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-		../thirdparty/imgui
-		../thirdparty/imgui/backends
 	PRIVATE
 		${Stb_INCLUDE_DIR}
 )
 
-target_precompile_headers(${PROJECT_NAME} 
-    PUBLIC
-        #"${header_path}/pch.hpp"
+target_precompile_headers(${PROJECT_NAME}
     PRIVATE
 		### std
         <array>
@@ -85,7 +69,7 @@ target_precompile_headers(${PROJECT_NAME}
 find_package(spdlog REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
-#find_package(imgui CONFIG REQUIRED)
+find_package(imgui CONFIG REQUIRED)
 find_package(Stb REQUIRED)
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 
@@ -95,7 +79,7 @@ target_link_libraries(${PROJECT_NAME}
         glfw
         Vulkan::Vulkan
         Vulkan::Headers
-		#imgui::imgui
+		imgui::imgui
 		GPUOpen::VulkanMemoryAllocator
 )
 

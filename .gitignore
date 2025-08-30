@@ -13,7 +13,7 @@ CMakeUserPresets.json
 
 .vs
 out
-thirdparty
+thirdparty/vcpkg
 .idea
 cmake-build-*
 .vscode
