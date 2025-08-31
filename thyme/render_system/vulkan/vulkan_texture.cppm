@@ -42,6 +42,9 @@ public:
 
     void transitImageLayout(ImageLayoutTransition layoutTransition);
     void transitImageLayout(vk::CommandBuffer commandBuffer, ImageLayoutTransition layoutTransition);
+    void transitImageLayout(vk::CommandBuffer commandBuffer, ImageLayoutTransition layoutTransition,
+                            ImagePipelineStageTransition stageTransition,
+                            ImageAccessFlagsTransition accessFlagsTransition);
 
     void copyTo(vk::CommandBuffer commandBuffer, const VulkanImageMemory& dstImage);
     void copyTo(vk::CommandBuffer commandBuffer, vk::Image image);
@@ -78,6 +81,8 @@ public:
 
 export class Vulkan2DTexture {
 public:
+    Vulkan2DTexture(const VulkanDevice& device, vk::Extent2D resolution,
+                    vk::Format format = vk::Format::eR8G8B8A8Unorm);
     Vulkan2DTexture(const VulkanDevice& device, const TextureData& texture,
                     vk::Format format = vk::Format::eR8G8B8A8Unorm);
 
@@ -90,7 +95,7 @@ public:
     [[nodiscard]] auto getSampler() const noexcept -> vk::Sampler {
         return m_sampler.get();
     }
-    [[nodiscard]] auto getImageMemory() const noexcept -> const VulkanImageMemory& {
+    [[nodiscard]] auto getImageMemory() noexcept -> VulkanImageMemory& {
         return m_imageMemory;
     }
     [[nodiscard]] auto getDescriptorImageInfo(const vk::ImageLayout imageLayout) const noexcept
@@ -99,6 +104,8 @@ public:
     }
 
     void setData(const TextureData& texture);
+
+    void resize(vk::Extent2D resolution);
 
 private:
     void generateMipmaps() const;

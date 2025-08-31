@@ -82,7 +82,7 @@ private:
 
     VulkanDepthImageMemory m_depthImageMemory;
     VulkanColorImageMemory m_colorImageMemory;
-    VulkanColorImageMemory m_resolveColorImageMemory;
+    Vulkan2DTexture m_resolveColorImageMemory;
 
     std::vector<VulkanModel> m_models;
     std::reference_wrapper<Camera> m_camera;

@@ -27,6 +27,10 @@ public:
     Gui(const Gui& other) = delete;
     auto operator=(const Gui& other) -> Gui& = delete;
 
+    void addTexture(const vk::ImageView imageView, const vk::Sampler sampler) {
+        m_texture = ImGui_ImplVulkan_AddTexture(sampler, imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    }
+
     void draw(vk::CommandBuffer commandBuffer);
 
     void start() const;
@@ -37,6 +41,9 @@ private:
     vk::UniquePipelineCache m_pipelineCache;
     vk::UniqueDescriptorPool m_descriptorPool;
     VulkanGraphicContext m_context;
+
+    VkDescriptorSet m_texture;
+    uint32_t m_dockSpaceId{0};
 };
 
 Gui::Gui(const VulkanDevice& device,
@@ -87,10 +94,20 @@ Gui::Gui(const VulkanDevice& device,
     ImGui_ImplVulkan_Init(&initInfo);
 }
 
+uint8_t index = 0;
+
 void Gui::draw(const vk::CommandBuffer commandBuffer) {
 
-    bool showDemoWindow = true;
-    ImGui::ShowDemoWindow(&showDemoWindow);
+    //bool showDemoWindow = true;
+    //ImGui::ShowDemoWindow(&showDemoWindow);
+    m_dockSpaceId = ImGui::GetID("DockSpace");
+    ImGui::DockSpaceOverViewport(m_dockSpaceId, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+
+    ImGui::Begin("Viewport");
+    ImGui::Image(static_cast<VkDescriptorSet>(m_texture),  ImGui::GetContentRegionAvail());
+
+    ImGui::End();
+
     ImGui::Render();
 
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);

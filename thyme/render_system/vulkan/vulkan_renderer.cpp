@@ -1,10 +1,9 @@
 module;
 
-#include <ranges>
 #include <memory>
+#include <ranges>
 
 module th.render_system.vulkan;
-
 
 
 namespace th {
@@ -44,24 +43,21 @@ RenderTarget::RenderTarget(const vk::ImageView imageView, const vk::ImageLayout 
 
 void updateUBO(const Camera& camera, const VulkanUniformBuffer<CameraMatrices>& cameraMatrices,
                std::vector<VulkanModel>& models, ModelStorage& model_storage) {
-    cameraMatrices.update(
-            CameraMatrices{ .view = camera.getViewMatrix(), .projection = camera.getProjectionMatrix() });
+    cameraMatrices.update(CameraMatrices{ .view = camera.getViewMatrix(), .projection = camera.getProjectionMatrix() });
     for (auto [vlkModel, model] : std::views::zip(models, model_storage)) {
         model.animate();
         vlkModel.getUniformBufferObject().update(model.transformation.getTransformMatrix());
     }
 }
 
-VulkanRenderer::VulkanRenderer(const VulkanDevice& device, VulkanSwapChain& swapChain, ModelStorage& modelStorage, Camera& camera,
-                   Gui& gui, const VulkanGraphicContext& context, VulkanCommandBuffersPool& commandBuffersPool) noexcept
+VulkanRenderer::VulkanRenderer(const VulkanDevice& device, VulkanSwapChain& swapChain, ModelStorage& modelStorage,
+                               Camera& camera, Gui& gui, const VulkanGraphicContext& context,
+                               VulkanCommandBuffersPool& commandBuffersPool) noexcept
     : m_gui{ gui }, m_swapChain{ swapChain }, m_commandBuffersPool{ commandBuffersPool },
       m_depthImageMemory{ device, swapChain.getSwapChainExtent(), context.depthFormat, device.maxMsaaSamples },
       m_colorImageMemory{ device, swapChain.getSwapChainExtent(), context.colorFormat, device.maxMsaaSamples },
-      m_resolveColorImageMemory{ device,
-                                 swapChain.getSwapChainExtent(),
-                                 context.colorFormat,
-                                 vk::SampleCountFlagBits::e1 },
-      m_camera{ camera }, m_modelStorage{ modelStorage }, m_cameraMatrices{ device } {
+      m_resolveColorImageMemory{ device, swapChain.getSwapChainExtent(), context.colorFormat }, m_camera{ camera },
+      m_modelStorage{ modelStorage }, m_cameraMatrices{ device } {
 
     for (const auto& model : modelStorage) {
         m_models.emplace_back(model, device);
@@ -83,6 +79,7 @@ void VulkanRenderer::draw() {
     updateUBO(m_camera, m_cameraMatrices, m_models, m_modelStorage);
     m_colorImageMemory.resize(m_swapChain.getSwapChainExtent());
     m_resolveColorImageMemory.resize(m_swapChain.getSwapChainExtent());
+    m_gui.addTexture(m_resolveColorImageMemory.getImageView(), m_resolveColorImageMemory.getSampler());
     m_depthImageMemory.resize(m_swapChain.getSwapChainExtent());
 
     const auto commandBuffer = m_commandBuffersPool.get().getBuffer();
@@ -91,7 +88,7 @@ void VulkanRenderer::draw() {
     constexpr auto depthClearValue = vk::ClearValue(vk::ClearDepthStencilValue(1.0f, 0));
 
 
-    m_resolveColorImageMemory.transitImageLayout(
+    m_resolveColorImageMemory.getImageMemory().transitImageLayout(
             commandBuffer,
             ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eUndefined,
                                    .newLayout = vk::ImageLayout::eColorAttachmentOptimal });
@@ -132,16 +129,18 @@ void VulkanRenderer::draw() {
     }
     commandBuffer.endRendering();
 
-    m_resolveColorImageMemory.transitImageLayout(
+
+    m_resolveColorImageMemory.getImageMemory().transitImageLayout(
             commandBuffer,
             ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eColorAttachmentOptimal,
-                                   .newLayout = vk::ImageLayout::eTransferSrcOptimal });
+                                   .newLayout = vk::ImageLayout::eShaderReadOnlyOptimal });
 
 
-    m_swapChain.renderImage(m_resolveColorImageMemory.getImage());
+    //m_swapChain.renderImage(m_resolveColorImageMemory.getImage());
+
     transitImageLayout(commandBuffer,
                        m_swapChain.getCurrentSwapChainFrame().image,
-                       ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eTransferDstOptimal,
+                       ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eUndefined,
                                               .newLayout = vk::ImageLayout::eColorAttachmentOptimal },
                        1);
 
@@ -149,8 +148,9 @@ void VulkanRenderer::draw() {
         .imageView = m_swapChain.getCurrentSwapChainFrame().imageView,
         .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
         .resolveMode = vk::ResolveModeFlagBits::eNone,
-        .loadOp = vk::AttachmentLoadOp::eLoad,
+        .loadOp = vk::AttachmentLoadOp::eClear,
         .storeOp = vk::AttachmentStoreOp::eStore,
+        .clearValue = clearColorValues,
     };
 
     const auto guiRenderingInfo = vk::RenderingInfo{
@@ -171,4 +171,4 @@ void VulkanRenderer::draw() {
 
     m_swapChain.submitFrame();
 }
-}
+}// namespace th

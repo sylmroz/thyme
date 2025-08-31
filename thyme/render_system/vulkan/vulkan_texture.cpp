@@ -143,6 +143,17 @@ void VulkanImageMemory::transitImageLayout(const vk::CommandBuffer commandBuffer
                                            const ImageLayoutTransition layoutTransition) {
     th::transitImageLayout(commandBuffer, m_image.get(), layoutTransition, m_mipLevels);
 }
+void VulkanImageMemory::transitImageLayout(vk::CommandBuffer commandBuffer, ImageLayoutTransition layoutTransition,
+                                           ImagePipelineStageTransition stageTransition,
+                                           ImageAccessFlagsTransition accessFlagsTransition) {
+    th::transitImageLayout(commandBuffer,
+                           m_image.get(),
+                           layoutTransition,
+                           stageTransition,
+                           accessFlagsTransition,
+                           m_aspectFlags,
+                           m_mipLevels);
+}
 
 void VulkanImageMemory::copyTo(const vk::CommandBuffer commandBuffer, const VulkanImageMemory& dstImage) {
     copyImage(commandBuffer, m_image.get(), m_extent, dstImage.getImage());
@@ -174,6 +185,21 @@ VulkanColorImageMemory::VulkanColorImageMemory(const VulkanDevice& device, const
                         vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst
                                 | vk::ImageUsageFlagBits::eColorAttachment,
                         vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor, msaa, 1) {}
+
+Vulkan2DTexture::Vulkan2DTexture(const VulkanDevice& device, vk::Extent2D resolution, vk::Format format)
+    : m_imageMemory{ VulkanImageMemory(
+              device,
+              vk::Extent3D{ .width = resolution.width, .height = resolution.height, .depth = 1 },
+              format,
+              vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst
+                      | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
+              vk::MemoryPropertyFlagBits::eDeviceLocal,
+              vk::ImageAspectFlagBits::eColor,
+              vk::SampleCountFlagBits::e1,
+              1) },
+      m_sampler{ createImageSampler(device.logicalDevice,
+                                    device.physicalDevice.getProperties().limits.maxSamplerAnisotropy, 1) },
+      m_format{ format }, m_device{ device } {}
 
 Vulkan2DTexture::Vulkan2DTexture(const VulkanDevice& device, const TextureData& texture, const vk::Format format)
     : m_imageMemory{ VulkanImageMemory(
@@ -224,6 +250,14 @@ void Vulkan2DTexture::setData(const TextureData& texture) {
                       m_imageMemory.getImage(),
                       texture.getResolution());
     generateMipmaps();
+}
+void Vulkan2DTexture::resize(vk::Extent2D resolution)  {
+    if (resolution.width == m_imageMemory.getExtent().width && resolution.height == m_imageMemory.getExtent().height) {
+        return;
+    }
+    m_imageMemory.resize(resolution);
+    m_sampler =  createImageSampler(m_device.logicalDevice,
+                                m_device.physicalDevice.getProperties().limits.maxSamplerAnisotropy, 1);
 }
 
 void Vulkan2DTexture::generateMipmaps() const {
