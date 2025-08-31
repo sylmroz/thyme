@@ -1,6 +1,3 @@
 [submodule "thirdparty/vcpkg"]
 	path = thirdparty/vcpkg
 	url = https://github.com/microsoft/vcpkg
-[submodule "thirdparty/imgui"]
-	path = thirdparty/imgui
-	url = https://github.com/sylmroz/imgui
