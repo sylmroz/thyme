@@ -1,5 +1,6 @@
 #include <glm/glm.hpp>
 #include <chrono>
+#include <filesystem>
 
 import th.core.logger;
 import th.core.application;
@@ -19,7 +20,7 @@ public:
                                               { { 0.5f, 0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },
                                               { { -0.5f, 0.5f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } } },
                                 .indices = { 0, 1, 2, 2, 3, 0 } },
-                .texture = th::TextureData("C:\\Users\\sylwek\\Desktop\\grumpy.jpg"),
+                .texture = th::TextureData(std::filesystem::current_path() / "assets" / "grumpy.jpg"),
                 .onAnimate = [](th::Model& model) {
                     using namespace std::chrono;
                     static const auto startTime = high_resolution_clock::now();
@@ -36,7 +37,7 @@ public:
                                               { { 0.5f, 0.5f, -0.5f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },
                                               { { -0.5f, 0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } } },
                                 .indices = { 0, 1, 2, 2, 3, 0 } },
-                .texture = th::TextureData("C:\\Users\\sylwek\\Desktop\\grumpy2.jpg"),
+                .texture = th::TextureData(std::filesystem::current_path() / "assets" / "grumpy2.jpg"),
                 .onAnimate = [](th::Model& model) {
                     using namespace std::chrono;
                     static const auto startTime = high_resolution_clock::now();
