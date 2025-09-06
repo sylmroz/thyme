@@ -4,11 +4,9 @@ module;
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
-#include <memory>
-#include <source_location>
-#include <string>
-
 export module th.core.logger;
+
+import std;
 
 namespace th {
 

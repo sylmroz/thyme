@@ -82,15 +82,15 @@ public:
         updateViewMatrix();
     }
 
-    [[nodiscard]] inline const glm::mat4& getProjectionMatrix() const noexcept {
+    [[nodiscard]] inline auto getProjectionMatrix() const noexcept -> const glm::mat4& {
         return m_projectionMatrix;
     }
 
-    [[nodiscard]] inline const glm::mat4& getViewMatrix() const noexcept {
+    [[nodiscard]] inline auto getViewMatrix() const noexcept -> const glm::mat4& {
         return m_viewMatrix;
     }
 
-    [[nodiscard]] inline const glm::mat4& getViewProjectionMatrix() const noexcept {
+    [[nodiscard]] inline auto getViewProjectionMatrix() const noexcept -> const glm::mat4& {
         return m_viewProjectionMatrix;
     }
 

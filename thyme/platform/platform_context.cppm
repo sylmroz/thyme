@@ -1,5 +1,3 @@
-module;
-
 export module th.platform.platform_context;
 
 export namespace th {

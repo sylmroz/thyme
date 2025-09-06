@@ -1,15 +1,12 @@
 module;
 
-#include <format>
-#include <functional>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
-#include <ranges>
-#include <string>
-#include <vector>
 
 export module th.scene.model;
+
+import std;
 
 import th.core.logger;
 import th.scene.texture_data;

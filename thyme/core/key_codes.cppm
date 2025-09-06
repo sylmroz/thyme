@@ -1,8 +1,6 @@
-module;
-
-#include <stdint.h>
-
 export module th.core.key_codes;
+
+import std;
 
 namespace th {
 

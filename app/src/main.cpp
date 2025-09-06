@@ -8,6 +8,9 @@ import th.core.application;
 import th.scene.model;
 import th.scene.texture_data;
 
+import th.platform.window;
+import th.platform.glfw.glfw_window;
+
 class ExampleApp: public th::Application {
 public:
     ExampleApp() {

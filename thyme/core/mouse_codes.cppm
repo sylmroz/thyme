@@ -1,8 +1,6 @@
-module;
-
-#include <stdint.h>
-
 export module th.core.mouse_codes;
+
+import std;
 
 namespace th {
 

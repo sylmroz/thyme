@@ -1,9 +1,6 @@
-module;
-
-#include <algorithm>
-#include <string_view>
-
 export module th.core.utils;
+
+import std;
 
 namespace th {
 

@@ -2,12 +2,9 @@ module;
 
 #include <glm/vec2.hpp>
 
-#include <format>
-#include <functional>
-#include <ranges>
-#include <variant>
-
 export module th.core.events;
+
+import std;
 
 import th.core.key_codes;
 import th.core.utils;
