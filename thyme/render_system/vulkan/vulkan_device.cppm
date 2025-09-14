@@ -6,6 +6,8 @@ export module th.render_system.vulkan:device;
 
 import :utils;
 
+import th.core.logger;
+
 import vulkan_hpp;
 
 namespace th {
@@ -80,10 +82,9 @@ export class VulkanPhysicalDevicesManager {
 
 public:
     explicit VulkanPhysicalDevicesManager(const vk::raii::Instance& instance,
-                                          const std::optional<vk::SurfaceKHR>
-                                                  surface)
+                                          const std::optional<vk::SurfaceKHR> surface, Logger& logger)
         : m_physicalDevices{ enumeratePhysicalDevices(instance, surface) },
-          m_selectedDevice{ InternalDevice{ m_physicalDevices.front() } } {}
+          m_selectedDevice{ InternalDevice{ m_physicalDevices.front() } }, m_logger{ logger } {}
 
     [[nodiscard]] auto getSelectedDevice() const noexcept -> VulkanDevice {
         return VulkanDevice{
@@ -101,6 +102,7 @@ public:
                     std::format("Selecting physical device failed! Selected index is {}, but devices are {}",
                                 index,
                                 m_physicalDevices.size());
+            m_logger.error("{}", message);
             throw std::runtime_error(message);
         }
         m_selectedDevice = InternalDevice(*(m_physicalDevices.begin() + index - 1));
@@ -114,6 +116,8 @@ private:
 private:
     std::vector<PhysicalDevice> m_physicalDevices{};
     InternalDevice m_selectedDevice;
+
+    Logger& m_logger;
 };
 
 }// namespace th

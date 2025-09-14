@@ -105,32 +105,4 @@ public:
     std::shared_ptr<spdlog::logger> logger;
 };
 
-export class ThymeLogger {
-public:
-    static void init(const LogLevel level) noexcept {
-        s_logger = std::make_unique<Logger>(level, "ThymeApi");
-    }
-
-    static auto getLogger() -> Logger* {
-        return s_logger.get();
-    }
-
-private:
-    inline static std::unique_ptr<Logger> s_logger{ nullptr };
-};
-
-export class AppLogger {
-public:
-    static void init(const LogLevel level) noexcept {
-        s_logger = std::make_unique<Logger>(level, "App");
-    }
-
-    static auto getLogger() -> Logger* {
-        return s_logger.get();
-    }
-
-private:
-    inline static std::unique_ptr<Logger> s_logger{ nullptr };
-};
-
 }// namespace th

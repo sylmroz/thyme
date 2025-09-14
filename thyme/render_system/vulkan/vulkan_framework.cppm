@@ -32,16 +32,16 @@ public:
         std::string engineName;
     };
     template <CanPassWindow window = void>
-    static auto create(const InitInfo& info) -> VulkanFramework {
+    static auto create(const InitInfo& info, Logger& logger) -> VulkanFramework {
         if constexpr (std::is_same_v<window, void>) {
-            return VulkanFramework(info);
+            return VulkanFramework(info, logger);
         } else {
-            return VulkanFramework{ info, window::getExtensions() };
+            return VulkanFramework(info, window::getExtensions(), logger);
         }
     }
 
-    explicit VulkanFramework(const InitInfo& info);
-    explicit VulkanFramework(const InitInfo& info, const std::vector<std::string>& windowExtensions);
+    explicit VulkanFramework(const InitInfo& info, Logger& logger);
+    explicit VulkanFramework(const InitInfo& info, const std::vector<std::string>& windowExtensions, Logger& logger);
 
     [[nodiscard]] auto getInstance() const -> const vk::raii::Instance& {
         return m_instance;
@@ -63,11 +63,13 @@ private:
 
     [[nodiscard]] auto validateLayers(std::span<const char* const> requestedLayers) const -> bool;
 
+    Logger& m_logger;
+
     vk::raii::Context m_context;
     vk::raii::Instance m_instance;
 
 #if !defined(NDEBUG)
-    render_system::vulkan::Debug m_debug;
+    VulkanDebug m_debug;
 #endif
 };
 

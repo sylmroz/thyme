@@ -36,7 +36,6 @@ private:
     [[nodiscard]] auto getSwapChainFrameInternal(const uint32_t index) const -> SwapChainFrame {
         if (index >= m_images.size()) {
             constexpr auto message = "SwapChainFrames index out of range";
-            ThymeLogger::getLogger()->error(message);
             throw std::out_of_range(message);
         }
         return SwapChainFrame{ .image = m_images[index], .imageView = m_imageViews[index].get() };
@@ -88,7 +87,7 @@ private:
 export class VulkanSwapChain final {
 public:
     VulkanSwapChain(const VulkanDevice& device, vk::SurfaceKHR surface, const VulkanGraphicContext& context, vk::Extent2D swapChainExtent,
-              VulkanCommandBuffersPool& commandPool);
+              VulkanCommandBuffersPool& commandPool, Logger& logger);
     void frameResized(vk::Extent2D resolution);
     auto prepareFrame() -> bool;
     void prepareRenderMode();
@@ -119,6 +118,7 @@ private:
     VulkanDevice m_device;
     SwapChainData m_swapChainData;
     VulkanCommandBuffersPool& m_commandBuffersPool;
+    Logger& m_logger;
 
     std::vector<vk::UniqueSemaphore> m_imageRenderingSemaphore;
 };

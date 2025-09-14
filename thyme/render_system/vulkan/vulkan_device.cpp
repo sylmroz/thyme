@@ -103,7 +103,7 @@ auto VulkanPhysicalDevicesManager::enumeratePhysicalDevices(const vk::raii::Inst
 
     if (physicalDevices.empty()) {
         constexpr auto message = "No physical device exist which can meet all requirements!";
-        ThymeLogger::getLogger()->error(message);
+        m_logger.error(message);
         throw std::runtime_error(message);
     }
 

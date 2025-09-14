@@ -55,8 +55,9 @@ auto SwapChainData::createSwapChain(const VulkanDevice& device, const SwapChainS
     return device.logicalDevice.createSwapchainKHRUnique(swapChainCreateInfo);
 }
 
-VulkanSwapChain::VulkanSwapChain(const VulkanDevice& device, const vk::SurfaceKHR surface, const VulkanGraphicContext& context,
-                     const vk::Extent2D swapChainExtent, VulkanCommandBuffersPool& commandPool)
+VulkanSwapChain::VulkanSwapChain(const VulkanDevice& device, const vk::SurfaceKHR surface,
+                                 const VulkanGraphicContext& context, const vk::Extent2D swapChainExtent,
+                                 VulkanCommandBuffersPool& commandPool, Logger& logger)
     : m_surface{ surface }, m_swapChainExtent{ swapChainExtent }, m_context{ context }, m_device{ device },
       m_swapChainData{ device,
                        SwapChainSettings{ .surfaceFormat = context.surfaceFormat,
@@ -64,8 +65,8 @@ VulkanSwapChain::VulkanSwapChain(const VulkanDevice& device, const vk::SurfaceKH
                                           .imageCount = context.imageCount },
                        swapChainExtent,
                        surface },
-      m_commandBuffersPool{ commandPool } {
-    std::generate_n(std::back_inserter(m_imageRenderingSemaphore), context.imageCount, [device]() {
+      m_commandBuffersPool{ commandPool }, m_logger{ logger } {
+    std::generate_n(std::back_inserter(m_imageRenderingSemaphore), context.imageCount, [device] {
         return device.logicalDevice.createSemaphoreUnique(vk::SemaphoreCreateInfo());
     });
 }
@@ -141,7 +142,7 @@ void VulkanSwapChain::submitFrame() {
             recreateSwapChain();
         }
         if (queuePresentResult != vk::Result::eSuccess) {
-            ThymeLogger::getLogger()->error("Failed to present rendered result!");
+            m_logger.error("Failed to present rendered result!");
             throw std::runtime_error("Failed to present rendered result!");
         }
     } catch (const vk::OutOfDateKHRError&) {
@@ -187,4 +188,4 @@ auto VulkanSwapChain::recreateSwapChain() -> bool {
     return true;
 }
 
-}
+}// namespace th

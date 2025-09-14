@@ -41,15 +41,17 @@ public:
 
 class ModelStorage {
 public:
+    explicit ModelStorage(Logger& logger) : m_logger(logger) {}
+
     inline auto addModel(const Model& model) -> Model& {
-         ThymeLogger::getLogger()->info("Adding model (name: {}, vertices: {}, indices: {})",
-                        model.name,
-                        model.mesh.vertices.size(),
-                        model.mesh.indices.size());
+        m_logger.info("Adding model (name: {}, vertices: {}, indices: {})",
+                      model.name,
+                      model.mesh.vertices.size(),
+                      model.mesh.indices.size());
         if (std::ranges::find_if(m_models, [&model](const Model& m) { return m.name == model.name; })
             != m_models.end()) {
             const auto msg = std::format("Cannot add model {}. Already exists.", model.name);
-            ThymeLogger::getLogger()->error("{}", msg);
+            m_logger.error("{}", msg);
             throw std::runtime_error(msg);
         }
         return m_models.emplace_back(model);
@@ -100,6 +102,7 @@ public:
 
 private:
     std::vector<Model> m_models;
+    Logger& m_logger;
 };
 
 }// namespace th

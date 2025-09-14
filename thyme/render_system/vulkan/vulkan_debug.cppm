@@ -11,14 +11,50 @@ import vulkan_hpp;
 
 import th.core.logger;
 
-namespace th::render_system::vulkan {
+namespace th {
 
 using namespace std::string_view_literals;
 
-inline VKAPI_ATTR auto VKAPI_CALL debugCallback(const vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                                const vk::DebugUtilsMessageTypeFlagsEXT messageTypes,
-                                                const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData,
-                                                void* /*pUserData*/) -> vk::Bool32 {
+VKAPI_ATTR auto VKAPI_CALL debugCallback(const vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                         const vk::DebugUtilsMessageTypeFlagsEXT messageTypes,
+                                         const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                                         void* pUserData) -> vk::Bool32;
+
+export class VulkanDebug {
+public:
+    explicit VulkanDebug(const vk::raii::Instance& instance, Logger& logger)
+        : m_debugMessenger{ instance.createDebugUtilsMessengerEXT(createDebugUtilsMessengerCreateInfo(&logger)) } {}
+
+    VulkanDebug(const VulkanDebug&) = delete;
+    VulkanDebug(VulkanDebug&&) = delete;
+    auto operator=(const VulkanDebug&) -> VulkanDebug& = delete;
+    auto operator=(VulkanDebug&&) -> VulkanDebug& = delete;
+    ~VulkanDebug() = default;
+
+    static auto createDebugUtilsMessengerCreateInfo(Logger* logger) -> vk::DebugUtilsMessengerCreateInfoEXT {
+        constexpr auto flags =
+                vk::DebugUtilsMessageSeverityFlagBitsEXT::eError | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning
+                | vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
+        constexpr auto typeFlags = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral
+                                   | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance
+                                   | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation;
+        return vk::DebugUtilsMessengerCreateInfoEXT{
+            .messageSeverity = flags,
+            .messageType = typeFlags,
+            .pfnUserCallback = debugCallback,
+            .pUserData = logger,
+        };
+    }
+
+
+private:
+    vk::raii::DebugUtilsMessengerEXT m_debugMessenger;
+};
+
+VKAPI_ATTR auto VKAPI_CALL debugCallback(const vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                         const vk::DebugUtilsMessageTypeFlagsEXT messageTypes,
+                                         const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                                         void* pUserData) -> vk::Bool32 {
     std::string messageDetails;
     if (const auto queueLabels = std::span(pCallbackData->pQueueLabels, pCallbackData->queueLabelCount);
         !queueLabels.empty()) {
@@ -56,7 +92,7 @@ inline VKAPI_ATTR auto VKAPI_CALL debugCallback(const vk::DebugUtilsMessageSever
                                      pCallbackData->pMessageIdName,
                                      pCallbackData->pMessage,
                                      messageDetails);
-    const auto logger = ThymeLogger::getLogger();
+    const auto logger = static_cast<Logger*>(pUserData);
     switch (messageSeverity) {
         case vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose: logger->trace("{}", message); break;
         case vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo: logger->info("{}", message); break;
@@ -66,36 +102,6 @@ inline VKAPI_ATTR auto VKAPI_CALL debugCallback(const vk::DebugUtilsMessageSever
     }
     return false;
 }
-
-export class Debug {
-public:
-    explicit Debug(const vk::raii::Instance& instance)
-        : m_debugMessenger{ instance.createDebugUtilsMessengerEXT(createDebugUtilsMessengerCreateInfo()) } {}
-
-    Debug(const Debug&) = delete;
-    Debug(Debug&&) = delete;
-    auto operator=(const Debug&) -> Debug& = delete;
-    auto operator=(Debug&&) -> Debug& = delete;
-    ~Debug() = default;
-
-    static auto createDebugUtilsMessengerCreateInfo() -> vk::DebugUtilsMessengerCreateInfoEXT {
-        constexpr auto flags =
-                vk::DebugUtilsMessageSeverityFlagBitsEXT::eError | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning
-                | vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
-        constexpr auto typeFlags = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral
-                                   | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance
-                                   | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation;
-        return vk::DebugUtilsMessengerCreateInfoEXT{
-            .messageSeverity = flags,
-            .messageType = typeFlags,
-            .pfnUserCallback = debugCallback,
-        };
-    }
-
-
-private:
-    vk::raii::DebugUtilsMessengerEXT m_debugMessenger;
-};
 
 }// namespace th::render_system::vulkan
 #endif

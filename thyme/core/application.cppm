@@ -14,11 +14,14 @@ namespace th {
 
 export class Application {
 public:
-    Application();
+    Application(Logger& logger);
     std::string name{ "Thyme" };
     void run();
 
     ModelStorage modelStorage;
+
+private:
+    Logger& m_logger;
 };
 
 }// namespace th

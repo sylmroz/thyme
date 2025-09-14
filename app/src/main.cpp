@@ -13,7 +13,7 @@ import th.platform.glfw.glfw_window;
 
 class ExampleApp: public th::Application {
 public:
-    ExampleApp() {
+    ExampleApp(th::Logger& logger): th::Application{logger} {
         modelStorage.addModel(th::Model{
                 .name = "Grumpy 1",
                 .mesh =
@@ -51,10 +51,9 @@ public:
     }
 };
 
-int main() {
-    th::AppLogger::init(th::LogLevel::info);
-    th::AppLogger::getLogger()->info("Hello from app");
-    ExampleApp app;
+auto main() -> int {
+    auto thymeApiLogger = th::Logger(th::LogLevel::info, "ThymeApi");
+    ExampleApp app(thymeApiLogger);
     app.name = "AppThyme";
     app.run();
 

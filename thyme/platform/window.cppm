@@ -1,31 +1,38 @@
-module;
-
 export module th.platform.window;
 
 import th.core.events;
+import th.core.logger;
 
 namespace th {
-
-export struct WindowConfig {
-    uint32_t width{ 0 };
-    uint32_t height{ 0 };
-    std::string name;
-};
 
 export enum class WindowState {
     minimalized,
     maximalized
 };
 
+constexpr uint32_t defaultWindowWidth{ 1240 };
+constexpr uint32_t defaultWindowHeight{ 620 };
+constexpr bool windowMaximalizedByDefault{ false };
+constexpr bool windowDecoratedByDefault{ true };
+
+export struct WindowConfig {
+    uint32_t width{ defaultWindowWidth };
+    uint32_t height{ defaultWindowHeight };
+    std::string name;
+    bool maximalized{ windowMaximalizedByDefault };
+    bool decorate{ windowDecoratedByDefault };
+};
+
 export class Window {
 public:
-    explicit Window(WindowConfig windowConfiguration) : config{ std::move(windowConfiguration) } {}
+    explicit Window(WindowConfig windowConfiguration, Logger& logger)
+        : config{ std::move(windowConfiguration) }, m_logger{ logger } {}
 
     explicit Window(const Window& window) = default;
     explicit Window(Window&& window) = default;
 
-    auto operator=(const Window& window) -> Window& = default;
-    auto operator=(Window&& window) -> Window& = default;
+    auto operator=(const Window& window) -> Window& = delete;
+    auto operator=(Window&& window) -> Window& = delete;
 
     virtual void poolEvents() = 0;
     [[nodiscard]] virtual auto shouldClose() -> bool = 0;
@@ -44,6 +51,7 @@ public:
 protected:
     WindowState m_windowState{ WindowState::maximalized };
     EventSubject m_eventListener;
+    Logger& m_logger;
 };
 
 }// namespace th

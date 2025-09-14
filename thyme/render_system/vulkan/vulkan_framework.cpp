@@ -17,23 +17,22 @@ constexpr auto defaultEnabledExtensions = std::array{ vk::KHRPortabilityEnumerat
 #endif
 
 namespace th {
+VulkanFramework::VulkanFramework(const InitInfo& info, Logger& logger) : VulkanFramework(info, {}, logger) {}
 
-VulkanFramework::VulkanFramework(const InitInfo& info) : VulkanFramework(info, {}) {}
-
-VulkanFramework::VulkanFramework(const InitInfo& info, const std::vector<std::string>& windowExtensions)
-    : m_instance{ createInstance(info, windowExtensions) }
+VulkanFramework::VulkanFramework(const InitInfo& info, const std::vector<std::string>& windowExtensions, Logger& logger)
+    : m_logger{ logger }, m_instance{ createInstance(info, windowExtensions) }
 #if !defined(NDEBUG)
       ,
-      m_debug{ m_instance }
+      m_debug{ m_instance, logger }
 #endif
 {
-    ThymeLogger::getLogger()->info("Vulkan framework initialized:\n\tAppName: {}\n\t{}\n\t{} {} {} {}",
-                                         info.appName,
-                                         info.engineName,
-                                         0,//version::major,
-                                         1,//version::minor,
-                                         0,//version::patch,
-                                         0);//version::tweak);
+    logger.info("Vulkan framework initialized:\n\tAppName: {}\n\t{}\n\t{} {} {} {}",
+                info.appName,
+                info.engineName,
+                0,//version::major,
+                1,//version::minor,
+                0,//version::patch,
+                0);//version::tweak);
 }
 
 [[nodiscard]] auto VulkanFramework::createInstance(const InitInfo& info,
@@ -61,7 +60,7 @@ VulkanFramework::VulkanFramework(const InitInfo& info, const std::vector<std::st
 #if !defined(NDEBUG)
         const auto enableValidation = validateLayers(validationLayers);
         if (!enableValidation) {
-            ThymeLogger::getLogger()->warn("Validation layers are not available! Proceeding without them.");
+            m_logger.warn("Validation layers are not available! Proceeding without them.");
         }
         if (enableValidation) {
             return vk::InstanceCreateInfo{
@@ -85,7 +84,7 @@ VulkanFramework::VulkanFramework(const InitInfo& info, const std::vector<std::st
     constexpr auto enabledValidationFeatures = std::array{ vk::ValidationFeatureEnableEXT::eSynchronizationValidation };
     const auto instanceCreateInfoChain = vk::StructureChain(
             instanceCreateInfo,
-            render_system::vulkan::Debug::createDebugUtilsMessengerCreateInfo(),
+            VulkanDebug::createDebugUtilsMessengerCreateInfo(&m_logger),
             vk::ValidationFeaturesEXT{
                     .enabledValidationFeatureCount = static_cast<uint32_t>(enabledValidationFeatures.size()),
                     .pEnabledValidationFeatures = enabledValidationFeatures.data(),
@@ -97,16 +96,16 @@ VulkanFramework::VulkanFramework(const InitInfo& info, const std::vector<std::st
 }
 
 void VulkanFramework::dumpExtensions() const {
-    ThymeLogger::getLogger()->info("Vulkan extensions:");
+    m_logger.info("Vulkan extensions:");
     for (const auto& extension : m_context.enumerateInstanceExtensionProperties()) {
-        ThymeLogger::getLogger()->info("\t{}", std::string_view(extension.extensionName));
+        m_logger.info("\t{}", std::string_view(extension.extensionName));
     }
 }
 
 void VulkanFramework::dumpLayers() const {
-    ThymeLogger::getLogger()->info("Vulkan layers:");
+    m_logger.info("Vulkan layers:");
     for (const auto& layer : m_context.enumerateInstanceLayerProperties()) {
-        ThymeLogger::getLogger()->info("\t{}", std::string_view(layer.layerName));
+        m_logger.info("\t{}", std::string_view(layer.layerName));
     }
 }
 

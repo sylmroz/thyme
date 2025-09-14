@@ -6,28 +6,22 @@ namespace th {
 
 using namespace std::string_view_literals;
 
-template <typename... Context>
-// requires(std::is_base_of_v<PlatformContext, Context>)
-auto createEngine(const EngineConfig& config, ModelStorage& modelStorage)
-        -> Engine {
-    [[maybe_unused]] static std::tuple<Context...> ctx;
-    return Engine(config, modelStorage);
+auto createEngine(const EngineConfig& config, ModelStorage& modelStorage, Logger& logger) -> Engine {
+    [[maybe_unused]] static ImGuiContext im_gui_context;
+    return Engine(config, modelStorage, logger);
 }
 
-Application::Application() {
-    ThymeLogger::init(LogLevel::trace);
-}
+Application::Application(Logger& logger) : modelStorage{ logger }, m_logger{ logger } {}
 
 void Application::run() {
-    const auto logger = ThymeLogger::getLogger();
-    logger->info("Starting Thyme api {}"sv, name);
+    m_logger.info("Starting Thyme api {}"sv, name);
     try {
-        auto engine = createEngine<ImGuiContext>(EngineConfig{ .appName = name }, modelStorage);
+        auto engine = createEngine(EngineConfig{ .appName = name }, modelStorage, m_logger);
         engine.run();
     } catch (const std::exception& e) {
-        logger->error("Error occurred during app runtime\n Error: {}"sv, e.what());
+        m_logger.error("Error occurred during app runtime\n Error: {}"sv, e.what());
     } catch (...) {
-        logger->error("Unknown error occurred during app runtime"sv);
+        m_logger.error("Unknown error occurred during app runtime"sv);
     }
 }
 

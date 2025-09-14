@@ -6,6 +6,8 @@ export module th.render_system.vulkan:command_buffers;
 
 import vulkan_hpp;
 
+import th.core.logger;
+
 namespace th {
 
 export class VulkanCommandBuffer {
@@ -16,7 +18,7 @@ export class VulkanCommandBuffer {
     };
 
 public:
-    VulkanCommandBuffer(vk::Device device, vk::CommandPool commandPool, vk::Queue graphicQueue);
+    VulkanCommandBuffer(vk::Device device, vk::CommandPool commandPool, vk::Queue graphicQueue, Logger& logger);
 
     [[nodiscard]] auto getBuffer() -> vk::CommandBuffer;
 
@@ -36,6 +38,8 @@ public:
 private:
     State m_state{ State::Idle };
 
+    Logger& m_logger;
+
     vk::Device m_device;
     vk::Queue m_graphicQueue;
 
@@ -47,7 +51,7 @@ private:
 
 export class VulkanCommandBuffersPool {
 public:
-    VulkanCommandBuffersPool(vk::Device device, vk::CommandPool commandPool, vk::Queue graphicQueue, std::size_t capacity);
+    VulkanCommandBuffersPool(vk::Device device, vk::CommandPool commandPool, vk::Queue graphicQueue, std::size_t capacity, Logger& logger);
     [[nodiscard]] auto get() -> VulkanCommandBuffer& {
         auto& currentBuffer = m_commandBuffers[m_current];
         return currentBuffer;

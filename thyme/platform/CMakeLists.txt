@@ -1,5 +1,4 @@
 set(MODULE_FILES
-        platform_context.cppm
         window.cppm
         imgui_context.cppm
 )

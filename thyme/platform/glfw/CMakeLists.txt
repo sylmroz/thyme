@@ -4,7 +4,6 @@ set(MODULE_FILES
 )
 
 SET(SOURCE_FILES
-        glfw_window.cpp
 )
 
 target_sources(${PROJECT_NAME}

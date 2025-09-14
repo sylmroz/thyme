@@ -12,7 +12,6 @@ import th.render_system.vulkan;
 
 import th.platform.glfw.glfw_window;
 import th.platform.window;
-import th.platform.platform_context;
 import th.platform.glfw.glfw_context;
 
 import th.core.events;
@@ -39,7 +38,7 @@ struct EngineConfig {
 
 class Engine final {
 public:
-    explicit Engine(const EngineConfig& engineConfig, ModelStorage& modelStorage);
+    explicit Engine(const EngineConfig& engineConfig, ModelStorage& modelStorage, Logger& logger);
 
     void run();
 
@@ -47,6 +46,7 @@ private:
     EngineConfig m_engineConfig;
     Camera m_camera;
     ModelStorage& m_modelStorage;
+    Logger& m_logger;
 };
 }// namespace th
 

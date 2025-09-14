@@ -20,7 +20,7 @@ namespace th {
 export class Gui final {
 public:
     explicit Gui(const VulkanDevice& device, const VulkanGlfwWindow& window, const VulkanGraphicContext& context,
-                 vk::Instance instance);
+                 vk::Instance instance, Logger& logger);
 
     Gui(Gui&& other) noexcept = delete;
     auto operator=(Gui&& other) noexcept -> Gui& = delete;
@@ -37,14 +37,13 @@ private:
     vk::UniquePipelineCache m_pipelineCache;
     vk::UniqueDescriptorPool m_descriptorPool;
     VulkanGraphicContext m_context;
+    Logger& m_logger;
 };
 
-Gui::Gui(const VulkanDevice& device,
-         const VulkanGlfwWindow& window,
-         const VulkanGraphicContext& context,
-         const vk::Instance instance)
-    : m_context{ context } {
-    ThymeLogger().getLogger()->debug("Create Gui Class");
+Gui::Gui(const VulkanDevice& device, const VulkanGlfwWindow& window, const VulkanGraphicContext& context,
+         const vk::Instance instance, Logger& logger)
+    : m_context{ context }, m_logger{ logger } {
+    logger.debug("Create Gui Class");
     m_pipelineCache = device.logicalDevice.createPipelineCacheUnique(vk::PipelineCacheCreateInfo());
     m_descriptorPool = createDescriptorPool(device.logicalDevice,
                                             { vk::DescriptorPoolSize(vk::DescriptorType::eSampler, 1000),
@@ -82,7 +81,7 @@ Gui::Gui(const VulkanDevice& device,
         if (vkResult == VK_SUCCESS) {
             return;
         }
-        ThymeLogger().getLogger()->error("CheckVkResultFn: {}", static_cast<int>(vkResult));
+        //m_logger.error("CheckVkResultFn: {}", static_cast<int>(vkResult));
     };
     ImGui_ImplVulkan_Init(&initInfo);
 }
@@ -110,7 +109,7 @@ void Gui::start() const {
 }
 
 Gui::~Gui() noexcept {
-    ThymeLogger().getLogger()->debug("Destroy Gui Class");
+    m_logger.debug("Destroy Gui Class");
 
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();

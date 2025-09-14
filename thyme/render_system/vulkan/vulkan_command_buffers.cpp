@@ -9,8 +9,8 @@ import th.core.logger;
 
 namespace th {
 
-VulkanCommandBuffer::VulkanCommandBuffer(const vk::Device device, const vk::CommandPool commandPool, const vk::Queue graphicQueue)
-    : m_device{ device }, m_graphicQueue{ graphicQueue },
+VulkanCommandBuffer::VulkanCommandBuffer(const vk::Device device, const vk::CommandPool commandPool, const vk::Queue graphicQueue, Logger& logger)
+    : m_logger{ logger }, m_device{ device }, m_graphicQueue{ graphicQueue },
       m_commandBuffer{ m_device.allocateCommandBuffers(vk::CommandBufferAllocateInfo{
                                                                .commandPool = commandPool,
                                                                .level = vk::CommandBufferLevel::ePrimary,
@@ -28,7 +28,7 @@ void VulkanCommandBuffer::reset() {
     if (m_state == State::Submitted) {
         if (m_device.waitForFences({ m_fence.get() }, vk::True, std::numeric_limits<uint64_t>::max())
             != vk::Result::eSuccess) {
-            ThymeLogger().getLogger()->error("Failed to wait for a complete fence");
+            m_logger.error("Failed to wait for a complete fence");
             throw std::runtime_error("Failed to wait for a complete fence");
         }
         m_device.resetFences({ m_fence.get() });
@@ -77,10 +77,10 @@ void VulkanCommandBuffer::waitFor(vk::UniqueSemaphore& dependSemaphore) {
 }
 
 VulkanCommandBuffersPool::VulkanCommandBuffersPool(const vk::Device device, const vk::CommandPool commandPool,
-                                       const vk::Queue graphicQueue, const std::size_t capacity)
+                                       const vk::Queue graphicQueue, const std::size_t capacity, Logger& logger)
     : m_device{ device } {
-    std::generate_n(std::back_inserter(m_commandBuffers), capacity, [device, commandPool, graphicQueue]() {
-        return VulkanCommandBuffer{ device, commandPool, graphicQueue };
+    std::generate_n(std::back_inserter(m_commandBuffers), capacity, [device, commandPool, graphicQueue, &logger]() {
+        return VulkanCommandBuffer{ device, commandPool, graphicQueue, logger };
     });
 }
 
