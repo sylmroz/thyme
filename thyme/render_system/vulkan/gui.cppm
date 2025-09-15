@@ -19,7 +19,7 @@ namespace th {
 
 export class Gui final {
 public:
-    explicit Gui(const VulkanDevice& device, const VulkanGlfwWindow& window, const VulkanGraphicContext& context,
+    explicit Gui(const VulkanDevice& device, const GlfwWindow& window, const VulkanGraphicContext& context,
                  vk::Instance instance, Logger& logger);
 
     Gui(Gui&& other) noexcept = delete;
@@ -40,7 +40,7 @@ private:
     Logger& m_logger;
 };
 
-Gui::Gui(const VulkanDevice& device, const VulkanGlfwWindow& window, const VulkanGraphicContext& context,
+Gui::Gui(const VulkanDevice& device, const GlfwWindow& window, const VulkanGraphicContext& context,
          const vk::Instance instance, Logger& logger)
     : m_context{ context }, m_logger{ logger } {
     logger.debug("Create Gui Class");

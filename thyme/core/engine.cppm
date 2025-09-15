@@ -12,7 +12,6 @@ import th.render_system.vulkan;
 
 import th.platform.glfw.glfw_window;
 import th.platform.window;
-import th.platform.glfw.glfw_context;
 
 import th.core.events;
 import th.core.logger;

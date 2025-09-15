@@ -24,7 +24,7 @@ void Engine::run() {
         camera.setResolution(glm::vec2{ static_cast<float>(width), static_cast<float>(height) });
     });
 
-    auto window = VulkanGlfwWindow(WindowConfig{ .width = m_engineConfig.width,
+    auto window = GlfwWindow(WindowConfig{ .width = m_engineConfig.width,
                                                  .height = m_engineConfig.height,
                                                  .name = "Thyme",
                                                  .maximalized = true },
@@ -39,7 +39,7 @@ void Engine::run() {
                 event);
     });
 
-    const auto framework = VulkanFramework::create<VulkanGlfwWindow>(
+    const auto framework = VulkanFramework::create<GlfwWindow>(
             VulkanFramework::InitInfo{
                     .appName = m_engineConfig.appName,
                     .engineName = m_engineConfig.engineName,
