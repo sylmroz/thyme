@@ -12,6 +12,7 @@ import :utils;
 
 import th.platform.glfw.glfw_window;
 import th.core.logger;
+import th.platform.imgui_context;
 
 import vulkan_hpp;
 
@@ -44,6 +45,7 @@ Gui::Gui(const VulkanDevice& device, const GlfwWindow& window, const VulkanGraph
          const vk::Instance instance, Logger& logger)
     : m_context{ context }, m_logger{ logger } {
     logger.debug("Create Gui Class");
+    [[maybe_unused]] static ImGuiContext im_gui_context;
     m_pipelineCache = device.logicalDevice.createPipelineCacheUnique(vk::PipelineCacheCreateInfo());
     m_descriptorPool = createDescriptorPool(device.logicalDevice,
                                             { vk::DescriptorPoolSize(vk::DescriptorType::eSampler, 1000),

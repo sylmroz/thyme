@@ -2,21 +2,21 @@ module;
 
 module th.core.application;
 
+import th.platform.window;
+import th.platform.glfw.glfw_window;
+
 namespace th {
 
 using namespace std::string_view_literals;
-
-auto createEngine(const EngineConfig& config, ModelStorage& modelStorage, Logger& logger) -> Engine {
-    [[maybe_unused]] static ImGuiContext im_gui_context;
-    return Engine(config, modelStorage, logger);
-}
 
 Application::Application(Logger& logger) : modelStorage{ logger }, m_logger{ logger } {}
 
 void Application::run() {
     m_logger.info("Starting Thyme api {}"sv, name);
     try {
-        auto engine = createEngine(EngineConfig{ .appName = name }, modelStorage, m_logger);
+        auto window = GlfwWindow(WindowConfig{ .width = 1280, .height = 720, .name = "Thyme", .maximalized = false },
+                                 m_logger);
+        auto engine = Engine(EngineConfig{ .appName = name }, window, modelStorage, m_logger);
         engine.run();
     } catch (const std::exception& e) {
         m_logger.error("Error occurred during app runtime\n Error: {}"sv, e.what());

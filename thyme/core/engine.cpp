@@ -4,16 +4,16 @@ module th.core.engine;
 
 namespace th {
 
-Engine::Engine(const EngineConfig& engineConfig, ModelStorage& modelStorage, Logger& logger)
+Engine::Engine(const EngineConfig& engineConfig, GlfwWindow& window, ModelStorage& modelStorage, Logger& logger)
     : m_engineConfig{ engineConfig },
       m_camera{ CameraArguments{ .fov = 45.0f,
                                  .zNear = 0.1f,
                                  .zFar = 100.0f,
-                                 .resolution = { engineConfig.width, engineConfig.height },
+                                 .resolution = window.getFrameBufferSize(),
                                  .eye = { 2.0f, 2.0f, 2.0f },
                                  .center = { 0.0f, 0.0f, 0.0f },
                                  .up = { 0.0f, 0.0f, 1.0f } } },
-      m_modelStorage{ modelStorage }, m_logger{ logger } {}
+      m_window{ window }, m_modelStorage{ modelStorage }, m_logger{ logger } {}
 
 void Engine::run() {
     m_logger.info("Start {} engine", m_engineConfig.engineName);
@@ -24,12 +24,7 @@ void Engine::run() {
         camera.setResolution(glm::vec2{ static_cast<float>(width), static_cast<float>(height) });
     });
 
-    auto window = GlfwWindow(WindowConfig{ .width = m_engineConfig.width,
-                                                 .height = m_engineConfig.height,
-                                                 .name = "Thyme",
-                                                 .maximalized = true },
-                                   m_logger);
-    window.subscribe([&windowResizedEventHandler](const Event& event) {
+    m_window.subscribe([&windowResizedEventHandler](const Event& event) {
         std::visit(
                 [&](const auto& windowResizedEvent) {
                     if constexpr (std::is_same_v<std::remove_cvref_t<decltype(windowResizedEvent)>, WindowResize>) {
@@ -46,7 +41,7 @@ void Engine::run() {
             },
             m_logger);
 
-    const auto surface = window.createSurface(framework.getInstance());
+    const auto surface = m_window.createSurface(framework.getInstance());
 
     const auto physicalDevicesManager = VulkanPhysicalDevicesManager(framework.getInstance(), *surface, m_logger);
 
@@ -60,19 +55,19 @@ void Engine::run() {
                                                       .presentMode = swapChainDetails.getBestPresetMode() };
 
 
-    Gui gui(device, window, graphicContext, *framework.getInstance(), m_logger);
+    Gui gui(device, m_window, graphicContext, *framework.getInstance(), m_logger);
     auto buffersPool = VulkanCommandBuffersPool(device.logicalDevice,
                                                 device.commandPool,
                                                 device.getGraphicQueue(),
                                                 graphicContext.maxFramesInFlight,
                                                 m_logger);
-    const auto frame_buffer_size = window.getFrameBufferSize();
+    const auto frame_buffer_size = m_window.getFrameBufferSize();
     m_camera.setResolution(
             glm::vec2{ static_cast<float>(frame_buffer_size.x), static_cast<float>(frame_buffer_size.y) });
     VulkanSwapChain swapChain(device,
                               *surface,
                               graphicContext,
-                              swapChainDetails.getSwapExtent(window.getFrameBufferSize()),
+                              swapChainDetails.getSwapExtent(frame_buffer_size),
                               buffersPool,
                               m_logger);
     VulkanRenderer renderer(device, swapChain, m_modelStorage, m_camera, gui, graphicContext, buffersPool);
@@ -82,9 +77,9 @@ void Engine::run() {
         swapChain.frameResized(vk::Extent2D{ static_cast<uint32_t>(width), static_cast<uint32_t>(height) });
     });
 
-    while (!window.shouldClose()) {
-        window.poolEvents();
-        if (!window.isMinimalized()) {
+    while (!m_window.shouldClose()) {
+        m_window.poolEvents();
+        if (!m_window.isMinimalized()) {
             renderer.draw();
         }
     }

@@ -91,7 +91,7 @@ VulkanImageMemory::VulkanImageMemory(const VulkanDevice& device, const vk::Exten
                                      const vk::ImageAspectFlags aspectFlags, const vk::SampleCountFlagBits msaa,
                                      const uint32_t mipLevels)
     : m_format{ format }, m_imageUsageFlags{ imageUsageFlags }, m_memoryPropertyFlags{ memoryPropertyFlags },
-      m_aspectFlags{ aspectFlags }, m_msaa{ msaa }, m_device{ device }, m_mipLevels{ mipLevels } {
+      m_aspectFlags{ aspectFlags }, m_msaa{ msaa }, m_mipLevels{ mipLevels }, m_device{ device } {
     resize(resolution);
 }
 

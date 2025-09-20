@@ -28,8 +28,6 @@ enum struct BackendType {
 };
 
 struct EngineConfig {
-    uint32_t width{ 1920 };
-    uint32_t height{ 1080 };
     BackendType backend{ BackendType::Vulkan };
     std::string engineName{ "Thyme" };
     std::string appName;
@@ -37,13 +35,15 @@ struct EngineConfig {
 
 class Engine final {
 public:
-    explicit Engine(const EngineConfig& engineConfig, ModelStorage& modelStorage, Logger& logger);
+    explicit Engine(const EngineConfig& engineConfig, GlfwWindow& window, ModelStorage& modelStorage, Logger& logger);
 
     void run();
 
 private:
     EngineConfig m_engineConfig;
     Camera m_camera;
+    GlfwWindow& m_window;
+
     ModelStorage& m_modelStorage;
     Logger& m_logger;
 };

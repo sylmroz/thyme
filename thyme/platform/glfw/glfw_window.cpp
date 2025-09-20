@@ -29,8 +29,8 @@ GlfwWindow::GlfwWindow(const WindowConfig& config, Logger& logger) : Window{ con
 
     glfwSetFramebufferSizeCallback(m_window.get(), [](GLFWwindow* window, const int width, const int height) {
         const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
-        const auto state = (width == 0 || height == 0) ? WindowState::minimalized : WindowState::maximalized;
-        if (state != app->m_windowState) {
+        if (const auto state = (width == 0 || height == 0) ? WindowState::minimalized : WindowState::maximalized;
+            state != app->m_windowState) {
             app->m_windowState = state;
             if (state == WindowState::minimalized) {
                 app->m_eventListener.next(WindowMinimalize{});

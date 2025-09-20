@@ -13,7 +13,7 @@ import th.platform.glfw.glfw_window;
 
 class ExampleApp: public th::Application {
 public:
-    ExampleApp(th::Logger& logger): th::Application{logger} {
+    explicit ExampleApp(th::Logger& logger): th::Application{logger} {
         modelStorage.addModel(th::Model{
                 .name = "Grumpy 1",
                 .mesh =

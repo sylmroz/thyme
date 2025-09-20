@@ -107,7 +107,7 @@ auto VulkanPhysicalDevicesManager::enumeratePhysicalDevices(const vk::raii::Inst
         throw std::runtime_error(message);
     }
 
-    std::sort(physicalDevices.begin(), physicalDevices.end(), [](const auto& device1, const auto& device2) {
+    std::ranges::sort(physicalDevices, [](const auto& device1, const auto& device2) {
         const auto dt1 = device1.physicalDevice.getProperties().deviceType;
         const auto dt2 = device2.physicalDevice.getProperties().deviceType;
         return priorities[dt1] > priorities[dt2];
