@@ -1,5 +1,3 @@
-module;
-
 export module th.core.application;
 
 import std;

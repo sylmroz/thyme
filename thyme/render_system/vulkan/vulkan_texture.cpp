@@ -1,8 +1,5 @@
 module;
 
-#include <array>
-#include <exception>
-
 module th.render_system.vulkan;
 
 namespace th {
@@ -208,7 +205,7 @@ void Vulkan2DTexture::setData(const TextureData& texture) {
     void* mappedMemory = nullptr;
     [[maybe_unused]] const auto result = m_device.logicalDevice.mapMemory(
             stagingMemoryBuffer.getMemory().get(), 0, data.size(), vk::MemoryMapFlags(), &mappedMemory);
-    memcpy(mappedMemory, data.data(), data.size());
+    std::memcpy(mappedMemory, data.data(), data.size());
     m_device.logicalDevice.unmapMemory(stagingMemoryBuffer.getMemory().get());
 
     m_imageMemory.transitImageLayout(ImageLayoutTransition{

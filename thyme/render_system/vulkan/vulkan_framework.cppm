@@ -1,19 +1,15 @@
-module;
-
-//#include "thyme/version.hpp"
-
-#include <string>
-
 export module th.render_system.vulkan:framework;
 
-#if !defined(NDEBUG)
-import :debug;
-#endif
+import std;
+
+import vulkan_hpp;
 
 import th.core.logger;
 import th.core.utils;
 
-import vulkan_hpp;
+#if !defined(NDEBUG)
+import :debug;
+#endif
 
 namespace th {
 

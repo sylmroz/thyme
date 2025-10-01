@@ -1,12 +1,5 @@
 module;
 
-#include <algorithm>
-#include <array>
-#include <map>
-#include <set>
-#include <string_view>
-#include <vector>
-
 module th.render_system.vulkan;
 
 import th.core.logger;

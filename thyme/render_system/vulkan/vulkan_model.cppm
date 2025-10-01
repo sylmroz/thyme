@@ -1,17 +1,18 @@
 module;
 
-#include <cstdint>
+#include <glm/glm.hpp>
 
 export module th.render_system.vulkan:model;
 
 import vulkan_hpp;
+
+import th.scene.model;
 
 import :buffer;
 import :device;
 import :uniform_buffer_object;
 import :texture;
 
-import th.scene.model;
 
 namespace th {
 
@@ -31,7 +32,7 @@ public:
     [[nodiscard]] auto getTexture() const noexcept -> const Vulkan2DTexture& {
         return m_texture;
     }
-    [[nodiscard]] auto getIndicesSize() const noexcept -> uint32_t {
+    [[nodiscard]] auto getIndicesSize() const noexcept -> std::uint32_t {
         return m_indicesSize;
     }
 
@@ -42,7 +43,7 @@ private:
     VulkanBufferMemory m_indexMemoryBuffer;
     VulkanUniformBuffer<glm::mat4> m_uniformBufferObject;
     Vulkan2DTexture m_texture;
-    uint32_t m_indicesSize;
+    std::uint32_t m_indicesSize;
 };
 
 }// namespace th

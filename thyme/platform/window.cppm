@@ -1,5 +1,7 @@
 export module th.platform.window;
 
+import std;
+
 import th.core.events;
 import th.core.logger;
 
@@ -10,14 +12,14 @@ export enum class WindowState {
     maximalized
 };
 
-constexpr uint32_t defaultWindowWidth{ 1240 };
-constexpr uint32_t defaultWindowHeight{ 620 };
+constexpr std::uint32_t defaultWindowWidth{ 1240 };
+constexpr std::uint32_t defaultWindowHeight{ 620 };
 constexpr bool windowMaximalizedByDefault{ false };
 constexpr bool windowDecoratedByDefault{ true };
 
 export struct WindowConfig {
-    uint32_t width{ defaultWindowWidth };
-    uint32_t height{ defaultWindowHeight };
+    std::uint32_t width{ defaultWindowWidth };
+    std::uint32_t height{ defaultWindowHeight };
     std::string name;
     bool maximalized{ windowMaximalizedByDefault };
     bool decorate{ windowDecoratedByDefault };

@@ -1,8 +1,5 @@
 module;
 
-#include <filesystem>
-#include <ranges>
-
 module th.render_system.vulkan;
 
 import th.scene.camera;

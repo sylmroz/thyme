@@ -1,5 +1,7 @@
 export module th.render_system.vulkan:buffer;
 
+import std;
+
 import vulkan_hpp;
 
 import :device;
@@ -31,7 +33,7 @@ public:
         void* mappedMemory = nullptr;
         [[maybe_unused]] const auto result =
                 device.mapMemory(stagingMemoryBuffer.getMemory().get(), 0, size, vk::MemoryMapFlags(), &mappedMemory);
-        memcpy(mappedMemory, data.data(), size);
+        std::memcpy(mappedMemory, data.data(), size);
         device.unmapMemory(stagingMemoryBuffer.getMemory().get());
         copyBuffer(device, commandPool, graphicQueue, stagingMemoryBuffer.getBuffer().get(), m_buffer.get(), size);
     }

@@ -1,11 +1,10 @@
-module;
-
-#include <vector>
-
 export module th.render_system.vulkan:graphic_pipeline;
+
+import std;
 
 import vulkan_hpp;
 
+import th.scene.camera;
 import th.core.utils;
 
 import :device;
@@ -13,9 +12,6 @@ import :model;
 import :utils;
 import :uniform_buffer_object;
 
-import th.scene.camera;
-
-import th.core.utils;
 
 namespace th {
 

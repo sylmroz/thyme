@@ -1,4 +1,5 @@
 set(MODULE_FILES
+        glfw.cppm
         glfw_context.cppm
         glfw_window.cppm
 )

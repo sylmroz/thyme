@@ -1,9 +1,6 @@
-module;
-
-#include <memory>
-#include <vector>
-
 export module th.render_system.vulkan:renderer;
+
+import std;
 
 import vulkan_hpp;
 

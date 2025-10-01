@@ -1,5 +1,7 @@
 export module th.render_system.vulkan:swap_chain;
 
+import std;
+
 import vulkan_hpp;
 
 import th.core.logger;
@@ -25,15 +27,15 @@ public:
         return m_images.size();
     }
 
-    [[nodiscard]] auto getSwapChainFrame(const uint32_t index) noexcept -> SwapChainFrame {
+    [[nodiscard]] auto getSwapChainFrame(const std::uint32_t index) noexcept -> SwapChainFrame {
         return getSwapChainFrameInternal(index);
     }
-    [[nodiscard]] auto getSwapChainFrame(const uint32_t index) const noexcept -> SwapChainFrame {
+    [[nodiscard]] auto getSwapChainFrame(const std::uint32_t index) const noexcept -> SwapChainFrame {
         return getSwapChainFrameInternal(index);
     }
 
 private:
-    [[nodiscard]] auto getSwapChainFrameInternal(const uint32_t index) const -> SwapChainFrame {
+    [[nodiscard]] auto getSwapChainFrameInternal(const std::uint32_t index) const -> SwapChainFrame {
         if (index >= m_images.size()) {
             constexpr auto message = "SwapChainFrames index out of range";
             throw std::out_of_range(message);

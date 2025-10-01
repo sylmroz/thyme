@@ -1,9 +1,8 @@
-module;
-
-#include <GLFW/glfw3.h>
-#include <vulkan/vulkan.hpp>
-
 export module th.platform.glfw.glfw_window:glfw_context;
+
+import std;
+
+import glfw;
 
 import th.core.logger;
 
@@ -21,15 +20,15 @@ public:
         glfwSetErrorCallback([](int error, const char* description) {
             //std::println("Error {} : msg: {}", error, description);
         });
-        if (glfwInit() == GLFW_FALSE) {
+        if (glfwInit() == glfw_false) {
             constexpr auto message = "Failed to initialize GLFW!";
             terminate_handler(message);
         }
-        if (glfwVulkanSupported() == GLFW_FALSE) {
+        if (glfwVulkanSupported() == glfw_false) {
             constexpr auto message = "GLFW3 does not support vulkan!";
             terminate_handler(message);
         }
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        glfwWindowHint(glfw_client_api, glfw_no_api);
     }
 
     GlfwContext(const GlfwContext&) = delete;

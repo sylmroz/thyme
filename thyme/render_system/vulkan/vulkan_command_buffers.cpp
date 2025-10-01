@@ -1,9 +1,8 @@
 module;
 
-#include <ranges>
-#include <vector>
-
 module th.render_system.vulkan;
+
+import std;
 
 import th.core.logger;
 

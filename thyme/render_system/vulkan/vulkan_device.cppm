@@ -1,14 +1,12 @@
-module;
-
-#include <vector>
-
 export module th.render_system.vulkan:device;
 
-import :utils;
+import std;
+
+import vulkan_hpp;
 
 import th.core.logger;
 
-import vulkan_hpp;
+import :utils;
 
 namespace th {
 

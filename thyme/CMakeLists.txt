@@ -22,7 +22,7 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	target_link_options(${PROJECT_NAME} PUBLIC $<$<CONFIG:Debug>:/INCREMENTAL>)
 endif()
 
-add_compile_definitions(VULKAN_HPP_NO_STRUCT_CONSTRUCTORS GLM_FORCE_RADIANS GLM_FORCE_DEPTH_ZERO_TO_ONE GLFW_INCLUDE_VULKAN)
+add_compile_definitions(VULKAN_HPP_NO_STRUCT_CONSTRUCTORS GLM_FORCE_RADIANS GLM_FORCE_DEPTH_ZERO_TO_ONE GLFW_INCLUDE_VULKAN SPDLOG_USE_STD_FORMAT)
 
 add_subdirectory(core)
 add_subdirectory(platform)
@@ -44,26 +44,8 @@ target_include_directories(${PROJECT_NAME}
 
 target_precompile_headers(${PROJECT_NAME}
     PRIVATE
-		### std
-        <array>
-		<functional>
-		<filesystem>
-		<fstream>
-        <iostream>
-        <ranges>
-        <map>
-        <memory>
-		<ostream>
-        <set>
-        <string>
-        <string_view>
-		<utility>
-        <unordered_map>
-		<variant>
-        <vector>
-        <type_traits>
-		#### glm
-		<glm/glm.hpp>
+		<ctime>
+		<compare>
 )
 
 find_package(spdlog REQUIRED)

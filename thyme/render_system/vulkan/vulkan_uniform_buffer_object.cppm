@@ -1,5 +1,7 @@
 export module th.render_system.vulkan:uniform_buffer_object;
 
+import std;
+
 import vulkan_hpp;
 
 import :buffer;
@@ -31,7 +33,7 @@ public:
     }
 
     void update(const T& obj) const noexcept {
-        memcpy(m_mappedMemoryBuffer, &obj, sizeof(obj));
+        std::memcpy(m_mappedMemoryBuffer, &obj, sizeof(obj));
     }
 
     ~VulkanUniformBuffer() {

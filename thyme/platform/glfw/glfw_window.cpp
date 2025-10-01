@@ -1,8 +1,10 @@
 module;
 
-#include <GLFW/glfw3.h>
-
 module th.platform.glfw.glfw_window;
+
+import std;
+import vulkan_hpp;
+import glfw;
 
 namespace th {
 
@@ -12,8 +14,8 @@ GlfwWindow::GlfwWindow(const WindowConfig& config, Logger& logger) : Window{ con
                  config.height,
                  config.name);
     initializeContext();
-    glfwWindowHint(GLFW_MAXIMIZED, config.maximalized);
-    glfwWindowHint(GLFW_DECORATED, config.decorate);
+    glfwWindowHint(glfw_maximized, config.maximalized);
+    glfwWindowHint(glfw_decorate, config.decorate);
     m_window = WindowHWND(glfwCreateWindow(static_cast<int>(config.width),
                                            static_cast<int>(config.height),
                                            config.name.data(),
@@ -63,11 +65,11 @@ GlfwWindow::GlfwWindow(const WindowConfig& config, Logger& logger) : Window{ con
             [](GLFWwindow* window, int key, [[maybe_unused]] int scancode, int action, [[maybe_unused]] int mods) {
                 const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
                 const auto& eventSubject = app->m_eventListener;
-                if (action == GLFW_PRESS) {
+                if (action == glfw_press) {
                     eventSubject.next(KeyPressed(static_cast<KeyCode>(key)));
-                } else if (action == GLFW_RELEASE) {
+                } else if (action == glfw_release) {
                     eventSubject.next(KeyReleased(static_cast<KeyCode>(key)));
-                } else if (action == GLFW_REPEAT) {
+                } else if (action == glfw_repeat) {
                     eventSubject.next(KeyRepeated(static_cast<KeyCode>(key)));
                 }
             });
@@ -76,21 +78,31 @@ GlfwWindow::GlfwWindow(const WindowConfig& config, Logger& logger) : Window{ con
                                [](GLFWwindow* window, int button, int action, [[maybe_unused]] int mods) {
                                    const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
                                    const auto& eventSubject = app->m_eventListener;
-                                   if (action == GLFW_PRESS) {
+                                   if (action == glfw_press) {
                                        eventSubject.next(MouseButtonPress(static_cast<MouseButton>(button)));
-                                   } else if (action == GLFW_RELEASE) {
+                                   } else if (action == glfw_release) {
                                        eventSubject.next(MouseButtonReleased(static_cast<MouseButton>(button)));
                                    }
                                });
 
     glfwSetWindowMaximizeCallback(m_window.get(), [](GLFWwindow* window, int maximize) {
         const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
-        if (maximize == GLFW_TRUE) {
+        if (maximize == glfw_true) {
             app->m_eventListener.next(WindowMaximalize{});
         } else {
             app->m_eventListener.next(WindowMinimalize{});
         }
     });
+}
+
+auto GlfwWindow::createSurface(const vk::raii::Instance& instance) const -> vk::raii::SurfaceKHR {
+    VkSurfaceKHR surface{ nullptr };
+    if (const auto result = glfwCreateWindowSurface(*instance, this->getHandler().get(), nullptr, &surface);
+        result != VK_SUCCESS) {
+        throw std::runtime_error(std::format("GLFW cannot create VkSurface! Error: {}",
+                                             vk::to_string(static_cast<vk::Result>(result))));
+        }
+    return vk::raii::SurfaceKHR(instance, surface);
 }
 
 }// namespace th

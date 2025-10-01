@@ -1,8 +1,6 @@
-module;
-
-#include <vector>
-
 export module th.render_system.vulkan:command_buffers;
+
+import std;
 
 import vulkan_hpp;
 

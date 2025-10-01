@@ -1,11 +1,6 @@
 module;
 
-#include <ranges>
-#include <memory>
-
 module th.render_system.vulkan;
-
-
 
 namespace th {
 

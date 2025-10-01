@@ -1,9 +1,10 @@
 module;
 
-#include <numeric>
-#include <vector>
+#include <glm/glm.hpp>
 
 export module th.render_system.vulkan:utils;
+
+import std;
 
 import vulkan_hpp;
 
@@ -14,8 +15,8 @@ export namespace th {
 struct QueueFamilyIndices {
     explicit QueueFamilyIndices(vk::PhysicalDevice device, std::optional<vk::SurfaceKHR> surface);
 
-    std::optional<uint32_t> graphicFamily;
-    std::optional<uint32_t> presentFamily;
+    std::optional<std::uint32_t> graphicFamily;
+    std::optional<std::uint32_t> presentFamily;
 
     [[nodiscard]] constexpr auto isCompleted() const noexcept -> bool {
         return graphicFamily.has_value() && (m_requested_surface_support ? presentFamily.has_value() : true);
@@ -28,7 +29,7 @@ private:
 struct SwapChainSettings {
     vk::SurfaceFormatKHR surfaceFormat;
     vk::PresentModeKHR presetMode;
-    uint32_t imageCount;
+    std::uint32_t imageCount;
 };
 
 class SwapChainSupportDetails {
@@ -65,7 +66,7 @@ public:
         return vk::PresentModeKHR::eFifo;
     }
 
-    [[nodiscard]] inline auto getImageCount() const noexcept -> uint32_t {
+    [[nodiscard]] inline auto getImageCount() const noexcept -> std::uint32_t {
         const auto swapChainImageCount = capabilities.minImageCount + 1;
         if (capabilities.maxImageCount > 0 && swapChainImageCount > capabilities.maxImageCount) {
             return capabilities.maxImageCount;
@@ -74,7 +75,7 @@ public:
     }
 
     [[nodiscard]] inline auto getSwapExtent(const glm::uvec2& fallbackResolution) const noexcept -> vk::Extent2D {
-        if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
+        if (capabilities.currentExtent.width != std::numeric_limits<std::uint32_t>::max()) {
             return capabilities.currentExtent;
         }
         const auto minImageExtent = capabilities.minImageExtent;

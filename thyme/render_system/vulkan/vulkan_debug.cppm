@@ -2,10 +2,9 @@ module;
 #if !defined(NDEBUG)
 #include <vulkan/vk_platform.h>
 
-#include <format>
-#include <span>
-
 export module th.render_system.vulkan:debug;
+
+import std;
 
 import vulkan_hpp;
 
