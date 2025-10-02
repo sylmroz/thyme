@@ -1,13 +1,10 @@
-module;
-
-#include <glm/glm.hpp>
-
 export module th.platform.glfw.glfw_window;
 
 import std;
 
-import vulkan_hpp;
 import glfw;
+import glm;
+import vulkan_hpp;
 
 import th.platform.window;
 import th.core.key_codes;

@@ -1,11 +1,10 @@
 module;
 
-#include <glm/vec2.hpp>
-
-#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 export module th.scene.texture_data;
+
+import glm;
 
 import std;
 

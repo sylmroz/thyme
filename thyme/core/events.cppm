@@ -1,10 +1,10 @@
 module;
 
-#include <glm/vec2.hpp>
-
 export module th.core.events;
 
 import std;
+
+import  glm;
 
 import th.core.key_codes;
 import th.core.utils;

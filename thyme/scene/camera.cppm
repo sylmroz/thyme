@@ -1,9 +1,6 @@
-module;
-
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
 export module th.scene.camera;
+
+import glm;
 
 export namespace th {
 
@@ -25,17 +22,17 @@ struct CameraArguments {
 class Camera {
 public:
     explicit Camera(const CameraArguments& cameraArguments) : m_cameraArguments{ cameraArguments } {
-        m_projectionMatrix = glm::perspective(glm::radians(m_cameraArguments.fov),
+        m_projectionMatrix = glm::gtc::perspective(glm::radians(m_cameraArguments.fov),
                                               m_cameraArguments.resolution.x / m_cameraArguments.resolution.y,
                                               m_cameraArguments.zNear,
                                               m_cameraArguments.zFar);
         m_projectionMatrix[1][1] *= -1.0f;
-        m_viewMatrix = glm::lookAt(m_cameraArguments.eye, m_cameraArguments.center, m_cameraArguments.up);
+        m_viewMatrix = glm::gtc::lookAt(m_cameraArguments.eye, m_cameraArguments.center, m_cameraArguments.up);
         m_viewProjectionMatrix = m_projectionMatrix * m_viewMatrix;
     }
 
     void updateProjectionMatrix() {
-        m_projectionMatrix = glm::perspective(glm::radians(m_cameraArguments.fov),
+        m_projectionMatrix = glm::gtc::perspective(glm::radians(m_cameraArguments.fov),
                                               m_cameraArguments.resolution.x / m_cameraArguments.resolution.y,
                                               m_cameraArguments.zNear,
                                               m_cameraArguments.zFar);
@@ -64,7 +61,7 @@ public:
     }
 
     void updateViewMatrix() {
-        m_viewMatrix = glm::lookAt(m_cameraArguments.eye, m_cameraArguments.center, m_cameraArguments.up);
+        m_viewMatrix = glm::gtc::lookAt(m_cameraArguments.eye, m_cameraArguments.center, m_cameraArguments.up);
         m_viewProjectionMatrix = m_projectionMatrix * m_viewMatrix;
     }
     void setCenter(const glm::vec3& center) {

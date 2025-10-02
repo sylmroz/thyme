@@ -2,6 +2,9 @@ export module th.render_system.vulkan;
 
 import std;
 
+import glm;
+import vulkan_hpp;
+
 export import :gui;
 export import :buffer;
 export import :command_buffers;

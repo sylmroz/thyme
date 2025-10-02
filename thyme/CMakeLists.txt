@@ -22,7 +22,7 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	target_link_options(${PROJECT_NAME} PUBLIC $<$<CONFIG:Debug>:/INCREMENTAL>)
 endif()
 
-add_compile_definitions(VULKAN_HPP_NO_STRUCT_CONSTRUCTORS GLM_FORCE_RADIANS GLM_FORCE_DEPTH_ZERO_TO_ONE GLFW_INCLUDE_VULKAN SPDLOG_USE_STD_FORMAT)
+add_compile_definitions(VULKAN_HPP_NO_STRUCT_CONSTRUCTORS GLM_FORCE_RADIANS GLM_FORCE_DEPTH_ZERO_TO_ONE GLFW_INCLUDE_VULKAN SPDLOG_USE_STD_FORMAT STB_IMAGE_IMPLEMENTATION)
 
 add_subdirectory(core)
 add_subdirectory(modules)
@@ -56,6 +56,7 @@ find_package(imgui CONFIG REQUIRED)
 find_package(Stb REQUIRED)
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
+find_package(glm CONFIG REQUIRED)
 
 target_link_libraries(${PROJECT_NAME} 
     PRIVATE
@@ -66,6 +67,7 @@ target_link_libraries(${PROJECT_NAME}
 		imgui::imgui
 		GPUOpen::VulkanMemoryAllocator
 		nlohmann_json::nlohmann_json
+		glm::glm
 )
 
 # copy dlls to the app
