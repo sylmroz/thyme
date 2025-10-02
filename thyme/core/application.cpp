@@ -2,6 +2,8 @@ module;
 
 module th.core.application;
 
+import nlohmann.json;
+
 import th.platform.window;
 import th.platform.glfw.glfw_window;
 
@@ -12,6 +14,7 @@ using namespace std::string_view_literals;
 Application::Application(Logger& logger) : modelStorage{ logger }, m_logger{ logger } {}
 
 void Application::run() {
+    nlohmann::json json = {"something", "here"};
     m_logger.info("Starting Thyme api {}"sv, name);
     try {
         auto window = GlfwWindow(WindowConfig{ .width = 1280, .height = 720, .name = "Thyme", .maximalized = false },

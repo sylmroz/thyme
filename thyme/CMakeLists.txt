@@ -1,7 +1,7 @@
 project(thyme VERSION 0.0.1)
 
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 
 add_library(${PROJECT_NAME})
@@ -25,11 +25,12 @@ endif()
 add_compile_definitions(VULKAN_HPP_NO_STRUCT_CONSTRUCTORS GLM_FORCE_RADIANS GLM_FORCE_DEPTH_ZERO_TO_ONE GLFW_INCLUDE_VULKAN SPDLOG_USE_STD_FORMAT)
 
 add_subdirectory(core)
+add_subdirectory(modules)
 add_subdirectory(platform)
 add_subdirectory(render_system)
 add_subdirectory(scene)
 
-set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
 
 configure_file(version.hpp.in version.hpp)
 
@@ -54,6 +55,7 @@ find_package(Vulkan REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(Stb REQUIRED)
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 
 target_link_libraries(${PROJECT_NAME} 
     PRIVATE
@@ -63,6 +65,7 @@ target_link_libraries(${PROJECT_NAME}
         Vulkan::Headers
 		imgui::imgui
 		GPUOpen::VulkanMemoryAllocator
+		nlohmann_json::nlohmann_json
 )
 
 # copy dlls to the app

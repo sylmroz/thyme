@@ -13,7 +13,8 @@
     "glm",
     "stb",
     "vulkan-sdk-components",
-    "vulkan-memory-allocator"
+    "vulkan-memory-allocator",
+    "nlohmann-json"
   ],
   "version": "0.0.1",
   "name": "thyme"
