@@ -1,11 +1,6 @@
-module;
-
-#include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_vulkan.h>
-
 export module th.render_system.vulkan:gui;
 
+import imgui;
 import vulkan_hpp;
 
 import th.platform.glfw.glfw_window;
@@ -70,7 +65,7 @@ Gui::Gui(const VulkanDevice& device, const GlfwWindow& window, const VulkanGraph
 
     initInfo.PipelineCache = m_pipelineCache.get();
     initInfo.DescriptorPool = m_descriptorPool.get();
-    initInfo.Subpass = VK_SUBPASS_EXTERNAL;
+    initInfo.Subpass = vk::SubpassExternal;
     initInfo.MinImageCount = m_context.imageCount;
     initInfo.ImageCount = m_context.imageCount;
     initInfo.UseDynamicRendering = true;
@@ -80,7 +75,7 @@ Gui::Gui(const VulkanDevice& device, const GlfwWindow& window, const VulkanGraph
     };
     initInfo.Allocator = nullptr;
     initInfo.CheckVkResultFn = [](const auto vkResult) {
-        if (vkResult == VK_SUCCESS) {
+        if (static_cast<vk::Result>(vkResult) == vk::Result::eSuccess) {
             return;
         }
         //m_logger.error("CheckVkResultFn: {}", static_cast<int>(vkResult));

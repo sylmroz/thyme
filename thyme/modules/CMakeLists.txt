@@ -1,5 +1,6 @@
 set(MODULE_FILES
         glfw.cppm
+        imgui.cppm
         json.cppm
 )
 

@@ -1,8 +1,6 @@
-module;
-
-#include <imgui.h>
-
 export module th.platform.imgui_context;
+
+import imgui;
 
 export namespace th {
 
@@ -19,7 +17,6 @@ public:
 
 private:
     static void init() noexcept {
-        IMGUI_CHECKVERSION();
         ImGui::CreateContext();
 
         ImGuiIO& io = ImGui::GetIO();
