@@ -1,8 +1,8 @@
 export module th.scene.model;
 
-import glm;
-
 import std;
+
+import glm;
 
 import th.core.logger;
 import th.scene.texture_data;

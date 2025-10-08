@@ -1,7 +1,3 @@
-module;
-
-#include <imgui.h>
-
 export module th.core.engine;
 
 import std;

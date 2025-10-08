@@ -2,6 +2,7 @@ set(MODULE_FILES
         glfw.cppm
         imgui.cppm
         json.cppm
+        stb_image.cppm
 )
 
 SET(SOURCE_FILES

@@ -102,6 +102,7 @@ export {
     using ::ImGui_ImplVulkan_RenderDrawData;
     using ::ImGui_ImplGlfw_Shutdown;
 }
+
 export namespace ImGui {
 
 using ::ImGui::AcceptDragDropPayload;
@@ -123,4 +124,4 @@ using ::ImGui::RenderPlatformWindowsDefault;
 
 using ::ImGui::ShowDemoWindow;
 
-}
+}// namespace ImGui

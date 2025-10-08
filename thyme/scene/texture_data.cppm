@@ -1,12 +1,9 @@
-module;
-
-#include <stb_image.h>
-
 export module th.scene.texture_data;
 
-import glm;
-
 import std;
+
+import glm;
+import stb.image;
 
 export namespace th {
 

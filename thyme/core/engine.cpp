@@ -1,10 +1,10 @@
 module;
 
-#include <glm/glm.hpp>
-
 module th.core.engine;
 
 import std;
+
+import glm;
 
 namespace th {
 

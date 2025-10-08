@@ -54,6 +54,7 @@ ExperimentalAutoDetectBinPacking: true
 FixNamespaceComments: true
 IncludeIsMainRegex: (Test)?$
 IndentCaseLabels: true
+#IndentExportBlock: false
 IndentWidth: 4
 IndentWrappedFunctionNames: true
 JavaScriptQuotes: Leave
