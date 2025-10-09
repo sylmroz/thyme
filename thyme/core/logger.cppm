@@ -59,8 +59,8 @@ using format_with_source_location = basic_format_with_source_location<std::type_
 
 export class Logger {
 public:
-    Logger(const LogLevel level, const std::string_view loggerName) {
-        logger = spdlog::stdout_color_mt(std::string(loggerName));
+    Logger(const LogLevel level, const std::string_view logger_name) {
+        logger = spdlog::stdout_color_mt(std::string(logger_name));
         logger->set_pattern("%^[%T:%e][%n][%l][%@]: %v%$");
         const auto l = toSpdLogLevel(level);
         logger->set_level(l);
@@ -68,38 +68,38 @@ public:
 
     template <typename... Args>
     void trace(format_with_source_location<Args...> msg, Args&&... args) const noexcept {
-        const auto fullMessage = std::format(msg.get_format(), std::forward<Args>(args)...);
-        logger->log(msg.get_location(), spdlog::level::trace, fullMessage);
+        const auto full_message = std::format(msg.get_format(), std::forward<Args>(args)...);
+        logger->log(msg.get_location(), spdlog::level::trace, full_message);
     }
 
     template <typename... Args>
     void debug(format_with_source_location<Args...> msg, Args&&... args) const noexcept {
-        const auto fullMessage = std::format(msg.get_format(), std::forward<Args>(args)...);
-        logger->log(msg.get_location(), spdlog::level::debug, fullMessage);
+        const auto full_message = std::format(msg.get_format(), std::forward<Args>(args)...);
+        logger->log(msg.get_location(), spdlog::level::debug, full_message);
     }
 
     template <typename... Args>
     void info(format_with_source_location<Args...> msg, Args&&... args) const noexcept {
-        const auto fullMessage = std::format(msg.get_format(), std::forward<Args>(args)...);
-        logger->log(msg.get_location(), spdlog::level::info, fullMessage);
+        const auto full_message = std::format(msg.get_format(), std::forward<Args>(args)...);
+        logger->log(msg.get_location(), spdlog::level::info, full_message);
     }
 
     template <typename... Args>
     void warn(format_with_source_location<Args...> msg, Args&&... args) const noexcept {
-        const auto fullMessage = std::format(msg.get_format(), std::forward<Args>(args)...);
-        logger->log(msg.get_location(), spdlog::level::warn, fullMessage);
+        const auto full_message = std::format(msg.get_format(), std::forward<Args>(args)...);
+        logger->log(msg.get_location(), spdlog::level::warn, full_message);
     }
 
     template <typename... Args>
     void error(format_with_source_location<Args...> msg, Args&&... args) const noexcept {
-        const auto fullMessage = std::format(msg.get_format(), std::forward<Args>(args)...);
-        logger->log(msg.get_location(), spdlog::level::err, fullMessage);
+        const auto full_message = std::format(msg.get_format(), std::forward<Args>(args)...);
+        logger->log(msg.get_location(), spdlog::level::err, full_message);
     }
 
     template <typename... Args>
     void critical(format_with_source_location<Args...> msg, Args&&... args) const noexcept {
-        const auto fullMessage = std::format(msg.get_format(), std::forward<Args>(args)...);
-        logger->log(msg.get_location(), spdlog::level::critical, fullMessage);
+        const auto full_message = std::format(msg.get_format(), std::forward<Args>(args)...);
+        logger->log(msg.get_location(), spdlog::level::critical, full_message);
     }
 
     std::shared_ptr<spdlog::logger> logger;

@@ -4,8 +4,8 @@ module th.render_system.vulkan;
 
 namespace th {
 
-SwapChainFrames::SwapChainFrames(const vk::Device device, const vk::SwapchainKHR swapChain, const vk::Format format) {
-    m_images = device.getSwapchainImagesKHR(swapChain);
+SwapchainFrames::SwapchainFrames(const vk::Device device, const vk::SwapchainKHR swapchain, const vk::Format format) {
+    m_images = device.getSwapchainImagesKHR(swapchain);
     for (const auto image : m_images) {
         m_imageViews.emplace_back(device.createImageViewUnique(vk::ImageViewCreateInfo{
                 .image = image,
@@ -20,17 +20,17 @@ SwapChainFrames::SwapChainFrames(const vk::Device device, const vk::SwapchainKHR
     }
 }
 
-auto SwapChainData::createSwapChain(const VulkanDevice& device, const SwapChainSettings swapChainSettings,
-                                    const vk::Extent2D swapChainExtent, const vk::SurfaceKHR surface,
-                                    const vk::SwapchainKHR oldSwapChain) -> vk::UniqueSwapchainKHR {
-    const auto& [surfaceFormat, presetMode, imageCount] = swapChainSettings;
-    const auto capabilities = device.physicalDevice.getSurfaceCapabilitiesKHR(surface);
+auto SwapchainData::createSwapchain(const VulkanDevice& device, const SwapChainSettings swapchain_settings,
+                                    const vk::Extent2D swapchain_extent, const vk::SurfaceKHR surface,
+                                    const vk::SwapchainKHR old_swapchain) -> vk::UniqueSwapchainKHR {
+    const auto& [surfaceFormat, presetMode, imageCount] = swapchain_settings;
+    const auto capabilities = device.physical_device.getSurfaceCapabilitiesKHR(surface);
     const auto swapChainCreateInfo = [&] {
         auto info = vk::SwapchainCreateInfoKHR{ .surface = surface,
                                                 .minImageCount = imageCount,
                                                 .imageFormat = surfaceFormat.format,
                                                 .imageColorSpace = surfaceFormat.colorSpace,
-                                                .imageExtent = swapChainExtent,
+                                                .imageExtent = swapchain_extent,
                                                 .imageArrayLayers = 1,
                                                 .imageUsage = vk::ImageUsageFlagBits::eColorAttachment
                                                               | vk::ImageUsageFlagBits::eTransferDst,
@@ -38,10 +38,10 @@ auto SwapChainData::createSwapChain(const VulkanDevice& device, const SwapChainS
                                                 .compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,
                                                 .presentMode = presetMode,
                                                 .clipped = vk::True,
-                                                .oldSwapchain = oldSwapChain };
-        if (device.queueFamilyIndices.graphicFamily.value() != device.queueFamilyIndices.presentFamily.value()) {
-            const auto indices = std::array{ device.queueFamilyIndices.graphicFamily.value(),
-                                             device.queueFamilyIndices.presentFamily.value() };
+                                                .oldSwapchain = old_swapchain };
+        if (device.queue_family_indices.graphic_family.value() != device.queue_family_indices.present_family.value()) {
+            const auto indices = std::array{ device.queue_family_indices.graphic_family.value(),
+                                             device.queue_family_indices.present_family.value() };
             info.imageSharingMode = vk::SharingMode::eConcurrent;
             info.setQueueFamilyIndices(indices);
         } else {
@@ -49,34 +49,34 @@ auto SwapChainData::createSwapChain(const VulkanDevice& device, const SwapChainS
         }
         return info;
     }();
-    return device.logicalDevice.createSwapchainKHRUnique(swapChainCreateInfo);
+    return device.logical_device.createSwapchainKHRUnique(swapChainCreateInfo);
 }
 
-VulkanSwapChain::VulkanSwapChain(const VulkanDevice& device, const vk::SurfaceKHR surface,
-                                 const VulkanGraphicContext& context, const vk::Extent2D swapChainExtent,
-                                 VulkanCommandBuffersPool& commandPool, Logger& logger)
-    : m_surface{ surface }, m_swapChainExtent{ swapChainExtent }, m_context{ context }, m_device{ device },
-      m_swapChainData{ device,
-                       SwapChainSettings{ .surfaceFormat = context.surfaceFormat,
-                                          .presetMode = context.presentMode,
-                                          .imageCount = context.imageCount },
-                       swapChainExtent,
+VulkanSwapchain::VulkanSwapchain(const VulkanDevice& device, const vk::SurfaceKHR surface,
+                                 const VulkanGraphicContext& context, const vk::Extent2D swapchain_extent,
+                                 VulkanCommandBuffersPool& command_pool, Logger& logger)
+    : m_surface{ surface }, m_swapchain_extent{ swapchain_extent }, m_context{ context }, m_device{ device },
+      m_swapchain_data{ device,
+                       SwapChainSettings{ .surfaceFormat = context.surface_format,
+                                          .presetMode = context.present_mode,
+                                          .imageCount = context.image_count },
+                       swapchain_extent,
                        surface },
-      m_commandBuffersPool{ commandPool }, m_logger{ logger } {
-    std::generate_n(std::back_inserter(m_imageRenderingSemaphore), context.imageCount, [device] {
-        return device.logicalDevice.createSemaphoreUnique(vk::SemaphoreCreateInfo());
+      m_command_buffers_pool{ command_pool }, m_logger{ logger } {
+    std::generate_n(std::back_inserter(m_image_rendering_semaphore), context.image_count, [device] {
+        return device.logical_device.createSemaphoreUnique(vk::SemaphoreCreateInfo());
     });
 }
 
-auto VulkanSwapChain::prepareFrame() -> bool {
-    auto imageAvailableSemaphore = m_device.logicalDevice.createSemaphoreUnique(vk::SemaphoreCreateInfo());
+auto VulkanSwapchain::prepareFrame() -> bool {
+    auto imageAvailableSemaphore = m_device.logical_device.createSemaphoreUnique(vk::SemaphoreCreateInfo());
     const auto imageIndexResult = [&] {
         try {
-            return m_device.logicalDevice.acquireNextImageKHR(m_swapChainData.getSwapChain(),
+            return m_device.logical_device.acquireNextImageKHR(m_swapchain_data.getSwapchain(),
                                                               std::numeric_limits<uint64_t>::max(),
                                                               imageAvailableSemaphore.get());
         } catch (const vk::OutOfDateKHRError&) {
-            recreateSwapChain();
+            recreateSwapchain();
         };
 
         return vk::ResultValue(vk::Result::eErrorOutOfDateKHR, std::numeric_limits<uint32_t>::max());
@@ -84,20 +84,20 @@ auto VulkanSwapChain::prepareFrame() -> bool {
     if (imageIndexResult.result != vk::Result::eSuccess) {
         return false;
     }
-    m_commandBuffersPool.waitFor(imageAvailableSemaphore);
-    m_currentImageIndex = imageIndexResult.value;
+    m_command_buffers_pool.waitFor(imageAvailableSemaphore);
+    m_current_image_index = imageIndexResult.value;
     return true;
 }
 
-void VulkanSwapChain::frameResized(const vk::Extent2D resolution) {
-    m_fallBackExtent = vk::Extent2D{ resolution.width, resolution.height };
+void VulkanSwapchain::frameResized(const vk::Extent2D resolution) {
+    m_fallback_extent = vk::Extent2D{ resolution.width, resolution.height };
 }
 
-void VulkanSwapChain::prepareRenderMode() {
-    const auto commandBuffer = m_commandBuffersPool.get().getBuffer();
-    setCommandBufferFrameSize(commandBuffer, m_swapChainExtent);
+void VulkanSwapchain::prepareRenderMode() {
+    const auto commandBuffer = m_command_buffers_pool.get().getBuffer();
+    setCommandBufferFrameSize(commandBuffer, m_swapchain_extent);
     transitImageLayout(commandBuffer,
-                       getCurrentSwapChainFrame().image,
+                       getCurrentSwapchainFrame().image,
                        ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eUndefined,
                                               .newLayout = vk::ImageLayout::eTransferDstOptimal },
                        ImagePipelineStageTransition{ .oldStage = vk::PipelineStageFlagBits::eTopOfPipe
@@ -112,56 +112,56 @@ void VulkanSwapChain::prepareRenderMode() {
                        1);
 }
 
-void VulkanSwapChain::preparePresentMode() {
-    const auto commandBuffer = m_commandBuffersPool.get().getBuffer();
+void VulkanSwapchain::preparePresentMode() {
+    const auto commandBuffer = m_command_buffers_pool.get().getBuffer();
     transitImageLayout(commandBuffer,
-                       m_swapChainData.getSwapChainFrame(m_currentImageIndex).image,
+                       m_swapchain_data.getSwapchainFrame(m_current_image_index).image,
                        ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eColorAttachmentOptimal,
                                               .newLayout = vk::ImageLayout::ePresentSrcKHR },
                        1);
 }
 
-void VulkanSwapChain::submitFrame() {
+void VulkanSwapchain::submitFrame() {
     preparePresentMode();
     const auto presentationQueue = m_device.getPresentationQueue();
-    const auto swapChain = m_swapChainData.getSwapChain();
-    const auto renderFinishedSemaphore = m_imageRenderingSemaphore[m_currentImageIndex].get();
-    m_commandBuffersPool.submit(renderFinishedSemaphore);
+    const auto swapChain = m_swapchain_data.getSwapchain();
+    const auto renderFinishedSemaphore = m_image_rendering_semaphore[m_current_image_index].get();
+    m_command_buffers_pool.submit(renderFinishedSemaphore);
     try {
         const auto queuePresentResult = presentationQueue.presentKHR(vk::PresentInfoKHR(vk::PresentInfoKHR{
                 .waitSemaphoreCount = 1,
                 .pWaitSemaphores = &renderFinishedSemaphore,
                 .swapchainCount = 1,
                 .pSwapchains = &swapChain,
-                .pImageIndices = &m_currentImageIndex,
+                .pImageIndices = &m_current_image_index,
         }));
         if (queuePresentResult == vk::Result::eErrorOutOfDateKHR || queuePresentResult == vk::Result::eSuboptimalKHR) {
-            recreateSwapChain();
+            recreateSwapchain();
         }
         if (queuePresentResult != vk::Result::eSuccess) {
             m_logger.error("Failed to present rendered result!");
             throw std::runtime_error("Failed to present rendered result!");
         }
     } catch (const vk::OutOfDateKHRError&) {
-        recreateSwapChain();
+        recreateSwapchain();
     }
 }
-void VulkanSwapChain::renderImage(const vk::Image image) {
+void VulkanSwapchain::renderImage(const vk::Image image) {
     prepareRenderMode();
     const auto blitSize =
-            vk::Extent3D{ .width = getSwapChainExtent().width, .height = getSwapChainExtent().height, .depth = 1 };
-    blitImage(m_commandBuffersPool.get().getBuffer(), image, blitSize, getCurrentSwapChainFrame().image, blitSize);
+            vk::Extent3D{ .width = getSwapchainExtent().width, .height = getSwapchainExtent().height, .depth = 1 };
+    blitImage(m_command_buffers_pool.get().getBuffer(), image, blitSize, getCurrentSwapchainFrame().image, blitSize);
 }
 
-auto VulkanSwapChain::hasResized() const -> bool {
-    const auto caps = m_device.physicalDevice.getSurfaceCapabilitiesKHR(m_surface);
-    return caps.currentExtent.width != m_swapChainExtent.width || caps.currentExtent.height != m_swapChainExtent.height;
+auto VulkanSwapchain::hasResized() const -> bool {
+    const auto caps = m_device.physical_device.getSurfaceCapabilitiesKHR(m_surface);
+    return caps.currentExtent.width != m_swapchain_extent.width || caps.currentExtent.height != m_swapchain_extent.height;
 }
 
-auto VulkanSwapChain::recreateSwapChain() -> bool {
-    m_commandBuffersPool.flush();
-    m_device.logicalDevice.waitIdle();
-    m_swapChainExtent = [resolution = m_fallBackExtent, surface = m_surface, physicalDevice = m_device.physicalDevice] {
+auto VulkanSwapchain::recreateSwapchain() -> bool {
+    m_command_buffers_pool.flush();
+    m_device.logical_device.waitIdle();
+    m_swapchain_extent = [resolution = m_fallback_extent, surface = m_surface, physicalDevice = m_device.physical_device] {
         const auto capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface);
         if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
             return capabilities.currentExtent;
@@ -172,16 +172,16 @@ auto VulkanSwapChain::recreateSwapChain() -> bool {
         return vk::Extent2D{ .width = std::clamp(width, minImageExtent.width, maxImageExtent.width),
                              .height = std::clamp(height, minImageExtent.height, maxImageExtent.height) };
     }();
-    if (m_swapChainExtent.width == 0 || m_swapChainExtent.height == 0) {
+    if (m_swapchain_extent.width == 0 || m_swapchain_extent.height == 0) {
         return false;
     }
-    m_swapChainData = SwapChainData(m_device,
-                                    SwapChainSettings{ .surfaceFormat = m_context.surfaceFormat,
-                                                       .presetMode = m_context.presentMode,
-                                                       .imageCount = m_context.imageCount },
-                                    m_swapChainExtent,
+    m_swapchain_data = SwapchainData(m_device,
+                                    SwapChainSettings{ .surfaceFormat = m_context.surface_format,
+                                                       .presetMode = m_context.present_mode,
+                                                       .imageCount = m_context.image_count },
+                                    m_swapchain_extent,
                                     m_surface,
-                                    m_swapChainData.getSwapChain());
+                                    m_swapchain_data.getSwapchain());
     return true;
 }
 

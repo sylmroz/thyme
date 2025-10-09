@@ -14,7 +14,7 @@ import th.platform.glfw.glfw_window;
 class ExampleApp: public th::Application {
 public:
     explicit ExampleApp(th::Logger& logger): th::Application{logger} {
-        modelStorage.addModel(th::Model{
+        m_model_storage.addModel(th::Model{
                 .name = "Grumpy 1",
                 .mesh =
                         th::Mesh{
@@ -24,14 +24,14 @@ public:
                                               { { -0.5f, 0.5f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } } },
                                 .indices = { 0, 1, 2, 2, 3, 0 } },
                 .texture = th::TextureData(std::filesystem::current_path() / "assets" / "grumpy.jpg"),
-                .onAnimate = [](th::Model& model) {
+                .on_animate = [](th::Model& model) {
                     using namespace std::chrono;
                     static const auto startTime = high_resolution_clock::now();
                     const auto currentTime = high_resolution_clock::now();
                     const auto deltaTime = duration<float, seconds::period>(currentTime - startTime).count();
                     model.transformation.rotate(deltaTime * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
                 } });
-        modelStorage.addModel(th::Model{
+        m_model_storage.addModel(th::Model{
                 .name = "Grumpy 2",
                 .mesh =
                         th::Mesh{
@@ -41,7 +41,7 @@ public:
                                               { { -0.5f, 0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } } },
                                 .indices = { 0, 1, 2, 2, 3, 0 } },
                 .texture = th::TextureData(std::filesystem::current_path() / "assets" / "grumpy2.jpg"),
-                .onAnimate = [](th::Model& model) {
+                .on_animate = [](th::Model& model) {
                     using namespace std::chrono;
                     static const auto startTime = high_resolution_clock::now();
                     const auto currentTime = high_resolution_clock::now();
@@ -54,7 +54,6 @@ public:
 auto main() -> int {
     auto thymeApiLogger = th::Logger(th::LogLevel::info, "ThymeApi");
     ExampleApp app(thymeApiLogger);
-    app.name = "AppThyme";
     app.run();
 
     return 0;

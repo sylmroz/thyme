@@ -23,7 +23,7 @@ public:
     Gui(const Gui& other) = delete;
     auto operator=(const Gui& other) -> Gui& = delete;
 
-    void draw(vk::CommandBuffer commandBuffer);
+    void draw(vk::CommandBuffer command_buffer);
 
     void start() const;
 
@@ -41,8 +41,8 @@ Gui::Gui(const VulkanDevice& device, const GlfwWindow& window, const VulkanGraph
     : m_context{ context }, m_logger{ logger } {
     logger.debug("Create Gui Class");
     [[maybe_unused]] static ImGuiContext im_gui_context;
-    m_pipelineCache = device.logicalDevice.createPipelineCacheUnique(vk::PipelineCacheCreateInfo());
-    m_descriptorPool = createDescriptorPool(device.logicalDevice,
+    m_pipelineCache = device.logical_device.createPipelineCacheUnique(vk::PipelineCacheCreateInfo());
+    m_descriptorPool = createDescriptorPool(device.logical_device,
                                             { vk::DescriptorPoolSize(vk::DescriptorType::eSampler, 1000),
                                               vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, 1000),
                                               vk::DescriptorPoolSize(vk::DescriptorType::eSampledImage, 1000),
@@ -56,40 +56,40 @@ Gui::Gui(const VulkanDevice& device, const GlfwWindow& window, const VulkanGraph
                                               vk::DescriptorPoolSize(vk::DescriptorType::eInputAttachment, 1000) });
 
     ImGui_ImplGlfw_InitForVulkan(window.getHandler().get(), true);
-    ImGui_ImplVulkan_InitInfo initInfo{};
-    initInfo.Instance = instance;
-    initInfo.PhysicalDevice = device.physicalDevice;
-    initInfo.Device = device.logicalDevice;
-    initInfo.QueueFamily = device.queueFamilyIndices.graphicFamily.value();
-    initInfo.Queue = device.getGraphicQueue();
+    ImGui_ImplVulkan_InitInfo init_info{};
+    init_info.Instance = instance;
+    init_info.PhysicalDevice = device.physical_device;
+    init_info.Device = device.logical_device;
+    init_info.QueueFamily = device.queue_family_indices.graphic_family.value();
+    init_info.Queue = device.getGraphicQueue();
 
-    initInfo.PipelineCache = m_pipelineCache.get();
-    initInfo.DescriptorPool = m_descriptorPool.get();
-    initInfo.Subpass = vk::SubpassExternal;
-    initInfo.MinImageCount = m_context.imageCount;
-    initInfo.ImageCount = m_context.imageCount;
-    initInfo.UseDynamicRendering = true;
-    initInfo.PipelineRenderingCreateInfo = vk::PipelineRenderingCreateInfo{
+    init_info.PipelineCache = m_pipelineCache.get();
+    init_info.DescriptorPool = m_descriptorPool.get();
+    init_info.Subpass = vk::SubpassExternal;
+    init_info.MinImageCount = m_context.image_count;
+    init_info.ImageCount = m_context.image_count;
+    init_info.UseDynamicRendering = true;
+    init_info.PipelineRenderingCreateInfo = vk::PipelineRenderingCreateInfo{
         .colorAttachmentCount = 1,
-        .pColorAttachmentFormats = &m_context.surfaceFormat.format,
+        .pColorAttachmentFormats = &m_context.surface_format.format,
     };
-    initInfo.Allocator = nullptr;
-    initInfo.CheckVkResultFn = [](const auto vkResult) {
-        if (static_cast<vk::Result>(vkResult) == vk::Result::eSuccess) {
+    init_info.Allocator = nullptr;
+    init_info.CheckVkResultFn = [](const auto vk_result) -> auto {
+        if (static_cast<vk::Result>(vk_result) == vk::Result::eSuccess) {
             return;
         }
-        //m_logger.error("CheckVkResultFn: {}", static_cast<int>(vkResult));
+        // m_logger.error("CheckVkResultFn: {}", static_cast<int>(vkResult));
     };
-    ImGui_ImplVulkan_Init(&initInfo);
+    ImGui_ImplVulkan_Init(&init_info);
 }
 
-void Gui::draw(const vk::CommandBuffer commandBuffer) {
+void Gui::draw(const vk::CommandBuffer command_buffer) {
 
-    bool showDemoWindow = true;
-    ImGui::ShowDemoWindow(&showDemoWindow);
+    bool show_demo_window{ true };
+    ImGui::ShowDemoWindow(&show_demo_window);
     ImGui::Render();
 
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer);
     // Update and Render additional Platform Windows
     if (const auto io = ImGui::GetIO(); io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
         ImGui::UpdatePlatformWindows();

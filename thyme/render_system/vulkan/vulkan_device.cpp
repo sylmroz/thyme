@@ -12,7 +12,8 @@ static constexpr auto g_sDeviceExtensions = std::array{ vk::KHRSwapchainExtensio
                                                         vk::KHRBufferDeviceAddressExtensionName };
 
 [[nodiscard]] auto VulkanPhysicalDevicesManager::PhysicalDevice::createLogicalDevice() const -> vk::raii::Device {
-    const std::set<uint32_t> indices = { queueFamilyIndices.graphicFamily.value(), queueFamilyIndices.presentFamily.value() };
+    const std::set<uint32_t> indices = { queue_family_indices.graphic_family.value(),
+                                         queue_family_indices.present_family.value() };
     std::vector<vk::DeviceQueueCreateInfo> deviceQueueCreateInfos;
     for (const auto ind : indices) {
         float queuePriority{ 1.0 };
@@ -23,7 +24,7 @@ static constexpr auto g_sDeviceExtensions = std::array{ vk::KHRSwapchainExtensio
         });
     }
 
-    const auto features = physicalDevice.getFeatures();
+    const auto features = physical_device.getFeatures();
     constexpr auto vulkan13Features =
             vk::PhysicalDeviceVulkan13Features{ .synchronization2 = true, .dynamicRendering = true };
     constexpr auto vulkan12Features =
@@ -36,13 +37,13 @@ static constexpr auto g_sDeviceExtensions = std::array{ vk::KHRSwapchainExtensio
                                   .pEnabledFeatures = &features },
             vulkan13Features,
             vulkan12Features);
-    return vk::raii::Device(physicalDevice, deviceCreateInfo.get<vk::DeviceCreateInfo>());
+    return vk::raii::Device(physical_device, deviceCreateInfo.get<vk::DeviceCreateInfo>());
 }
 
-static auto deviceHasAllRequiredExtensions(const vk::PhysicalDevice& physicalDevice) -> bool {
-    const auto& availableDeviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
-    return std::ranges::all_of(g_sDeviceExtensions, [&availableDeviceExtensions](const auto& extension) {
-        return std::ranges::any_of(availableDeviceExtensions, [&extension](const auto& instanceExtension) {
+static auto deviceHasAllRequiredExtensions(const vk::PhysicalDevice& physical_device) -> bool {
+    const auto& available_device_extensions = physical_device.enumerateDeviceExtensionProperties();
+    return std::ranges::all_of(g_sDeviceExtensions, [&available_device_extensions](const auto& extension) {
+        return std::ranges::any_of(available_device_extensions, [&extension](const auto& instanceExtension) {
             return std::string_view(extension) == std::string_view(instanceExtension.extensionName);
         });
     });
@@ -101,8 +102,8 @@ auto VulkanPhysicalDevicesManager::enumeratePhysicalDevices(const vk::raii::Inst
     }
 
     std::ranges::sort(physicalDevices, [](const auto& device1, const auto& device2) {
-        const auto dt1 = device1.physicalDevice.getProperties().deviceType;
-        const auto dt2 = device2.physicalDevice.getProperties().deviceType;
+        const auto dt1 = device1.physical_device.getProperties().deviceType;
+        const auto dt2 = device2.physical_device.getProperties().deviceType;
         return priorities[dt1] > priorities[dt2];
     });
 

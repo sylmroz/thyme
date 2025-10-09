@@ -8,19 +8,20 @@ import th.core.logger;
 
 namespace th {
 
-VulkanCommandBuffer::VulkanCommandBuffer(const vk::Device device, const vk::CommandPool commandPool, const vk::Queue graphicQueue, Logger& logger)
-    : m_logger{ logger }, m_device{ device }, m_graphicQueue{ graphicQueue },
-      m_commandBuffer{ m_device.allocateCommandBuffers(vk::CommandBufferAllocateInfo{
-                                                               .commandPool = commandPool,
-                                                               .level = vk::CommandBufferLevel::ePrimary,
-                                                               .commandBufferCount = 1u,
-                                                       })
-                               .front() },
+VulkanCommandBuffer::VulkanCommandBuffer(const vk::Device device, const vk::CommandPool command_pool,
+                                         const vk::Queue graphic_queue, Logger& logger)
+    : m_logger{ logger }, m_device{ device }, m_graphic_queue{ graphic_queue },
+      m_command_buffer{ m_device.allocateCommandBuffers(vk::CommandBufferAllocateInfo{
+                                                                .commandPool = command_pool,
+                                                                .level = vk::CommandBufferLevel::ePrimary,
+                                                                .commandBufferCount = 1u,
+                                                        })
+                                .front() },
       m_fence{ m_device.createFenceUnique(vk::FenceCreateInfo{}) } {}
 
 auto VulkanCommandBuffer::getBuffer() -> vk::CommandBuffer {
     start();
-    return m_commandBuffer;
+    return m_command_buffer;
 }
 
 void VulkanCommandBuffer::reset() {
@@ -32,8 +33,8 @@ void VulkanCommandBuffer::reset() {
         }
         m_device.resetFences({ m_fence.get() });
     }
-    m_dependSemaphores.clear();
-    m_commandBuffer.reset();
+    m_depend_semaphores.clear();
+    m_command_buffer.reset();
     m_state = State::Idle;
 }
 
@@ -45,42 +46,43 @@ void VulkanCommandBuffer::start() {
         reset();
     }
 
-    m_commandBuffer.begin(vk::CommandBufferBeginInfo());
+    m_command_buffer.begin(vk::CommandBufferBeginInfo());
     m_state = State::Recording;
 }
 
-void VulkanCommandBuffer::submit(const vk::PipelineStageFlags stage, const vk::Semaphore renderSemaphore) {
+void VulkanCommandBuffer::submit(const vk::PipelineStageFlags stage, const vk::Semaphore render_semaphore) {
     if (m_state != State::Recording) {
         return;
     }
-    m_commandBuffer.end();
-    const auto dependants = m_dependSemaphores | std::views::transform([](auto& semaphore) { return semaphore.get(); })
+    m_command_buffer.end();
+    const auto dependants = m_depend_semaphores | std::views::transform([](auto& semaphore) { return semaphore.get(); })
                             | std::ranges::to<std::vector>();
-    m_graphicQueue.submit(
+    m_graphic_queue.submit(
             vk::SubmitInfo{
-                    .waitSemaphoreCount = static_cast<uint32_t>(m_dependSemaphores.size()),
+                    .waitSemaphoreCount = static_cast<uint32_t>(m_depend_semaphores.size()),
                     .pWaitSemaphores = dependants.data(),
                     .pWaitDstStageMask = &stage,
                     .commandBufferCount = 1u,
-                    .pCommandBuffers = &m_commandBuffer,
+                    .pCommandBuffers = &m_command_buffer,
                     .signalSemaphoreCount = 1u,
-                    .pSignalSemaphores = &renderSemaphore,
+                    .pSignalSemaphores = &render_semaphore,
             },
             m_fence.get());
     m_state = State::Submitted;
 }
 
-void VulkanCommandBuffer::waitFor(vk::UniqueSemaphore& dependSemaphore) {
+void VulkanCommandBuffer::waitFor(vk::UniqueSemaphore& depend_semaphore) {
     start();
-    m_dependSemaphores.emplace_back(std::move(dependSemaphore));
+    m_depend_semaphores.emplace_back(std::move(depend_semaphore));
 }
 
-VulkanCommandBuffersPool::VulkanCommandBuffersPool(const vk::Device device, const vk::CommandPool commandPool,
-                                       const vk::Queue graphicQueue, const std::size_t capacity, Logger& logger)
+VulkanCommandBuffersPool::VulkanCommandBuffersPool(const vk::Device device, const vk::CommandPool command_pool,
+                                                   const vk::Queue graphic_queue, const std::size_t capacity,
+                                                   Logger& logger)
     : m_device{ device } {
-    std::generate_n(std::back_inserter(m_commandBuffers), capacity, [device, commandPool, graphicQueue, &logger]() {
-        return VulkanCommandBuffer{ device, commandPool, graphicQueue, logger };
+    std::generate_n(std::back_inserter(m_command_buffers), capacity, [device, command_pool, graphic_queue, &logger]() {
+        return VulkanCommandBuffer{ device, command_pool, graphic_queue, logger };
     });
 }
 
-}
+}// namespace th

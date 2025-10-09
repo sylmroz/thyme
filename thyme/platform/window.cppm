@@ -12,23 +12,23 @@ export enum class WindowState {
     maximalized
 };
 
-constexpr std::uint32_t defaultWindowWidth{ 1240 };
+constexpr std::uint32_t g_defaultWindowWidth{ 1240 };
 constexpr std::uint32_t defaultWindowHeight{ 620 };
 constexpr bool windowMaximalizedByDefault{ false };
 constexpr bool windowDecoratedByDefault{ true };
 
 export struct WindowConfig {
-    std::uint32_t width{ defaultWindowWidth };
+    std::uint32_t width{ g_defaultWindowWidth };
     std::uint32_t height{ defaultWindowHeight };
-    std::string name;
+    std::string name{};
     bool maximalized{ windowMaximalizedByDefault };
     bool decorate{ windowDecoratedByDefault };
 };
 
 export class Window {
 public:
-    explicit Window(WindowConfig windowConfiguration, Logger& logger)
-        : config{ std::move(windowConfiguration) }, m_logger{ logger } {}
+    explicit Window(WindowConfig window_configuration, Logger& logger)
+        : config{ std::move(window_configuration) }, m_logger{ logger } {}
 
     explicit Window(const Window& window) = default;
     explicit Window(Window&& window) = default;
@@ -39,21 +39,21 @@ public:
     virtual void poolEvents() = 0;
     [[nodiscard]] virtual auto shouldClose() -> bool = 0;
     [[nodiscard]] auto isMinimalized() const noexcept -> bool {
-        return m_windowState == WindowState::minimalized;
+        return m_window_state == WindowState::minimalized;
     }
 
     WindowConfig config;
 
     auto subscribe(EventSubject::event_fn&& handler) -> int {
-        return m_eventListener.subscribe(std::forward<EventSubject::event_fn>(handler));
+        return m_event_listener.subscribe(std::forward<EventSubject::event_fn>(handler));
     }
 
     virtual ~Window() = default;
 
 protected:
-    WindowState m_windowState{ WindowState::maximalized };
-    EventSubject m_eventListener;
-    Logger& m_logger;
+    WindowState m_window_state{ WindowState::maximalized };
+    EventSubject m_event_listener{};
+    std::reference_wrapper<Logger> m_logger;
 };
 
 }// namespace th

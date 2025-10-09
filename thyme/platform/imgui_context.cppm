@@ -11,6 +11,12 @@ public:
         init();
     }
 
+    ImGuiContext(const ImGuiContext& ) = delete;
+    ImGuiContext(ImGuiContext&& ) = delete;
+    auto operator=(const ImGuiContext& ) -> ImGuiContext& = delete;
+    auto operator=(ImGuiContext&& other) -> ImGuiContext& = delete;
+
+
     ~ImGuiContext() noexcept {
         ImGui::DestroyContext();
     }

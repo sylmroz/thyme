@@ -11,14 +11,14 @@ namespace th {
 
 using namespace std::string_view_literals;
 
-Application::Application(Logger& logger) : modelStorage{ logger }, m_logger{ logger } {}
+Application::Application(Logger& logger) : m_model_storage{ logger }, m_logger{ logger } {}
 
 void Application::run() {
-    m_logger.info("Starting Thyme api {}"sv, name);
+    m_logger.info("Starting Thyme api {}"sv, m_name);
     try {
         auto window = GlfwWindow(WindowConfig{ .width = 1280, .height = 720, .name = "Thyme", .maximalized = false },
                                  m_logger);
-        auto engine = Engine(EngineConfig{ .appName = name }, window, modelStorage, m_logger);
+        auto engine = Engine(EngineConfig{ .app_name = m_name }, window, m_model_storage, m_logger);
         engine.run();
     } catch (const std::exception& e) {
         m_logger.error("Error occurred during app runtime\n Error: {}"sv, e.what());

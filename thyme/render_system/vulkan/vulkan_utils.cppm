@@ -12,11 +12,11 @@ export namespace th {
 struct QueueFamilyIndices {
     explicit QueueFamilyIndices(vk::PhysicalDevice device, std::optional<vk::SurfaceKHR> surface);
 
-    std::optional<std::uint32_t> graphicFamily;
-    std::optional<std::uint32_t> presentFamily;
+    std::optional<std::uint32_t> graphic_family;
+    std::optional<std::uint32_t> present_family;
 
     [[nodiscard]] constexpr auto isCompleted() const noexcept -> bool {
-        return graphicFamily.has_value() && (m_requested_surface_support ? presentFamily.has_value() : true);
+        return graphic_family.has_value() && (m_requested_surface_support ? present_family.has_value() : true);
     }
 
 private:
@@ -37,28 +37,28 @@ public:
     std::vector<vk::SurfaceFormatKHR> formats;
     std::vector<vk::PresentModeKHR> presentModes;
 
-    [[nodiscard]] bool isValid() const noexcept {
+    [[nodiscard]] auto isValid() const noexcept -> bool {
         return !formats.empty() && !presentModes.empty();
     }
 
     [[nodiscard]] auto getBestSurfaceFormat() const noexcept -> vk::SurfaceFormatKHR {
-        const auto suitableFormat = std::ranges::find_if(formats, [](const vk::SurfaceFormatKHR& format) {
+        const auto suitable_format = std::ranges::find_if(formats, [](const vk::SurfaceFormatKHR& format) {
             return format.format == vk::Format::eB8G8R8A8Unorm
                    && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear;
         });
-        if (suitableFormat != formats.end()) {
-            return *suitableFormat;
+        if (suitable_format != formats.end()) {
+            return *suitable_format;
         }
         return formats[0];
     }
 
-    [[nodiscard]] inline auto getBestPresetMode() const noexcept -> vk::PresentModeKHR {
-        const auto suitablePreset = std::ranges::find_if(presentModes, [](const vk::PresentModeKHR presentMode) {
+    [[nodiscard]] auto getBestPresetMode() const noexcept -> vk::PresentModeKHR {
+        const auto suitable_preset = std::ranges::find_if(presentModes, [](const vk::PresentModeKHR presentMode) {
             return presentMode == vk::PresentModeKHR::eMailbox;
         });
 
-        if (suitablePreset != presentModes.end()) {
-            return *suitablePreset;
+        if (suitable_preset != presentModes.end()) {
+            return *suitable_preset;
         }
         return vk::PresentModeKHR::eFifo;
     }
@@ -148,7 +148,7 @@ constexpr auto getAttributeDescriptions() -> std::array<vk::VertexInputAttribute
     return std::array{
         vk::VertexInputAttributeDescription(0, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, pos)),
         vk::VertexInputAttributeDescription(1, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, color)),
-        vk::VertexInputAttributeDescription(2, 0, vk::Format::eR32G32Sfloat, offsetof(Vertex, texCoord)),
+        vk::VertexInputAttributeDescription(2, 0, vk::Format::eR32G32Sfloat, offsetof(Vertex, tex_coord)),
     };
 }
 
@@ -166,7 +166,7 @@ constexpr auto getAttributeDescriptions() -> std::array<vk::VertexInputAttribute
 
 inline void copyBuffer(const vk::Device device, const vk::CommandPool commandPool, const vk::Queue graphicQueue,
                        const vk::Buffer srcBuffer, const vk::Buffer dstBuffer, const size_t size) {
-    singleTimeCommand(device, commandPool, graphicQueue, [&](const vk::CommandBuffer& commandBuffer) {
+    singleTimeCommand(device, commandPool, graphicQueue, [&](const vk::CommandBuffer& commandBuffer) -> void {
         commandBuffer.copyBuffer(srcBuffer, dstBuffer, { vk::BufferCopy(0, 0, size) });
     });
 }
@@ -186,29 +186,30 @@ struct ImageAccessFlagsTransition {
     vk::AccessFlags newAccess;
 };
 
-void transitImageLayout(vk::CommandBuffer commandBuffer, vk::Image image, ImageLayoutTransition layoutTransition,
-                        uint32_t mipLevels);
+void transitImageLayout(vk::CommandBuffer command_buffer, vk::Image image, ImageLayoutTransition layout_transition,
+                        uint32_t mip_levels);
 
-void transitImageLayout(vk::CommandBuffer commandBuffer, vk::Image image, ImageLayoutTransition layoutTransition,
-                        ImagePipelineStageTransition stageTransition, ImageAccessFlagsTransition accessFlagsTransition,
-                        vk::ImageAspectFlags aspectFlags, uint32_t mipLevels);
+void transitImageLayout(vk::CommandBuffer command_buffer, vk::Image image, ImageLayoutTransition layout_transition,
+                        ImagePipelineStageTransition stage_transition,
+                        ImageAccessFlagsTransition access_flags_transition, vk::ImageAspectFlags aspect_flags,
+                        uint32_t mip_levels);
 
-inline void copyBufferToImage(vk::Device device, const vk::CommandPool commandPool, const vk::Queue graphicQueue,
+inline void copyBufferToImage(vk::Device device, const vk::CommandPool command_pool, const vk::Queue graphic_queue,
                               const vk::Buffer buffer, const vk::Image image, const glm::uvec2& resolution) {
-    singleTimeCommand(device, commandPool, graphicQueue, [&](const vk::CommandBuffer commandBuffer) {
+    singleTimeCommand(device, command_pool, graphic_queue, [&](const vk::CommandBuffer cb) -> void {
         const auto region = vk::BufferImageCopy(0,
                                                 0,
                                                 0,
                                                 vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1),
                                                 vk::Offset3D(0, 0, 0),
                                                 vk::Extent3D(resolution.x, resolution.y, 1));
-        commandBuffer.copyBufferToImage(buffer, image, vk::ImageLayout::eTransferDstOptimal, region);
+        cb.copyBufferToImage(buffer, image, vk::ImageLayout::eTransferDstOptimal, region);
     });
 }
 
 [[nodiscard]] auto findSupportedImageFormat(vk::PhysicalDevice device,
                                             std::span<const vk::Format> formats,
-                                            vk::ImageTiling imageTiling,
+                                            vk::ImageTiling image_tiling,
                                             vk::FormatFeatureFlags features) -> vk::Format;
 
 [[nodiscard]] inline auto findDepthFormat(const vk::PhysicalDevice device) -> vk::Format {
@@ -220,28 +221,28 @@ inline void copyBufferToImage(vk::Device device, const vk::CommandPool commandPo
                                     vk::FormatFeatureFlagBits::eDepthStencilAttachment);
 }
 
-[[nodiscard]] inline bool hasStencilFormat(const vk::Format format) noexcept {
+[[nodiscard]] inline auto hasStencilFormat(const vk::Format format) noexcept -> bool {
     return format == vk::Format::eD24UnormS8Uint || format == vk::Format::eD32SfloatS8Uint;
 }
 
-void setCommandBufferFrameSize(vk::CommandBuffer commandBuffer, vk::Extent2D frameSize);
+void setCommandBufferFrameSize(vk::CommandBuffer command_buffer, vk::Extent2D frame_size);
 
 QueueFamilyIndices::QueueFamilyIndices(const vk::PhysicalDevice device, const std::optional<vk::SurfaceKHR> surface)
     : m_requested_surface_support{ surface.has_value() } {
-    const auto& queueFamilies = device.getQueueFamilyProperties2();
-    for (uint32_t i{ 0 }; i < queueFamilies.size(); i++) {
-        const auto& queueFamily = queueFamilies[i];
-        const auto& queueFamilyProperties = queueFamily.queueFamilyProperties;
-        if (queueFamilyProperties.queueCount <= 0) {
+    const auto& queue_families = device.getQueueFamilyProperties2();
+    for (uint32_t i{ 0 }; i < queue_families.size(); i++) {
+        const auto& queue_family = queue_families[i];
+        const auto& queue_family_properties = queue_family.queueFamilyProperties;
+        if (queue_family_properties.queueCount <= 0) {
             continue;
         }
-        if (queueFamilyProperties.queueFlags & vk::QueueFlagBits::eGraphics) {
-            graphicFamily = i;
+        if (queue_family_properties.queueFlags & vk::QueueFlagBits::eGraphics) {
+            graphic_family = i;
         }
-        if (queueFamilyProperties.queueFlags & vk::QueueFlagBits::eCompute) {}
-        if (queueFamilyProperties.queueFlags & vk::QueueFlagBits::eTransfer) {}
+        if (queue_family_properties.queueFlags & vk::QueueFlagBits::eCompute) {}
+        if (queue_family_properties.queueFlags & vk::QueueFlagBits::eTransfer) {}
         if (surface.has_value() ? device.getSurfaceSupportKHR(i, surface.value()) : true) {
-            presentFamily = i;
+            present_family = i;
         }
         if (isCompleted()) {
             break;
@@ -255,119 +256,119 @@ SwapChainSupportDetails::SwapChainSupportDetails(const vk::PhysicalDevice& devic
     presentModes = device.getSurfacePresentModesKHR(surface);
 }
 
-void transitImageLayout(const vk::CommandBuffer commandBuffer, const vk::Image image,
-                        const ImageLayoutTransition layoutTransition,
-                        const ImagePipelineStageTransition stageTransition,
-                        const ImageAccessFlagsTransition accessFlagsTransition, const vk::ImageAspectFlags aspectFlags,
-                        const uint32_t mipLevels) {
-    const auto [srcAccessFlag, dstAccessFlag] = accessFlagsTransition;
-    const auto [oldLayout, newLayout] = layoutTransition;
-    const auto [srcStages, dstStages] = stageTransition;
-    const auto barrier = vk::ImageMemoryBarrier{ .srcAccessMask = srcAccessFlag,
-                                                 .dstAccessMask = dstAccessFlag,
-                                                 .oldLayout = oldLayout,
-                                                 .newLayout = newLayout,
+void transitImageLayout(const vk::CommandBuffer command_buffer, const vk::Image image,
+                        const ImageLayoutTransition layout_transition,
+                        const ImagePipelineStageTransition stage_transition,
+                        const ImageAccessFlagsTransition access_flags_transition,
+                        const vk::ImageAspectFlags aspect_flags, const uint32_t mip_levels) {
+    const auto [src_access_flag, dst_access_flag] = access_flags_transition;
+    const auto [old_layout, new_layout] = layout_transition;
+    const auto [src_stages, dst_stages] = stage_transition;
+    const auto barrier = vk::ImageMemoryBarrier{ .srcAccessMask = src_access_flag,
+                                                 .dstAccessMask = dst_access_flag,
+                                                 .oldLayout = old_layout,
+                                                 .newLayout = new_layout,
                                                  .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
                                                  .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
                                                  .image = image,
                                                  .subresourceRange = vk::ImageSubresourceRange{
-                                                         .aspectMask = aspectFlags,
+                                                         .aspectMask = aspect_flags,
                                                          .baseMipLevel = 0u,
-                                                         .levelCount = mipLevels,
+                                                         .levelCount = mip_levels,
                                                          .baseArrayLayer = 0u,
                                                          .layerCount = 1u,
                                                  } };
-    commandBuffer.pipelineBarrier(srcStages, dstStages, vk::DependencyFlags(), 0, nullptr, 0, nullptr, 1, &barrier);
+    command_buffer.pipelineBarrier(src_stages, dst_stages, vk::DependencyFlags(), 0, nullptr, 0, nullptr, 1, &barrier);
 }
 
-void transitImageLayout(const vk::CommandBuffer commandBuffer, const vk::Image image,
-                        const ImageLayoutTransition layoutTransition, const uint32_t mipLevels) {
-    const auto [oldLayout, newLayout] = layoutTransition;
-    if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal) {
-        transitImageLayout(commandBuffer,
+void transitImageLayout(const vk::CommandBuffer command_buffer, const vk::Image image,
+                        const ImageLayoutTransition layout_transition, const uint32_t mip_levels) {
+    const auto [old_layout, new_layout] = layout_transition;
+    if (old_layout == vk::ImageLayout::eUndefined && new_layout == vk::ImageLayout::eTransferDstOptimal) {
+        transitImageLayout(command_buffer,
                            image,
-                           layoutTransition,
+                           layout_transition,
                            ImagePipelineStageTransition{ .oldStage = vk::PipelineStageFlagBits::eTopOfPipe,
                                                          .newStage = vk::PipelineStageFlagBits::eTransfer },
                            ImageAccessFlagsTransition{ .oldAccess = vk::AccessFlags(),
                                                        .newAccess = vk::AccessFlagBits::eTransferWrite },
                            vk::ImageAspectFlagBits::eColor,
-                           mipLevels);
+                           mip_levels);
         return;
     }
-    if (oldLayout == vk::ImageLayout::eTransferDstOptimal && newLayout == vk::ImageLayout::eShaderReadOnlyOptimal) {
-        transitImageLayout(commandBuffer,
+    if (old_layout == vk::ImageLayout::eTransferDstOptimal && new_layout == vk::ImageLayout::eShaderReadOnlyOptimal) {
+        transitImageLayout(command_buffer,
                            image,
-                           layoutTransition,
+                           layout_transition,
                            ImagePipelineStageTransition{ .oldStage = vk::PipelineStageFlagBits::eTransfer,
                                                          .newStage = vk::PipelineStageFlagBits::eFragmentShader },
                            ImageAccessFlagsTransition{ .oldAccess = vk::AccessFlagBits::eTransferWrite,
                                                        .newAccess = vk::AccessFlagBits::eShaderRead },
                            vk::ImageAspectFlagBits::eColor,
-                           mipLevels);
+                           mip_levels);
         return;
     }
-    if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eColorAttachmentOptimal) {
+    if (old_layout == vk::ImageLayout::eUndefined && new_layout == vk::ImageLayout::eColorAttachmentOptimal) {
         transitImageLayout(
-                commandBuffer,
+                command_buffer,
                 image,
-                layoutTransition,
+                layout_transition,
                 ImagePipelineStageTransition{ .oldStage = vk::PipelineStageFlagBits::eColorAttachmentOutput
                                                           | vk::PipelineStageFlagBits::eNone,
                                               .newStage = vk::PipelineStageFlagBits::eColorAttachmentOutput },
                 ImageAccessFlagsTransition{ .oldAccess = vk::AccessFlagBits::eNone,
                                             .newAccess = vk::AccessFlagBits::eColorAttachmentWrite },
                 vk::ImageAspectFlagBits::eColor,
-                mipLevels);
+                mip_levels);
         return;
     }
-    if (oldLayout == vk::ImageLayout::eColorAttachmentOptimal && newLayout == vk::ImageLayout::ePresentSrcKHR) {
-        transitImageLayout(commandBuffer,
+    if (old_layout == vk::ImageLayout::eColorAttachmentOptimal && new_layout == vk::ImageLayout::ePresentSrcKHR) {
+        transitImageLayout(command_buffer,
                            image,
-                           layoutTransition,
+                           layout_transition,
                            ImagePipelineStageTransition{ .oldStage = vk::PipelineStageFlagBits::eColorAttachmentOutput,
                                                          .newStage = vk::PipelineStageFlagBits::eBottomOfPipe },
                            ImageAccessFlagsTransition{ .oldAccess = vk::AccessFlagBits::eColorAttachmentWrite,
                                                        .newAccess = vk::AccessFlagBits() },
                            vk::ImageAspectFlagBits::eColor,
-                           mipLevels);
+                           mip_levels);
         return;
     }
-    transitImageLayout(commandBuffer,
+    transitImageLayout(command_buffer,
                        image,
-                       layoutTransition,
+                       layout_transition,
                        ImagePipelineStageTransition{ .oldStage = vk::PipelineStageFlagBits::eAllCommands,
                                                      .newStage = vk::PipelineStageFlagBits::eAllCommands },
                        ImageAccessFlagsTransition{ .oldAccess = vk::AccessFlagBits::eMemoryWrite,
                                                    .newAccess = vk::AccessFlagBits::eMemoryWrite
                                                                 | vk::AccessFlagBits::eMemoryRead },
                        vk::ImageAspectFlagBits::eColor,
-                       mipLevels);
+                       mip_levels);
 }
 
 auto findSupportedImageFormat(const vk::PhysicalDevice device, const std::span<const vk::Format> formats,
-                              const vk::ImageTiling imageTiling, const vk::FormatFeatureFlags features) -> vk::Format {
+                              const vk::ImageTiling image_tiling, const vk::FormatFeatureFlags features) -> vk::Format {
     for (const auto format : formats) {
         const auto properties = device.getFormatProperties(format);
-        if (imageTiling == vk::ImageTiling::eLinear && (properties.linearTilingFeatures & features) == features) {
+        if (image_tiling == vk::ImageTiling::eLinear && (properties.linearTilingFeatures & features) == features) {
             return format;
         }
-        if (imageTiling == vk::ImageTiling::eOptimal && (properties.optimalTilingFeatures & features) == features) {
+        if (image_tiling == vk::ImageTiling::eOptimal && (properties.optimalTilingFeatures & features) == features) {
             return format;
         }
     }
     throw std::runtime_error("failed to find image format");
 }
 
-void setCommandBufferFrameSize(const vk::CommandBuffer commandBuffer, const vk::Extent2D frameSize) {
-    commandBuffer.setViewport(0,
-                              { vk::Viewport(0.0f,
-                                             0.0f,
-                                             static_cast<float>(frameSize.width),
-                                             static_cast<float>(frameSize.height),
-                                             0.0f,
-                                             1.0f) });
-    commandBuffer.setScissor(0, { vk::Rect2D(vk::Offset2D(0, 0), frameSize) });
+void setCommandBufferFrameSize(const vk::CommandBuffer command_buffer, const vk::Extent2D frame_size) {
+    command_buffer.setViewport(0,
+                               { vk::Viewport(0.0f,
+                                              0.0f,
+                                              static_cast<float>(frame_size.width),
+                                              static_cast<float>(frame_size.height),
+                                              0.0f,
+                                              1.0f) });
+    command_buffer.setScissor(0, { vk::Rect2D(vk::Offset2D(0, 0), frame_size) });
 }
 
-}// namespace th::render_system::vulkan
+}// namespace th

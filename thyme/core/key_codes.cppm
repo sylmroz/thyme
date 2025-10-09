@@ -4,7 +4,7 @@ import std;
 
 namespace th {
 
-export enum class KeyCode : std::int16_t {
+export enum class KeyCode: std::int16_t {
     space = 32,
     apostrophe = 39 /* ' */,
     comma = 44 /* , */,
@@ -126,5 +126,4 @@ export enum class KeyCode : std::int16_t {
     right_super = 347
 };
 
-}
-
+}// namespace th

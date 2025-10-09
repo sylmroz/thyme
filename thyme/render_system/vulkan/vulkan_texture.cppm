@@ -12,16 +12,16 @@ import :utils;
 
 namespace th {
 
-export void copyImage(vk::CommandBuffer commandBuffer, vk::Image srcImage, vk::Extent3D srcResolution,
-                      vk::Image dstImage);
-export void blitImage(vk::CommandBuffer commandBuffer, vk::Image srcImage, vk::Extent3D srcResolution,
-                      vk::Image dstImage, vk::Extent3D dstResolution);
+export void copyImage(vk::CommandBuffer command_buffer, vk::Image src_image, vk::Extent3D src_resolution,
+                      vk::Image dst_image);
+export void blitImage(vk::CommandBuffer command_buffer, vk::Image src_image, vk::Extent3D src_resolution,
+                      vk::Image dst_image, vk::Extent3D dst_resolution);
 
 export class VulkanImageMemory {
 public:
     VulkanImageMemory(const VulkanDevice& device, vk::Extent3D resolution, vk::Format format,
-                      vk::ImageUsageFlags imageUsageFlags, vk::MemoryPropertyFlags memoryPropertyFlags,
-                      vk::ImageAspectFlags aspectFlags, vk::SampleCountFlagBits msaa, uint32_t mipLevels);
+                      vk::ImageUsageFlags image_usage_flags, vk::MemoryPropertyFlags memory_property_flags,
+                      vk::ImageAspectFlags aspect_flags, vk::SampleCountFlagBits msaa, uint32_t mip_levels);
 
     [[nodiscard]] auto getImage() const noexcept -> vk::Image {
         return m_image.get();
@@ -42,13 +42,13 @@ public:
     void resize(vk::Extent2D resolution);
     void resize(vk::Extent3D resolution);
 
-    void transitImageLayout(ImageLayoutTransition layoutTransition);
-    void transitImageLayout(vk::CommandBuffer commandBuffer, ImageLayoutTransition layoutTransition);
+    void transitImageLayout(ImageLayoutTransition layout_transition);
+    void transitImageLayout(vk::CommandBuffer command_buffer, ImageLayoutTransition layout_transition);
 
-    void copyTo(vk::CommandBuffer commandBuffer, const VulkanImageMemory& dstImage);
-    void copyTo(vk::CommandBuffer commandBuffer, vk::Image image);
-    void blitTo(vk::CommandBuffer commandBuffer, const VulkanImageMemory& dstImage);
-    void blitTo(vk::CommandBuffer commandBuffer, vk::Image dstImage, vk::Extent3D dstResolution);
+    void copyTo(vk::CommandBuffer command_buffer, const VulkanImageMemory& dst_image);
+    void copyTo(vk::CommandBuffer command_buffer, vk::Image image);
+    void blitTo(vk::CommandBuffer command_buffer, const VulkanImageMemory& dst_image);
+    void blitTo(vk::CommandBuffer command_buffer, vk::Image dst_image, vk::Extent3D dst_resolution);
 
 private:
     vk::UniqueImage m_image;

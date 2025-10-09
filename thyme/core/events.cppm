@@ -87,8 +87,8 @@ public:
     }
 
     auto subscribe(event_fn fn) noexcept -> int {
-        m_handlers.emplace_back(std::make_pair(std::move(fn), m_handlerId));
-        return m_handlerId++;
+        m_handlers.emplace_back(std::make_pair(std::move(fn), m_handler_id));
+        return m_handler_id++;
     }
 
     void unsubscribe(const int id) noexcept {
@@ -99,7 +99,7 @@ public:
     }
 
 private:
-    int m_handlerId{ 0 };
+    int m_handler_id{ 0 };
     std::vector<std::pair<event_fn, int>> m_handlers;
 };
 

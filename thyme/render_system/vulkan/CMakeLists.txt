@@ -10,7 +10,7 @@ SET(MODULE_FILES
         vulkan_graphic_pipeline.cppm
         vulkan_model.cppm
         vulkan_renderer.cppm
-        vulkan_swap_chain.cppm
+        vulkan_swapchain.cppm
         vulkan_texture.cppm
         vulkan_uniform_buffer_object.cppm
         vulkan_utils.cppm
@@ -24,7 +24,7 @@ set(SRC_FILES
         vulkan_graphic_pipeline.cpp
         vulkan_model.cpp
         vulkan_renderer.cpp
-        vulkan_swap_chain.cpp
+        vulkan_swapchain.cpp
         vulkan_texture.cpp
 )
 

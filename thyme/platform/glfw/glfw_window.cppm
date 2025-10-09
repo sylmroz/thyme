@@ -42,7 +42,7 @@ public:
     }
 
     void initializeContext() const {
-        [[maybe_unused]] static auto glfwContext = GlfwContext(m_logger);
+        [[maybe_unused]] static auto glfw_context = GlfwContext(m_logger);
     }
 
     [[nodiscard]] auto createSurface(const vk::raii::Instance& instance) const -> vk::raii::SurfaceKHR;

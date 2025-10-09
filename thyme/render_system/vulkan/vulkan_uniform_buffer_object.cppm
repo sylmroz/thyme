@@ -18,8 +18,8 @@ public:
                                               vk::BufferUsageFlagBits::eUniformBuffer,
                                               vk::MemoryPropertyFlagBits::eHostVisible
                                                       | vk::MemoryPropertyFlagBits::eHostCoherent) },
-          m_device{ device.logicalDevice } {
-        [[maybe_unused]] const auto result = device.logicalDevice.mapMemory(
+          m_device{ device.logical_device } {
+        [[maybe_unused]] const auto result = device.logical_device.mapMemory(
                 *m_uniformMemoryBuffer.getMemory(), 0, sizeof(T), vk::MemoryMapFlags(), &m_mappedMemoryBuffer);
     }
 

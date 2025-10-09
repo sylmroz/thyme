@@ -12,12 +12,20 @@ namespace th {
 export class Application {
 public:
     explicit Application(Logger& logger);
-    std::string name{ "Thyme" };
+
+    Application(const Application&) = delete;
+    Application(Application&&) = delete;
+    auto operator=(const Application&) -> Application& = delete;
+    auto operator=(Application&&) -> Application& = delete;
+    virtual ~Application() = default;
+
     void run();
 
-    ModelStorage modelStorage;
+protected:
+    ModelStorage m_model_storage;
 
 private:
+    std::string m_name{ "Thyme" };
     Logger& m_logger;
 };
 

@@ -4,8 +4,8 @@ module th.render_system.vulkan;
 
 namespace th {
 
-[[nodiscard]] static auto createImageSampler(const vk::Device device, const float maxSamplerAnisotropy,
-                                             const uint32_t mipLevels) -> vk::UniqueSampler {
+[[nodiscard]] static auto createImageSampler(const vk::Device device, const float max_sampler_anisotropy,
+                                             const uint32_t mip_levels) -> vk::UniqueSampler {
     return device.createSamplerUnique(vk::SamplerCreateInfo{ .magFilter = vk::Filter::eLinear,
                                                              .minFilter = vk::Filter::eLinear,
                                                              .mipmapMode = vk::SamplerMipmapMode::eLinear,
@@ -14,30 +14,30 @@ namespace th {
                                                              .addressModeW = vk::SamplerAddressMode::eRepeat,
                                                              .mipLodBias = 0.0f,
                                                              .anisotropyEnable = vk::True,
-                                                             .maxAnisotropy = maxSamplerAnisotropy,
+                                                             .maxAnisotropy = max_sampler_anisotropy,
                                                              .compareEnable = vk::False,
                                                              .compareOp = vk::CompareOp::eAlways,
                                                              .minLod = 0.0f,
-                                                             .maxLod = static_cast<float>(mipLevels),
+                                                             .maxLod = static_cast<float>(mip_levels),
                                                              .borderColor = vk::BorderColor::eIntOpaqueBlack,
                                                              .unnormalizedCoordinates = vk::False });
 }
 
-void copyImage(const vk::CommandBuffer commandBuffer, const vk::Image srcImage, const vk::Extent3D resolution,
-               const vk::Image dstImage) {
+void copyImage(const vk::CommandBuffer commandBuffer, const vk::Image src_image, const vk::Extent3D resolution,
+               const vk::Image dst_image) {
     const auto copyRegion = vk::ImageCopy2{
         .extent = resolution,
     };
-    commandBuffer.copyImage2(vk::CopyImageInfo2{ .srcImage = srcImage,
+    commandBuffer.copyImage2(vk::CopyImageInfo2{ .srcImage = src_image,
                                                  .srcImageLayout = vk::ImageLayout::eTransferSrcOptimal,
-                                                 .dstImage = dstImage,
+                                                 .dstImage = dst_image,
                                                  .dstImageLayout = vk::ImageLayout::eTransferDstOptimal,
                                                  .regionCount = 1u,
                                                  .pRegions = &copyRegion });
 }
 
-void blitImage(const vk::CommandBuffer commandBuffer, const vk::Image srcImage, const vk::Extent3D srcResolution,
-               const vk::Image dstImage, const vk::Extent3D dstResolution) {
+void blitImage(const vk::CommandBuffer command_buffer, const vk::Image src_image, const vk::Extent3D src_resolution,
+               const vk::Image dst_image, const vk::Extent3D dst_resolution) {
 
     const auto blitRegion = vk::ImageBlit2{
         .srcSubresource =
@@ -50,9 +50,9 @@ void blitImage(const vk::CommandBuffer commandBuffer, const vk::Image srcImage, 
         .srcOffsets =
                 std::array{
                         vk::Offset3D{},
-                        vk::Offset3D{ .x = static_cast<int32_t>(srcResolution.width),
-                                      .y = static_cast<int32_t>(srcResolution.height),
-                                      .z = static_cast<int32_t>(srcResolution.depth) },
+                        vk::Offset3D{ .x = static_cast<int32_t>(src_resolution.width),
+                                      .y = static_cast<int32_t>(src_resolution.height),
+                                      .z = static_cast<int32_t>(src_resolution.depth) },
                 },
         .dstSubresource =
                 vk::ImageSubresourceLayers{
@@ -64,31 +64,31 @@ void blitImage(const vk::CommandBuffer commandBuffer, const vk::Image srcImage, 
         .dstOffsets =
                 std::array{
                         vk::Offset3D{},
-                        vk::Offset3D{ .x = static_cast<int32_t>(dstResolution.width),
-                                      .y = static_cast<int32_t>(dstResolution.height),
-                                      .z = static_cast<int32_t>(dstResolution.depth) },
+                        vk::Offset3D{ .x = static_cast<int32_t>(dst_resolution.width),
+                                      .y = static_cast<int32_t>(dst_resolution.height),
+                                      .z = static_cast<int32_t>(dst_resolution.depth) },
                 },
     };
 
     const auto blitInfo = vk::BlitImageInfo2{
-        .srcImage = srcImage,
+        .srcImage = src_image,
         .srcImageLayout = vk::ImageLayout::eTransferSrcOptimal,
-        .dstImage = dstImage,
+        .dstImage = dst_image,
         .dstImageLayout = vk::ImageLayout::eTransferDstOptimal,
         .regionCount = 1u,
         .pRegions = &blitRegion,
         .filter = vk::Filter::eLinear,
     };
-    commandBuffer.blitImage2(blitInfo);
+    command_buffer.blitImage2(blitInfo);
 }
 
 VulkanImageMemory::VulkanImageMemory(const VulkanDevice& device, const vk::Extent3D resolution, const vk::Format format,
-                                     const vk::ImageUsageFlags imageUsageFlags,
-                                     const vk::MemoryPropertyFlags memoryPropertyFlags,
-                                     const vk::ImageAspectFlags aspectFlags, const vk::SampleCountFlagBits msaa,
-                                     const uint32_t mipLevels)
-    : m_format{ format }, m_imageUsageFlags{ imageUsageFlags }, m_memoryPropertyFlags{ memoryPropertyFlags },
-      m_aspectFlags{ aspectFlags }, m_msaa{ msaa }, m_mipLevels{ mipLevels }, m_device{ device } {
+                                     const vk::ImageUsageFlags image_usage_flags,
+                                     const vk::MemoryPropertyFlags memory_property_flags,
+                                     const vk::ImageAspectFlags aspect_flags, const vk::SampleCountFlagBits msaa,
+                                     const uint32_t mip_levels)
+    : m_format{ format }, m_imageUsageFlags{ image_usage_flags }, m_memoryPropertyFlags{ memory_property_flags },
+      m_aspectFlags{ aspect_flags }, m_msaa{ msaa }, m_mipLevels{ mip_levels }, m_device{ device } {
     resize(resolution);
 }
 
@@ -112,15 +112,15 @@ void VulkanImageMemory::resize(const vk::Extent3D resolution) {
         .usage = m_imageUsageFlags,
         .sharingMode = vk::SharingMode::eExclusive,
     };
-    m_image = m_device.logicalDevice.createImageUnique(createInfo);
+    m_image = m_device.logical_device.createImageUnique(createInfo);
     vk::MemoryRequirements memoryRequirements;
-    m_device.logicalDevice.getImageMemoryRequirements(m_image.get(), &memoryRequirements);
-    m_memory = m_device.logicalDevice.allocateMemoryUnique(vk::MemoryAllocateInfo{
+    m_device.logical_device.getImageMemoryRequirements(m_image.get(), &memoryRequirements);
+    m_memory = m_device.logical_device.allocateMemoryUnique(vk::MemoryAllocateInfo{
             .allocationSize = memoryRequirements.size,
             .memoryTypeIndex = findMemoryType(
-                    m_device.physicalDevice, memoryRequirements.memoryTypeBits, m_memoryPropertyFlags) });
-    m_device.logicalDevice.bindImageMemory(m_image.get(), m_memory.get(), 0);
-    m_imageView = m_device.logicalDevice.createImageViewUnique(
+                    m_device.physical_device, memoryRequirements.memoryTypeBits, m_memoryPropertyFlags) });
+    m_device.logical_device.bindImageMemory(m_image.get(), m_memory.get(), 0);
+    m_imageView = m_device.logical_device.createImageViewUnique(
             vk::ImageViewCreateInfo{ .image = m_image.get(),
                                      .viewType = vk::ImageViewType::e2D,
                                      .format = m_format,
@@ -130,32 +130,32 @@ void VulkanImageMemory::resize(const vk::Extent3D resolution) {
                                                                                     .baseArrayLayer = 0,
                                                                                     .layerCount = 1 } });
 }
-void VulkanImageMemory::transitImageLayout(ImageLayoutTransition layoutTransition) {
+void VulkanImageMemory::transitImageLayout(ImageLayoutTransition layout_transition) {
     m_device.singleTimeCommand(
-            [layoutTransition, image = m_image.get(), mipLevels = m_mipLevels](const vk::CommandBuffer commandBuffer) {
-                th::transitImageLayout(commandBuffer, image, layoutTransition, mipLevels);
+            [layout_transition, image = m_image.get(), mipLevels = m_mipLevels](const vk::CommandBuffer commandBuffer) {
+                th::transitImageLayout(commandBuffer, image, layout_transition, mipLevels);
             });
 }
-void VulkanImageMemory::transitImageLayout(const vk::CommandBuffer commandBuffer,
-                                           const ImageLayoutTransition layoutTransition) {
-    th::transitImageLayout(commandBuffer, m_image.get(), layoutTransition, m_mipLevels);
+void VulkanImageMemory::transitImageLayout(const vk::CommandBuffer command_buffer,
+                                           const ImageLayoutTransition layout_transition) {
+    th::transitImageLayout(command_buffer, m_image.get(), layout_transition, m_mipLevels);
 }
 
-void VulkanImageMemory::copyTo(const vk::CommandBuffer commandBuffer, const VulkanImageMemory& dstImage) {
-    copyImage(commandBuffer, m_image.get(), m_extent, dstImage.getImage());
+void VulkanImageMemory::copyTo(const vk::CommandBuffer command_buffer, const VulkanImageMemory& dst_image) {
+    copyImage(command_buffer, m_image.get(), m_extent, dst_image.getImage());
 }
 
-void VulkanImageMemory::copyTo(const vk::CommandBuffer commandBuffer, const vk::Image dstImage) {
-    copyImage(commandBuffer, m_image.get(), m_extent, dstImage);
+void VulkanImageMemory::copyTo(const vk::CommandBuffer command_buffer, const vk::Image image) {
+    copyImage(command_buffer, m_image.get(), m_extent, image);
 }
 
-void VulkanImageMemory::blitTo(const vk::CommandBuffer commandBuffer, const VulkanImageMemory& dstImage) {
-    blitImage(commandBuffer, m_image.get(), m_extent, dstImage.getImage(), dstImage.getExtent());
+void VulkanImageMemory::blitTo(const vk::CommandBuffer command_buffer, const VulkanImageMemory& dst_image) {
+    blitImage(command_buffer, m_image.get(), m_extent, dst_image.getImage(), dst_image.getExtent());
 }
 
-void VulkanImageMemory::blitTo(const vk::CommandBuffer commandBuffer, const vk::Image dstImage,
-                               const vk::Extent3D dstResolution) {
-    blitImage(commandBuffer, m_image.get(), m_extent, dstImage, dstResolution);
+void VulkanImageMemory::blitTo(const vk::CommandBuffer command_buffer, const vk::Image dst_image,
+                               const vk::Extent3D dst_resolution) {
+    blitImage(command_buffer, m_image.get(), m_extent, dst_image, dst_resolution);
 }
 
 VulkanDepthImageMemory::VulkanDepthImageMemory(const VulkanDevice& device, const vk::Extent2D resolution,
@@ -183,8 +183,8 @@ Vulkan2DTexture::Vulkan2DTexture(const VulkanDevice& device, const TextureData& 
               vk::ImageAspectFlagBits::eColor,
               vk::SampleCountFlagBits::e1,
               texture.getMipLevels()) },
-      m_sampler{ createImageSampler(device.logicalDevice,
-                                    device.physicalDevice.getProperties().limits.maxSamplerAnisotropy,
+      m_sampler{ createImageSampler(device.logical_device,
+                                    device.physical_device.getProperties().limits.maxSamplerAnisotropy,
                                     texture.getMipLevels()) },
       m_format{ format }, m_device{ device } {
     setData(texture);
@@ -197,16 +197,16 @@ void Vulkan2DTexture::setData(const TextureData& texture) {
 
     const auto data = texture.getData();
     const auto stagingMemoryBuffer =
-            VulkanBufferMemory(m_device.logicalDevice,
-                               m_device.physicalDevice,
+            VulkanBufferMemory(m_device.logical_device,
+                               m_device.physical_device,
                                data.size(),
                                vk::BufferUsageFlagBits::eTransferSrc,
                                vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
     void* mappedMemory = nullptr;
-    [[maybe_unused]] const auto result = m_device.logicalDevice.mapMemory(
+    [[maybe_unused]] const auto result = m_device.logical_device.mapMemory(
             stagingMemoryBuffer.getMemory().get(), 0, data.size(), vk::MemoryMapFlags(), &mappedMemory);
     std::memcpy(mappedMemory, data.data(), data.size());
-    m_device.logicalDevice.unmapMemory(stagingMemoryBuffer.getMemory().get());
+    m_device.logical_device.unmapMemory(stagingMemoryBuffer.getMemory().get());
 
     m_imageMemory.transitImageLayout(ImageLayoutTransition{
             .oldLayout = vk::ImageLayout::eUndefined,
@@ -214,8 +214,8 @@ void Vulkan2DTexture::setData(const TextureData& texture) {
     });
 
     const auto graphicsQueue = m_device.getGraphicQueue();
-    copyBufferToImage(m_device.logicalDevice,
-                      m_device.commandPool,
+    copyBufferToImage(m_device.logical_device,
+                      m_device.command_pool,
                       graphicsQueue,
                       stagingMemoryBuffer.getBuffer().get(),
                       m_imageMemory.getImage(),
@@ -224,9 +224,9 @@ void Vulkan2DTexture::setData(const TextureData& texture) {
 }
 
 void Vulkan2DTexture::generateMipmaps() const {
-    const auto device = m_device.logicalDevice;
-    const auto physicalDevice = m_device.physicalDevice;
-    const auto commandPool = m_device.commandPool;
+    const auto device = m_device.logical_device;
+    const auto physicalDevice = m_device.physical_device;
+    const auto commandPool = m_device.command_pool;
     const auto graphicsQueue = m_device.getGraphicQueue();
     if (!(physicalDevice.getFormatProperties(m_format).optimalTilingFeatures
           & vk::FormatFeatureFlagBits::eSampledImageFilterLinear)) {

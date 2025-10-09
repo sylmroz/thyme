@@ -12,7 +12,7 @@ import :command_buffers;
 import :device;
 import :graphic_pipeline;
 import :graphic_context;
-import :swap_chain;
+import :swapchain;
 import :model;
 import :texture;
 import :uniform_buffer_object;
@@ -23,10 +23,10 @@ namespace th {
 
 export class RenderTarget {
 public:
-    RenderTarget(vk::ImageView imageView, vk::ImageView resolvedImageView, vk::ImageLayout imageLayout,
-                 vk::AttachmentLoadOp loadOp, vk::AttachmentStoreOp storeOp, vk::ClearValue clearValue);
-    RenderTarget(vk::ImageView imageView, vk::ImageLayout imageLayout, vk::AttachmentLoadOp loadOp,
-                 vk::AttachmentStoreOp storeOp, vk::ClearValue clearValue);
+    RenderTarget(vk::ImageView image_view, vk::ImageView resolved_image_view, vk::ImageLayout image_layout,
+                 vk::AttachmentLoadOp load_op, vk::AttachmentStoreOp store_op, vk::ClearValue clear_value);
+    RenderTarget(vk::ImageView image_view, vk::ImageLayout image_layout, vk::AttachmentLoadOp load_op,
+                 vk::AttachmentStoreOp store_op, vk::ClearValue clear_value);
 
     [[nodiscard]] auto getAttachmentInfo() const noexcept -> vk::RenderingAttachmentInfo {
         return m_attachmentInfo;
@@ -49,16 +49,16 @@ private:
 // };
 export class VulkanRenderer {
 public:
-    explicit VulkanRenderer(const VulkanDevice& device, VulkanSwapChain& swapChain, ModelStorage& modelStorage,
+    explicit VulkanRenderer(const VulkanDevice& device, VulkanSwapchain& swapchain, ModelStorage& model_storage,
                             Camera& camera, Gui& gui, const VulkanGraphicContext& context,
-                            VulkanCommandBuffersPool& commandBuffersPool) noexcept;
+                            VulkanCommandBuffersPool& command_buffers_pool) noexcept;
 
     void draw();
 
 private:
-    void transitDepthImageLayout(const vk::CommandBuffer commandBuffer) const {
-        transitImageLayout(commandBuffer,
-                           m_depthImageMemory.getImage(),
+    void transitDepthImageLayout(const vk::CommandBuffer command_buffer) const {
+        transitImageLayout(command_buffer,
+                           m_depth_image_memory.getImage(),
                            ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eUndefined,
                                                   .newLayout = vk::ImageLayout::eDepthAttachmentOptimal },
                            ImagePipelineStageTransition{ .oldStage = vk::PipelineStageFlagBits::eEarlyFragmentTests
@@ -73,19 +73,19 @@ private:
 
 
     Gui& m_gui;
-    VulkanSwapChain& m_swapChain;
-    VulkanCommandBuffersPool& m_commandBuffersPool;
+    VulkanSwapchain& m_swapchain;
+    VulkanCommandBuffersPool& m_command_buffers_pool;
     std::vector<std::unique_ptr<VulkanGraphicPipeline>> m_pipelines;
 
-    VulkanDepthImageMemory m_depthImageMemory;
-    VulkanColorImageMemory m_colorImageMemory;
-    VulkanColorImageMemory m_resolveColorImageMemory;
+    VulkanDepthImageMemory m_depth_image_memory;
+    VulkanColorImageMemory m_color_image_memory;
+    VulkanColorImageMemory m_resolve_color_image_memory;
 
     std::vector<VulkanModel> m_models;
     std::reference_wrapper<Camera> m_camera;
 
-    std::reference_wrapper<ModelStorage> m_modelStorage;
-    VulkanUniformBuffer<CameraMatrices> m_cameraMatrices;
+    std::reference_wrapper<ModelStorage> m_model_storage;
+    VulkanUniformBuffer<CameraMatrices> m_camera_matrices;
 };
 
 }// namespace th

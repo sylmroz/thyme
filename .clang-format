@@ -54,7 +54,7 @@ ExperimentalAutoDetectBinPacking: true
 FixNamespaceComments: true
 IncludeIsMainRegex: (Test)?$
 IndentCaseLabels: true
-#IndentExportBlock: false
+IndentExportBlock: false
 IndentWidth: 4
 IndentWrappedFunctionNames: true
 JavaScriptQuotes: Leave
@@ -69,7 +69,7 @@ ObjCBlockIndentWidth: 7
 ObjCSpaceAfterProperty: true
 ObjCSpaceBeforeProtocolList: false
 PointerAlignment: Left
-ReflowComments: false
+ReflowComments: IndentOnly
 SortIncludes: CaseInsensitive
 SortUsingDeclarations: false
 SpaceAfterCStyleCast: false

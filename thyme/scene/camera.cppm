@@ -11,8 +11,8 @@ struct CameraMatrices {
 
 struct CameraArguments {
     float fov;
-    float zNear;
-    float zFar;
+    float znear;
+    float zfar;
     glm::vec2 resolution;
     glm::vec3 eye;
     glm::vec3 center;
@@ -21,80 +21,80 @@ struct CameraArguments {
 
 class Camera {
 public:
-    explicit Camera(const CameraArguments& cameraArguments) : m_cameraArguments{ cameraArguments } {
-        m_projectionMatrix = glm::gtc::perspective(glm::radians(m_cameraArguments.fov),
-                                              m_cameraArguments.resolution.x / m_cameraArguments.resolution.y,
-                                              m_cameraArguments.zNear,
-                                              m_cameraArguments.zFar);
-        m_projectionMatrix[1][1] *= -1.0f;
-        m_viewMatrix = glm::gtc::lookAt(m_cameraArguments.eye, m_cameraArguments.center, m_cameraArguments.up);
-        m_viewProjectionMatrix = m_projectionMatrix * m_viewMatrix;
+    explicit Camera(const CameraArguments& camera_arguments) : m_camera_arguments{ camera_arguments } {
+        m_projection_matrix = glm::gtc::perspective(glm::radians(m_camera_arguments.fov),
+                                              m_camera_arguments.resolution.x / m_camera_arguments.resolution.y,
+                                              m_camera_arguments.znear,
+                                              m_camera_arguments.zfar);
+        m_projection_matrix[1][1] *= -1.0f;
+        m_view_matrix = glm::gtc::lookAt(m_camera_arguments.eye, m_camera_arguments.center, m_camera_arguments.up);
+        m_view_projection_matrix = m_projection_matrix * m_view_matrix;
     }
 
     void updateProjectionMatrix() {
-        m_projectionMatrix = glm::gtc::perspective(glm::radians(m_cameraArguments.fov),
-                                              m_cameraArguments.resolution.x / m_cameraArguments.resolution.y,
-                                              m_cameraArguments.zNear,
-                                              m_cameraArguments.zFar);
-        m_projectionMatrix[1][1] *= -1.0f;
-        m_viewProjectionMatrix = m_projectionMatrix * m_viewMatrix;
+        m_projection_matrix = glm::gtc::perspective(glm::radians(m_camera_arguments.fov),
+                                              m_camera_arguments.resolution.x / m_camera_arguments.resolution.y,
+                                              m_camera_arguments.znear,
+                                              m_camera_arguments.zfar);
+        m_projection_matrix[1][1] *= -1.0f;
+        m_view_projection_matrix = m_projection_matrix * m_view_matrix;
     }
 
     void setResolution(const glm::vec2& resolution) {
-        m_cameraArguments.resolution = resolution;
+        m_camera_arguments.resolution = resolution;
         updateProjectionMatrix();
     }
 
     void setFov(const float fov) {
-        m_cameraArguments.fov = fov;
+        m_camera_arguments.fov = fov;
         updateProjectionMatrix();
     }
 
-    void setZNear(const float zNear) {
-        m_cameraArguments.zNear = zNear;
+    void setZNear(const float z_near) {
+        m_camera_arguments.znear = z_near;
         updateProjectionMatrix();
     }
 
-    void setZFar(const float zFar) {
-        m_cameraArguments.zFar = zFar;
+    void setZFar(const float z_far) {
+        m_camera_arguments.zfar = z_far;
         updateProjectionMatrix();
     }
 
     void updateViewMatrix() {
-        m_viewMatrix = glm::gtc::lookAt(m_cameraArguments.eye, m_cameraArguments.center, m_cameraArguments.up);
-        m_viewProjectionMatrix = m_projectionMatrix * m_viewMatrix;
+        m_view_matrix = glm::gtc::lookAt(m_camera_arguments.eye, m_camera_arguments.center, m_camera_arguments.up);
+        m_view_projection_matrix = m_projection_matrix * m_view_matrix;
     }
     void setCenter(const glm::vec3& center) {
-        m_cameraArguments.center = center;
+        m_camera_arguments.center = center;
         updateViewMatrix();
     }
 
     void setEyePosition(const glm::vec3& eye) {
-        m_cameraArguments.eye = eye;
+        m_camera_arguments.eye = eye;
         updateViewMatrix();
     }
 
     void setUp(const glm::vec3& up) {
-        m_cameraArguments.up = up;
+        m_camera_arguments.up = up;
         updateViewMatrix();
     }
 
     [[nodiscard]] inline auto getProjectionMatrix() const noexcept -> const glm::mat4& {
-        return m_projectionMatrix;
+        return m_projection_matrix;
     }
 
     [[nodiscard]] inline auto getViewMatrix() const noexcept -> const glm::mat4& {
-        return m_viewMatrix;
+        return m_view_matrix;
     }
 
     [[nodiscard]] inline auto getViewProjectionMatrix() const noexcept -> const glm::mat4& {
-        return m_viewProjectionMatrix;
+        return m_view_projection_matrix;
     }
 
 private:
-    glm::mat4 m_projectionMatrix = glm::mat4(1.0f);
-    glm::mat4 m_viewMatrix = glm::mat4(1.0f);
-    glm::mat4 m_viewProjectionMatrix = glm::mat4(1.0f);
-    CameraArguments m_cameraArguments;
+    glm::mat4 m_projection_matrix = glm::mat4(1.0f);
+    glm::mat4 m_view_matrix = glm::mat4(1.0f);
+    glm::mat4 m_view_projection_matrix = glm::mat4(1.0f);
+    CameraArguments m_camera_arguments;
 };
 }

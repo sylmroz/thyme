@@ -13,7 +13,7 @@ export namespace th {
 struct Vertex {
     glm::vec3 pos;
     glm::vec3 color;
-    glm::vec2 texCoord;
+    glm::vec2 tex_coord;
 };
 
 class Mesh {
@@ -24,14 +24,14 @@ public:
 
 class Model {
 public:
-    glm::vec4 solidColor = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+    glm::vec4 solid_color = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
     Transformation transformation;
     std::string name;
     Mesh mesh;
     TextureData texture;// TODO! make array of textures
-    std::function<void(Model&)> onAnimate;
+    std::function<void(Model&)> on_animate;
     void animate() {
-        onAnimate(*this);
+        on_animate(*this);
     }
 };
 

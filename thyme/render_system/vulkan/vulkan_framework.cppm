@@ -24,8 +24,8 @@ concept CanPassWindow = has_get_extension_static_function<ExtensionProvider> || 
 export class VulkanFramework final {
 public:
     struct InitInfo {
-        std::string appName;
-        std::string engineName;
+        std::string app_name;
+        std::string engine_name;
     };
     template <CanPassWindow window = void>
     static auto create(const InitInfo& info, Logger& logger) -> VulkanFramework {
@@ -37,27 +37,27 @@ public:
     }
 
     explicit VulkanFramework(const InitInfo& info, Logger& logger);
-    explicit VulkanFramework(const InitInfo& info, const std::vector<std::string>& windowExtensions, Logger& logger);
+    explicit VulkanFramework(const InitInfo& info, const std::vector<std::string>& window_extensions, Logger& logger);
 
     [[nodiscard]] auto getInstance() const -> const vk::raii::Instance& {
         return m_instance;
     }
 
 private:
-    [[nodiscard]] auto createInstance(const InitInfo& info, const std::vector<std::string>& windowExtensions) const
+    [[nodiscard]] auto createInstance(const InitInfo& info, const std::vector<std::string>& window_extensions) const
             -> vk::raii::Instance;
 
     void dumpExtensions() const;
 
     void dumpLayers() const;
 
-    static auto mergeInstanceExtensions(std::span<const char* const> defaultExtensions,
+    static auto mergeInstanceExtensions(std::span<const char* const> default_extensions,
                                                       std::span<const std::string>
-                                                              windowExtensions) -> std::vector<const char*>;
+                                                              window_extensions) -> std::vector<const char*>;
 
-    [[nodiscard]] auto validateExtension(std::span<const char* const> requestedExtensions) const -> bool;
+    [[nodiscard]] auto validateExtension(std::span<const char* const> requested_extensions) const -> bool;
 
-    [[nodiscard]] auto validateLayers(std::span<const char* const> requestedLayers) const -> bool;
+    [[nodiscard]] auto validateLayers(std::span<const char* const> requested_layers) const -> bool;
 
     Logger& m_logger;
 
