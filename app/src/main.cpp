@@ -1,6 +1,5 @@
-#include <glm/glm.hpp>
-#include <chrono>
-#include <filesystem>
+import std;
+import glm;
 
 import th.core.logger;
 import th.core.application;
@@ -52,9 +51,8 @@ public:
 };
 
 auto main() -> int {
-    auto thymeApiLogger = th::Logger(th::LogLevel::info, "ThymeApi");
-    ExampleApp app(thymeApiLogger);
+    auto thyme_api_logger = th::Logger(th::LogLevel::info, "ThymeApi");
+    ExampleApp app(thyme_api_logger);
     app.run();
-
     return 0;
 }

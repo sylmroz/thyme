@@ -23,9 +23,13 @@ struct WindowResize {
 
 struct WindowClose {};
 
-struct WindowMinimalize {};
+struct WindowMinimalize {
+    bool minimized;
+};
 
-struct WindowMaximalize {};
+struct WindowMaximize {
+    bool maximized;
+};
 
 struct MousePosition {
     glm::vec2 pos;
@@ -58,7 +62,7 @@ struct KeyReleased {
     KeyCode code;
 };
 
-using WindowEvent = std::variant<WindowResize, WindowClose, WindowMinimalize, WindowMaximalize>;
+using WindowEvent = std::variant<WindowResize, WindowClose, WindowMinimalize, WindowMaximize>;
 
 using MouseEvent = std::variant<MousePosition, MouseWheel, MouseButtonPress, MouseButtonReleased>;
 
@@ -67,7 +71,7 @@ using KeyEvent = std::variant<KeyPressed, KeyReleased, KeyRepeated>;
 using Event = std::variant<WindowResize,
                            WindowClose,
                            WindowMinimalize,
-                           WindowMaximalize,
+                           WindowMaximize,
                            MousePosition,
                            MouseWheel,
                            MouseButtonPress,
@@ -86,8 +90,8 @@ public:
         }
     }
 
-    auto subscribe(event_fn fn) noexcept -> int {
-        m_handlers.emplace_back(std::make_pair(std::move(fn), m_handler_id));
+    auto subscribe(event_fn&& fn) noexcept -> int {
+        m_handlers.emplace_back(std::make_pair(std::forward<event_fn>(fn), m_handler_id));
         return m_handler_id++;
     }
 
@@ -107,7 +111,7 @@ using EventSubject = EventHandler<Event>;
 using WindowResizedEventHandler = EventHandler<WindowResize>;
 using WindowClosedEventHandler = EventHandler<WindowClose>;
 using WindowMinimalizedEventHandler = EventHandler<WindowMinimalize>;
-using WindowMaximalizedEventHandler = EventHandler<WindowMaximalize>;
+using WindowMaximalizedEventHandler = EventHandler<WindowMaximize>;
 using MousePositionEventHandler = EventHandler<MousePosition>;
 using MouseWheelEventHandler = EventHandler<MouseWheel>;
 using MouseButtonDownEventHandler = EventHandler<MouseButtonPress>;
@@ -128,9 +132,43 @@ struct EventDispatcherHelper {
     virtual ~EventDispatcherHelper() = default;
 };
 
-template <typename... Events>
-struct EventDispatcher: EventDispatcherHelper<Events>... {
-    void operator()(auto&&) {}
+template <typename T>
+struct crtp
+{
+    auto underlying() -> T& { return static_cast<T&>(*this); }
+    auto underlying() const -> T const& { return static_cast<T const&>(*this); }
 };
 
+template <typename EventDispatcherType>
+struct EventDispatcher : crtp<EventDispatcherType> {
+    void operator()(const Event& event) const {
+        std::visit( this->underlying(), event);
+    }
+    void operator()(const auto&) const {}
+};
+
+template <typename... Ts>
+struct Overload: Ts... {
+    using Ts::operator()...;
+};
+
+template <class... Ts>
+Overload(Ts...) -> Overload<Ts...>;
+
 }// namespace th
+
+template <>
+struct std::formatter<th::WindowResize>: std::formatter<std::string> {
+    auto format(th::WindowResize window_resize, std::format_context& ctx) const {
+        return formatter<std::string>::format(
+                std::format("{{ width: {}, height: {} }}", window_resize.width, window_resize.height), ctx);
+    }
+};
+
+template <>
+struct std::formatter<th::MousePosition>: std::formatter<std::string> {
+    auto format(th::MousePosition mouse_position, std::format_context& ctx) const {
+        return formatter<std::string>::format(
+                std::format("{{ x: {}, y: {} }}", mouse_position.pos.x, mouse_position.pos.y), ctx);
+    }
+};

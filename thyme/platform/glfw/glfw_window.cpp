@@ -17,7 +17,7 @@ GlfwWindow::GlfwWindow(const WindowConfig& config, Logger& logger) : Window{ con
                  config.height,
                  config.name);
     initializeContext();
-    glfwWindowHint(glfw_maximized, config.maximalized);
+    glfwWindowHint(glfw_maximized, config.maximized);
     glfwWindowHint(glfw_decorate, config.decorate);
     m_window = WindowHWND(glfwCreateWindow(static_cast<int>(config.width),
                                            static_cast<int>(config.height),
@@ -38,9 +38,9 @@ GlfwWindow::GlfwWindow(const WindowConfig& config, Logger& logger) : Window{ con
             state != app->m_window_state) {
             app->m_window_state = state;
             if (state == WindowState::minimalized) {
-                app->m_event_listener.next(WindowMinimalize{});
+                app->m_event_listener.next(WindowMinimalize{ .minimized = true });
             } else {
-                app->m_event_listener.next(WindowMaximalize{});
+                app->m_event_listener.next(WindowMinimalize{ .minimized = false });
             }
         }
         if (width > 0 && height > 0) {
@@ -93,11 +93,7 @@ GlfwWindow::GlfwWindow(const WindowConfig& config, Logger& logger) : Window{ con
 
     glfwSetWindowMaximizeCallback(m_window.get(), [](GLFWwindow* window, int maximize) {
         const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
-        if (maximize == glfw_true) {
-            app->m_event_listener.next(WindowMaximalize{});
-        } else {
-            app->m_event_listener.next(WindowMinimalize{});
-        }
+        app->m_event_listener.next(WindowMaximize{ .maximized = maximize == glfw_true });
     });
 }
 

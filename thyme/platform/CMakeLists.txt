@@ -1,10 +1,11 @@
 set(MODULE_FILES
         window.cppm
+        window_settings.cppm
         imgui_context.cppm
 )
 
 set(SRC_FILES
-
+        window_settings.cpp
 )
 
 target_sources(${PROJECT_NAME}

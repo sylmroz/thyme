@@ -13,16 +13,16 @@ export enum class WindowState {
 };
 
 constexpr std::uint32_t g_defaultWindowWidth{ 1240 };
-constexpr std::uint32_t defaultWindowHeight{ 620 };
-constexpr bool windowMaximalizedByDefault{ false };
-constexpr bool windowDecoratedByDefault{ true };
+constexpr std::uint32_t g_defaultWindowHeight{ 620 };
+constexpr bool g_windowMaximalizedByDefault{ false };
+constexpr bool g_windowDecoratedByDefault{ true };
 
 export struct WindowConfig {
     std::uint32_t width{ g_defaultWindowWidth };
-    std::uint32_t height{ defaultWindowHeight };
+    std::uint32_t height{ g_defaultWindowHeight };
     std::string name{};
-    bool maximalized{ windowMaximalizedByDefault };
-    bool decorate{ windowDecoratedByDefault };
+    bool maximized{ g_windowMaximalizedByDefault };
+    bool decorate{ g_windowDecoratedByDefault };
 };
 
 export class Window {
