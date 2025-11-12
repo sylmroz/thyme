@@ -1,5 +1,6 @@
 set(MODULE_FILES
         window.cppm
+        window_event_handler.cppm
         window_settings.cppm
         imgui_context.cppm
 )

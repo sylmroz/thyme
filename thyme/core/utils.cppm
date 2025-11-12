@@ -27,5 +27,8 @@ export auto readFile(const std::filesystem::path& file_path) -> std::vector<char
     return buffer;
 }
 
+export template<typename T, typename ... U>
+concept either = (std::same_as<T, U> || ...);
+
 
 }// namespace th

@@ -28,15 +28,6 @@ public:
         save();
     }
 
-    void operator()(const WindowMaximize& maximize) {
-        std::println("maximize: {}", maximize.maximized);
-        setMaximized(maximize.maximized);
-    }
-
-    void operator()(const WindowResize& resize) {
-        setResolution(glm::uvec2(resize.width, resize.height));
-    }
-
 private:
     void load();
     void save() const;
@@ -45,27 +36,6 @@ private:
 
 private:
     WindowConfig m_config;
-};
-
-
-export class WindowSettingsEventDispatcher : public EventDispatcher<WindowSettingsEventDispatcher> {
-
-public:
-    explicit WindowSettingsEventDispatcher(WindowSettings& window_settings): m_window_settings{window_settings} {}
-
-    void operator()(const WindowMaximize& maximize) const {
-        std::println("maximize: {}", maximize.maximized);
-        m_window_settings.setMaximized(maximize.maximized);
-    }
-
-    void operator()(const WindowResize& resize) const {
-        m_window_settings.setResolution(glm::uvec2(resize.width, resize.height));
-    }
-
-    using EventDispatcher::operator();
-
-private:
-    WindowSettings& m_window_settings;
 };
 
 }// namespace th

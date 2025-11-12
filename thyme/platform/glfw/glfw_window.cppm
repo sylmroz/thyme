@@ -7,6 +7,7 @@ import glm;
 import vulkan_hpp;
 
 import th.platform.window;
+import th.platform.window_event_handler;
 import th.core.key_codes;
 import th.core.logger;
 import th.core.events;
@@ -20,7 +21,7 @@ export class GlfwWindow final: public Window {
     using WindowHWND = std::unique_ptr<GLFWwindow, std::function<void(GLFWwindow*)>>;
 
 public:
-    explicit GlfwWindow(const WindowConfig& config, Logger& logger);
+    explicit GlfwWindow(const WindowConfig& config, WindowEventsHandlers& event_handlers, Logger& logger);
 
     void poolEvents() override {
         glfwPollEvents();

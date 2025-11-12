@@ -4,6 +4,7 @@ import std;
 
 import th.core.events;
 import th.core.logger;
+import th.platform.window_event_handler;
 
 namespace th {
 
@@ -27,8 +28,8 @@ export struct WindowConfig {
 
 export class Window {
 public:
-    explicit Window(WindowConfig window_configuration, Logger& logger)
-        : config{ std::move(window_configuration) }, m_logger{ logger } {}
+    explicit Window(WindowConfig window_configuration, WindowEventsHandlers& event_handlers, Logger& logger)
+        : m_config{ std::move(window_configuration) }, m_event_handlers{ event_handlers }, m_logger{ logger } {}
 
     explicit Window(const Window& window) = default;
     explicit Window(Window&& window) = default;
@@ -42,17 +43,14 @@ public:
         return m_window_state == WindowState::minimalized;
     }
 
-    WindowConfig config;
-
-    auto subscribe(EventSubject::event_fn&& handler) -> int {
-        return m_event_listener.subscribe(std::forward<EventSubject::event_fn>(handler));
-    }
-
     virtual ~Window() = default;
 
 protected:
     WindowState m_window_state{ WindowState::maximalized };
-    EventSubject m_event_listener{};
+    WindowConfig m_config;
+
+    WindowEventsHandlers& m_event_handlers;
+
     std::reference_wrapper<Logger> m_logger;
 };
 

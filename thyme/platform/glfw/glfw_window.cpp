@@ -11,7 +11,8 @@ import glfw;
 
 namespace th {
 
-GlfwWindow::GlfwWindow(const WindowConfig& config, Logger& logger) : Window{ config, logger } {
+GlfwWindow::GlfwWindow(const WindowConfig& config, WindowEventsHandlers& event_handlers, Logger& logger)
+    : Window{ config, event_handlers, logger } {
     logger.debug("Create window with parameters: width = {}, height = {}, name = {}",
                  config.width,
                  config.height,
@@ -33,34 +34,30 @@ GlfwWindow::GlfwWindow(const WindowConfig& config, Logger& logger) : Window{ con
     glfwSetWindowUserPointer(m_window.get(), this);
 
     glfwSetFramebufferSizeCallback(m_window.get(), [](GLFWwindow* window, const int width, const int height) {
-        const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
+        const auto glfw_window = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
         if (const auto state = (width == 0 || height == 0) ? WindowState::minimalized : WindowState::maximalized;
-            state != app->m_window_state) {
-            app->m_window_state = state;
-            if (state == WindowState::minimalized) {
-                app->m_event_listener.next(WindowMinimalize{ .minimized = true });
-            } else {
-                app->m_event_listener.next(WindowMinimalize{ .minimized = false });
-            }
+            state != glfw_window->m_window_state) {
+            glfw_window->m_window_state = state;
+            glfw_window->m_event_handlers.onEvent(WindowMinimalizedEvent{ .minimized = state == WindowState::minimalized });
         }
         if (width > 0 && height > 0) {
-            app->m_event_listener.next(WindowResize{ .width = width, .height = height });
+            glfw_window->m_event_handlers.onEvent(WindowResizedEvent{ .width = width, .height = height });
         }
     });
 
     glfwSetWindowCloseCallback(m_window.get(), [](GLFWwindow* window) {
-        const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
-        app->m_event_listener.next(WindowClose{});
+        const auto glfw_window = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
+        glfw_window->m_event_handlers.onEvent(WindowClosedEvent{});
     });
 
     glfwSetCursorPosCallback(m_window.get(), [](GLFWwindow* window, double x, double y) {
-        const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
-        app->m_event_listener.next(MousePosition{ { x, y } });
+        const auto glfw_window = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
+        glfw_window->m_event_handlers.onEvent(MousePositionEvent{ { x, y } });
     });
 
     glfwSetScrollCallback(m_window.get(), [](GLFWwindow* window, double x, double y) {
-        const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
-        app->m_event_listener.next(MouseWheel{ { x, y } });
+        const auto glfw_window = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
+        glfw_window->m_event_handlers.onEvent(MouseWheelEvent{ { x, y } });
     });
 
     glfwSetKeyCallback(m_window.get(),
@@ -69,31 +66,31 @@ GlfwWindow::GlfwWindow(const WindowConfig& config, Logger& logger) : Window{ con
                           [[maybe_unused]] int scancode,
                           const int action,
                           [[maybe_unused]] int mods) {
-                           const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
-                           const auto& eventSubject = app->m_event_listener;
+                           const auto glfw_window = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
+                           const auto key_code = static_cast<KeyCode>(key);
                            if (action == glfw_press) {
-                               eventSubject.next(KeyPressed(static_cast<KeyCode>(key)));
+                               glfw_window->m_event_handlers.onEvent(KeyPressedEvent{key_code});
                            } else if (action == glfw_release) {
-                               eventSubject.next(KeyReleased(static_cast<KeyCode>(key)));
+                               glfw_window->m_event_handlers.onEvent(KeyReleasedEvent{key_code});
                            } else if (action == glfw_repeat) {
-                               eventSubject.next(KeyRepeated(static_cast<KeyCode>(key)));
+                               glfw_window->m_event_handlers.onEvent(KeyRepeatedEvent{key_code});
                            }
                        });
 
     glfwSetMouseButtonCallback(m_window.get(),
                                [](GLFWwindow* window, int button, const int action, [[maybe_unused]] int mods) {
-                                   const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
-                                   const auto& eventSubject = app->m_event_listener;
+                                   const auto glfw_window = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
+                                   const auto mouse_button = static_cast<MouseButton>(button);
                                    if (action == glfw_press) {
-                                       eventSubject.next(MouseButtonPress(static_cast<MouseButton>(button)));
+                                       glfw_window->m_event_handlers.onEvent(MouseButtonPressedEvent{mouse_button});
                                    } else if (action == glfw_release) {
-                                       eventSubject.next(MouseButtonReleased(static_cast<MouseButton>(button)));
+                                       glfw_window->m_event_handlers.onEvent(MouseButtonReleasedEvent{mouse_button});
                                    }
                                });
 
-    glfwSetWindowMaximizeCallback(m_window.get(), [](GLFWwindow* window, int maximize) {
-        const auto app = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
-        app->m_event_listener.next(WindowMaximize{ .maximized = maximize == glfw_true });
+    glfwSetWindowMaximizeCallback(m_window.get(), [](GLFWwindow* window, const int maximize) {
+        const auto glfw_window = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
+        glfw_window->m_event_handlers.onEvent(WindowMaximizedEvent{ .maximized = maximize == glfw_true });
     });
 }
 

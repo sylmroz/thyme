@@ -2,10 +2,12 @@ module;
 
 module th.core.application;
 
+import glm;
 import nlohmann.json;
 
 import th.core.events;
 import th.platform.window;
+import th.platform.window_event_handler;
 import th.platform.window_settings;
 import th.platform.glfw.glfw_window;
 
@@ -20,13 +22,18 @@ void Application::run() {
     try {
         auto window_settings =
                 WindowSettings(WindowConfig{ .width = 1280, .height = 720, .name = "Thyme", .maximized = false });
-        auto window_settings_events_dispatcher = WindowSettingsEventDispatcher(window_settings);
-        auto window = GlfwWindow(window_settings.getConfig(), m_logger);
-        window.subscribe([&window_settings_events_dispatcher](const Event& event) {
-            window_settings_events_dispatcher(event);
+        auto window_event_handlers = WindowEventsHandlers();
+        window_event_handlers.addEventListener<WindowResizedEvent>([&window_settings](const WindowResizedEvent& window_resize) {
+            window_settings.setResolution(glm::uvec2(window_resize.width, window_resize.height));
         });
 
-        auto engine = Engine(EngineConfig{ .app_name = m_name }, window, m_model_storage, m_logger);
+        window_event_handlers.addEventListener<WindowMaximizedEvent>([&window_settings](const WindowMaximizedEvent maximize) {
+            window_settings.setMaximized(maximize.maximized);
+        });
+        auto window = GlfwWindow(window_settings.getConfig(), window_event_handlers, m_logger);
+
+        auto engine =
+                Engine(EngineConfig{ .app_name = m_name }, window, m_model_storage, window_event_handlers, m_logger);
         engine.run();
     } catch (const std::exception& e) {
         m_logger.error("Error occurred during app runtime\n Error: {}"sv, e.what());
