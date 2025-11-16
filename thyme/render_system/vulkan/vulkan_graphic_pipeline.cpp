@@ -68,14 +68,16 @@ VulkanScenePipeline::VulkanScenePipeline(const VulkanDevice& device,
     }
 
     const auto currentDir = std::filesystem::current_path();
-    const auto shaderPath = currentDir / "../../../../thyme/shaders/spv";
+    const auto shaderPath = currentDir / "../../../../thyme/shaders/glsl";
     const auto shaderAbsolutePath = std::filesystem::absolute(shaderPath);
-    const auto vertShader = readFile(shaderAbsolutePath / "triangle.vert.spv");
-    const auto fragShader = readFile(shaderAbsolutePath / "triangle.frag.spv");
+    const auto vertShader = readFile<std::string>(shaderAbsolutePath / "triangle.vert");
+    const auto fragShader = readFile<std::string>(shaderAbsolutePath / "triangle.frag");
+    VulkanShader vertex_shader(ShaderLanguaType::glsl, ShaderType::vertex, vertShader);
     const auto vertexShaderModule = device.logical_device.createShaderModuleUnique(vk::ShaderModuleCreateInfo{
-            .codeSize = vertShader.size(), .pCode = reinterpret_cast<const uint32_t*>(vertShader.data()) });
+            .codeSize = vertex_shader.getSpirV().size()*4, .pCode = vertex_shader.getSpirV().data() });
+    VulkanShader fragment_shader(ShaderLanguaType::glsl, ShaderType::fragment, fragShader);
     const auto fragmentShaderModule = device.logical_device.createShaderModuleUnique(vk::ShaderModuleCreateInfo{
-            .codeSize = fragShader.size(), .pCode = reinterpret_cast<const uint32_t*>(fragShader.data()) });
+            .codeSize = fragment_shader.getSpirV().size()*4, .pCode = fragment_shader.getSpirV().data() });
     const auto vertexShaderStageInfo = vk::PipelineShaderStageCreateInfo{ .stage = vk::ShaderStageFlagBits::eVertex,
                                                                           .module = vertexShaderModule.get(),
                                                                           .pName = "main" };

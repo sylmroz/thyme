@@ -14,6 +14,7 @@ export import :graphic_context;
 export import :graphic_pipeline;
 export import :model;
 export import :renderer;
+export import :shader;
 export import :swapchain;
 export import :texture;
 export import :uniform_buffer_object;

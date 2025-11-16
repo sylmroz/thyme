@@ -13,7 +13,9 @@ export template <typename InnerArray, typename OuterArray>
     });
 }
 
-export auto readFile(const std::filesystem::path& file_path) -> std::vector<char> {
+export
+template <typename Container>
+auto readFile(const std::filesystem::path& file_path) -> Container {
     const auto file_name = file_path.filename().string();
     std::ifstream file(file_path, std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
@@ -21,7 +23,8 @@ export auto readFile(const std::filesystem::path& file_path) -> std::vector<char
     }
     const auto size = file.tellg();
     file.seekg(0, std::ios::beg);
-    std::vector<char> buffer(size);
+    Container buffer;
+    buffer.resize(size);
     file.read(buffer.data(), size);
     file.close();
     return buffer;

@@ -10,6 +10,7 @@ SET(MODULE_FILES
         vulkan_graphic_pipeline.cppm
         vulkan_model.cppm
         vulkan_renderer.cppm
+        vulkan_shader.cppm
         vulkan_swapchain.cppm
         vulkan_texture.cppm
         vulkan_uniform_buffer_object.cppm

@@ -57,6 +57,7 @@ find_package(Stb REQUIRED)
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
+find_package(glslang CONFIG REQUIRED)
 
 target_link_libraries(${PROJECT_NAME} 
     PRIVATE
@@ -68,6 +69,10 @@ target_link_libraries(${PROJECT_NAME}
 		GPUOpen::VulkanMemoryAllocator
 		nlohmann_json::nlohmann_json
 		glm::glm
+		glslang::glslang
+		glslang::glslang-default-resource-limits
+		glslang::SPIRV
+		glslang::SPVRemapper
 )
 
 # copy dlls to the app
