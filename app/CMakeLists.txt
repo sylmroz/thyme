@@ -30,9 +30,12 @@ if (WIN32)
 		COMMAND_EXPAND_LISTS)
 endif()
 
-message(STATUS "copy file from ${CMAKE_SOURCE_DIR}/app/assets to  ${CMAKE_CURRENT_BINARY_DIR}/assets")
-
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/app/assets ${CMAKE_CURRENT_BINARY_DIR}/assets
 		COMMENT "Copying app assets folder"
+)
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/thyme/shaders ${CMAKE_CURRENT_BINARY_DIR}/shaders
+		COMMENT "Copying thyme shader folder"
 )

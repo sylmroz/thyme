@@ -8,8 +8,7 @@ if (POLICY CMP0141)
 endif()
 
 include(includeImportStd.cmake)
-set(CMAKE_CXX_SCAN_FOR_MODULES ON)
-project(thyme_app VERSION 0.0.1)
+project(thyme_app VERSION 0.0.1 LANGUAGES CXX)
 
 enable_testing()
 if(NOT DEFINED BUILD_TESTING)

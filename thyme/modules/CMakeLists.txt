@@ -6,6 +6,10 @@ set(MODULE_FILES
         stb_image.cppm
 )
 
+if (NOT DEFINED LOGGER_STD_PRINT OR ${LOGGER_STD_PRINT} EQUAL "OFF")
+    set (MODULE_FILES ${MODULE_FILES} spdlog.cppm)
+endif ()
+
 SET(SOURCE_FILES
 )
 

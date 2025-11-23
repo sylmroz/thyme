@@ -68,7 +68,7 @@ void Engine::run() {
                               swapchain_support_details.getSwapExtent(frame_buffer_size),
                               buffers_pool,
                               m_logger);
-    VulkanRenderer renderer(device, swapChain, m_model_storage, m_camera, gui, graphic_context, buffers_pool);
+    VulkanRenderer renderer(device, swapChain, m_model_storage, m_camera, gui, graphic_context, buffers_pool, m_logger);
 
     m_window_event_handler.addEventListener<WindowResizedEvent>([&swapChain](const WindowResizedEvent& window_resized) {
         const auto [width, height] = window_resized;

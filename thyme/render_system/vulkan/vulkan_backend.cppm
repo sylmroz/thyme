@@ -5,6 +5,8 @@ import std;
 import glm;
 import vulkan_hpp;
 
+import th.core.logger;
+
 export import :gui;
 export import :buffer;
 export import :command_buffers;

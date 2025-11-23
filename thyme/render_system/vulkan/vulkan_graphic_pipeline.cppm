@@ -6,6 +6,7 @@ import vulkan_hpp;
 
 import th.scene.camera;
 import th.core.utils;
+import th.core.logger;
 
 import :device;
 import :model;
@@ -42,7 +43,7 @@ public:
     explicit VulkanScenePipeline(const VulkanDevice& device,
                                  const vk::PipelineRenderingCreateInfo& pipeline_rendering_create_info,
                                  std::vector<VulkanModel>& models,
-                                 const VulkanUniformBuffer<CameraMatrices>& camera_matrices);
+                                 const VulkanUniformBuffer<CameraMatrices>& camera_matrices, Logger& logger);
 
     void draw(vk::CommandBuffer command_buffer, const std::vector<VulkanModel>& models) const override;
 

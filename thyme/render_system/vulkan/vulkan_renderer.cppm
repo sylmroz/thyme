@@ -6,6 +6,7 @@ import vulkan_hpp;
 
 import th.scene.camera;
 import th.scene.model;
+import th.core.logger;
 
 import :buffer;
 import :command_buffers;
@@ -51,7 +52,7 @@ export class VulkanRenderer {
 public:
     explicit VulkanRenderer(const VulkanDevice& device, VulkanSwapchain& swapchain, ModelStorage& model_storage,
                             Camera& camera, Gui& gui, const VulkanGraphicContext& context,
-                            VulkanCommandBuffersPool& command_buffers_pool) noexcept;
+                            VulkanCommandBuffersPool& command_buffers_pool, Logger& logger) noexcept;
 
     void draw();
 

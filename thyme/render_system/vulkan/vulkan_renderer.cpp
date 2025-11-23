@@ -47,15 +47,16 @@ void updateUBO(const Camera& camera, const VulkanUniformBuffer<CameraMatrices>& 
     }
 }
 
-VulkanRenderer::VulkanRenderer(const VulkanDevice& device, VulkanSwapchain& swapchain, ModelStorage& model_storage, Camera& camera,
-                   Gui& gui, const VulkanGraphicContext& context, VulkanCommandBuffersPool& command_buffers_pool) noexcept
+VulkanRenderer::VulkanRenderer(const VulkanDevice& device, VulkanSwapchain& swapchain, ModelStorage& model_storage,
+                               Camera& camera, Gui& gui, const VulkanGraphicContext& context,
+                               VulkanCommandBuffersPool& command_buffers_pool, Logger& logger) noexcept
     : m_gui{ gui }, m_swapchain{ swapchain }, m_command_buffers_pool{ command_buffers_pool },
       m_depth_image_memory{ device, swapchain.getSwapchainExtent(), context.depth_format, device.max_msaa_samples },
       m_color_image_memory{ device, swapchain.getSwapchainExtent(), context.color_format, device.max_msaa_samples },
       m_resolve_color_image_memory{ device,
-                                 swapchain.getSwapchainExtent(),
-                                 context.color_format,
-                                 vk::SampleCountFlagBits::e1 },
+                                    swapchain.getSwapchainExtent(),
+                                    context.color_format,
+                                    vk::SampleCountFlagBits::e1 },
       m_camera{ camera }, m_model_storage{ model_storage }, m_camera_matrices{ device } {
 
     for (const auto& model : model_storage) {
@@ -68,7 +69,8 @@ VulkanRenderer::VulkanRenderer(const VulkanDevice& device, VulkanSwapchain& swap
                                              .pColorAttachmentFormats = &context.color_format,
                                              .depthAttachmentFormat = context.depth_format },
             m_models,
-            m_camera_matrices));
+            m_camera_matrices,
+            logger));
 }
 
 void VulkanRenderer::draw() {
@@ -166,4 +168,4 @@ void VulkanRenderer::draw() {
 
     m_swapchain.submitFrame();
 }
-}
+}// namespace th

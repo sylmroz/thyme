@@ -4,6 +4,8 @@ import std;
 
 import glslang;
 
+import th.core.logger;
+
 class GlslangContext {
 public:
     GlslangContext() {
@@ -25,7 +27,7 @@ private:
 
 namespace th {
 
-export enum struct ShaderLanguaType {
+export enum struct ShaderLanguageType {
     glsl,
     hlsl
 };
@@ -67,17 +69,17 @@ auto toGlslang(const ShaderType type) -> EShLanguage {
     std::unreachable();
 }
 
-auto toEshSource(const ShaderLanguaType type) -> glslang::EShSource {
+auto toEshSource(const ShaderLanguageType type) -> glslang::EShSource {
     switch (type) {
-        case ShaderLanguaType::glsl: return glslang::EShSource::EShSourceGlsl;
-        case ShaderLanguaType::hlsl: return glslang::EShSource::EShSourceHlsl;
+        case ShaderLanguageType::glsl: return glslang::EShSource::EShSourceGlsl;
+        case ShaderLanguageType::hlsl: return glslang::EShSource::EShSourceHlsl;
     }
     std::unreachable();
 }
 
 export class VulkanShader {
 public:
-    VulkanShader(ShaderLanguaType language, const ShaderType type, const std::string& data) {
+    VulkanShader(const ShaderType type, const std::string& data, Logger& logger) {
         initializeContext();
         const auto shader_stage = toGlslang(type);
         auto shader = glslang::TShader(shader_stage);
@@ -94,23 +96,25 @@ public:
         constexpr auto message = static_cast<EShMessages>(EShMsgSpvRules | EShMsgDebugInfo | EShMsgSpvRules);
         if (constexpr int default_version = 100;
             !shader.parse(GetDefaultResources(), default_version, false, message)) {
-            std::println("Can't parse shader: {}, {}", shader.getInfoLog(), shader.getInfoDebugLog());
+            logger.error("Can't parse shader: {}, {}", shader.getInfoLog(), shader.getInfoDebugLog());
+            return;
         }
 
         glslang::TProgram program;
         program.addShader(&shader);
         if (!program.link(message)) {
-            std::println("Can't link shader: {}, {}", program.getInfoLog(), program.getInfoDebugLog());
+            logger.error("Can't link shader: {}, {}", program.getInfoLog(), program.getInfoDebugLog());
+            return;
         }
         std::vector<uint32_t> spir_v;
-        spv::SpvBuildLogger logger;
+        spv::SpvBuildLogger build_logger;
         glslang::SpvOptions spir_v_options{
             .generateDebugInfo = true,
             .emitNonSemanticShaderDebugInfo = true,
             .emitNonSemanticShaderDebugSource = true
         };
 
-        glslang::GlslangToSpv(*program.getIntermediate(shader_stage), spir_v, &logger, &spir_v_options);
+        glslang::GlslangToSpv(*program.getIntermediate(shader_stage), spir_v, &build_logger, &spir_v_options);
         m_spir_v_result.resize(spir_v.size());
         std::ranges::copy(spir_v, m_spir_v_result.begin());
     }

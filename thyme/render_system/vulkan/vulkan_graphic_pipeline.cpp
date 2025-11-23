@@ -7,9 +7,9 @@ import th.scene.camera;
 namespace th {
 
 VulkanScenePipeline::VulkanScenePipeline(const VulkanDevice& device,
-                             const vk::PipelineRenderingCreateInfo& pipeline_rendering_create_info,
-                             std::vector<VulkanModel>& models,
-                             const VulkanUniformBuffer<CameraMatrices>& camera_matrices) {
+                                         const vk::PipelineRenderingCreateInfo& pipeline_rendering_create_info,
+                                         std::vector<VulkanModel>& models,
+                                         const VulkanUniformBuffer<CameraMatrices>& camera_matrices, Logger& logger) {
     constexpr auto uboBinding =
             vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex);
     constexpr auto cameraUboBinding =
@@ -22,11 +22,12 @@ VulkanScenePipeline::VulkanScenePipeline(const VulkanDevice& device,
             vk::DescriptorSetLayoutCreateInfo(vk::DescriptorSetLayoutCreateInfo{
                     .bindingCount = static_cast<uint32_t>(bindings.size()), .pBindings = bindings.data() }));
 
-    m_descriptor_pool =
-            createDescriptorPool(device.logical_device,
-                                 { vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, static_cast<uint32_t>(models.size())),
-                                   vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, static_cast<uint32_t>(models.size())),
-                                   vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, static_cast<uint32_t>(models.size())) });
+    m_descriptor_pool = createDescriptorPool(
+            device.logical_device,
+            { vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, static_cast<uint32_t>(models.size())),
+              vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, static_cast<uint32_t>(models.size())),
+              vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler,
+                                     static_cast<uint32_t>(models.size())) });
 
     const auto descriptorSetLayouts = std::vector{ models.size(), m_descriptor_set_layout.get() };
     m_descriptor_sets = device.logical_device.allocateDescriptorSets(
@@ -72,12 +73,12 @@ VulkanScenePipeline::VulkanScenePipeline(const VulkanDevice& device,
     const auto shaderAbsolutePath = std::filesystem::absolute(shaderPath);
     const auto vertShader = readFile<std::string>(shaderAbsolutePath / "triangle.vert");
     const auto fragShader = readFile<std::string>(shaderAbsolutePath / "triangle.frag");
-    VulkanShader vertex_shader(ShaderLanguaType::glsl, ShaderType::vertex, vertShader);
+    VulkanShader vertex_shader(ShaderType::vertex, vertShader, logger);
     const auto vertexShaderModule = device.logical_device.createShaderModuleUnique(vk::ShaderModuleCreateInfo{
-            .codeSize = vertex_shader.getSpirV().size()*4, .pCode = vertex_shader.getSpirV().data() });
-    VulkanShader fragment_shader(ShaderLanguaType::glsl, ShaderType::fragment, fragShader);
+            .codeSize = vertex_shader.getSpirV().size() * 4, .pCode = vertex_shader.getSpirV().data() });
+    VulkanShader fragment_shader(ShaderType::fragment, fragShader, logger);
     const auto fragmentShaderModule = device.logical_device.createShaderModuleUnique(vk::ShaderModuleCreateInfo{
-            .codeSize = fragment_shader.getSpirV().size()*4, .pCode = fragment_shader.getSpirV().data() });
+            .codeSize = fragment_shader.getSpirV().size() * 4, .pCode = fragment_shader.getSpirV().data() });
     const auto vertexShaderStageInfo = vk::PipelineShaderStageCreateInfo{ .stage = vk::ShaderStageFlagBits::eVertex,
                                                                           .module = vertexShaderModule.get(),
                                                                           .pName = "main" };
@@ -91,10 +92,10 @@ VulkanScenePipeline::VulkanScenePipeline(const VulkanDevice& device,
             .pSetLayouts = &(m_descriptor_set_layout.get()),
     });
     m_pipeline = createVulkanGraphicsPipeline(device.logical_device,
-                                        m_pipeline_layout.get(),
-                                        device.max_msaa_samples,
-                                        pipeline_rendering_create_info,
-                                        shaderStages);
+                                              m_pipeline_layout.get(),
+                                              device.max_msaa_samples,
+                                              pipeline_rendering_create_info,
+                                              shaderStages);
 }
 
 void VulkanScenePipeline::draw(const vk::CommandBuffer command_buffer, const std::vector<VulkanModel>& models) const {
@@ -107,14 +108,15 @@ void VulkanScenePipeline::draw(const vk::CommandBuffer command_buffer, const std
 }
 
 auto createVulkanGraphicsPipeline(const vk::Device logical_device,
-                            const vk::PipelineLayout pipeline_layout,
-                            const vk::SampleCountFlagBits samples,
-                            const vk::PipelineRenderingCreateInfo& pipeline_rendering_create_info,
-                            const std::vector<vk::PipelineShaderStageCreateInfo>& shader_stages) -> vk::UniquePipeline {
-    constexpr auto dynamicStates = std::array{ vk::DynamicState::eViewport, vk::DynamicState::eScissor };
+                                  const vk::PipelineLayout pipeline_layout,
+                                  const vk::SampleCountFlagBits samples,
+                                  const vk::PipelineRenderingCreateInfo& pipeline_rendering_create_info,
+                                  const std::vector<vk::PipelineShaderStageCreateInfo>& shader_stages)
+        -> vk::UniquePipeline {
+    constexpr auto dynamic_states = std::array{ vk::DynamicState::eViewport, vk::DynamicState::eScissor };
     const auto dynamic_state_create_info = vk::PipelineDynamicStateCreateInfo{
-        .dynamicStateCount = static_cast<uint32_t>(dynamicStates.size()),
-        .pDynamicStates = dynamicStates.data(),
+        .dynamicStateCount = static_cast<uint32_t>(dynamic_states.size()),
+        .pDynamicStates = dynamic_states.data(),
     };
     constexpr auto binding_description = getBindingDescription();
     constexpr auto attribute_descriptions = getAttributeDescriptions();
@@ -198,4 +200,4 @@ auto createVulkanGraphicsPipeline(const vk::Device logical_device,
             .value;
 }
 
-}
+}// namespace th

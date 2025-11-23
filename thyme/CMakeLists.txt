@@ -1,8 +1,9 @@
-project(thyme VERSION 0.0.1)
+set(CMAKE_CXX_SCAN_FOR_MODULES ON)
+
+project(thyme VERSION 0.0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
-set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 
 add_library(${PROJECT_NAME})
 
@@ -30,7 +31,11 @@ add_subdirectory(platform)
 add_subdirectory(render_system)
 add_subdirectory(scene)
 
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20 cxx_std_23)
+
+if (LOGGER_STD_PRINT)
+	add_compile_definitions(LOGGER_STD_PRINT)
+endif ()
 
 configure_file(version.hpp.in version.hpp)
 
