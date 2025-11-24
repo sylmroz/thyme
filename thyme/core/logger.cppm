@@ -2,7 +2,7 @@ export module th.core.logger;
 
 import std;
 
-#ifndef LOGGER_STD_PRINT
+#ifndef LOGGER_USE_STD_PRINT
 import spdlog;
 #endif
 
@@ -18,7 +18,7 @@ export enum struct LogLevel {
     off
 };
 
-#ifndef LOGGER_STD_PRINT
+#ifndef LOGGER_USE_STD_PRINT
 constexpr auto toSpdLogLevel(const LogLevel level) -> spdlog::level::level_enum {
     switch (level) {
         case LogLevel::trace: return spdlog::level::trace;
@@ -53,7 +53,7 @@ struct basic_format_with_source_location {
     consteval basic_format_with_source_location(const Str fmt,
                                                 const std::source_location& loc = std::source_location::current())
         : m_fmt(std::move(fmt)),
-#ifndef LOGGER_STD_PRINT
+#ifndef LOGGER_USE_STD_PRINT
           location(loc.file_name(), static_cast<int>(loc.line()), loc.function_name())
 #else
           location(loc)
@@ -71,7 +71,7 @@ struct basic_format_with_source_location {
 
 private:
     std::format_string<Args...> m_fmt;
-#ifndef LOGGER_STD_PRINT
+#ifndef LOGGER_USE_STD_PRINT
     spdlog::source_loc location{};
 #else
     std::source_location location{};
@@ -84,7 +84,7 @@ using format_with_source_location = basic_format_with_source_location<std::type_
 export class Logger {
 public:
     Logger(const LogLevel level, const std::string_view logger_name) {
-#ifndef LOGGER_STD_PRINT
+#ifndef LOGGER_USE_STD_PRINT
         logger = spdlog::stdout_color_mt(std::string(logger_name));
         logger->set_pattern("%^[%T:%e][%n][%l][%@]: %v%$");
         const auto l = toSpdLogLevel(level);
@@ -98,7 +98,7 @@ public:
     template <typename... Args>
     void trace(format_with_source_location<Args...> msg, Args&&... args) const noexcept {
         const auto full_message = std::format(msg.get_format(), std::forward<Args>(args)...);
-#ifndef LOGGER_STD_PRINT
+#ifndef LOGGER_USE_STD_PRINT
         logger->log(msg.get_location(), spdlog::level::trace, full_message);
 #else
         printMessage(msg.get_location(), LogLevel::trace, full_message);
@@ -108,7 +108,7 @@ public:
     template <typename... Args>
     void debug(format_with_source_location<Args...> msg, Args&&... args) const noexcept {
         const auto full_message = std::format(msg.get_format(), std::forward<Args>(args)...);
-#ifndef LOGGER_STD_PRINT
+#ifndef LOGGER_USE_STD_PRINT
         logger->log(msg.get_location(), spdlog::level::debug, full_message);
 #else
         printMessage(msg.get_location(), LogLevel::debug, full_message);
@@ -118,7 +118,7 @@ public:
     template <typename... Args>
     void info(format_with_source_location<Args...> msg, Args&&... args) const noexcept {
         const auto full_message = std::format(msg.get_format(), std::forward<Args>(args)...);
-#ifndef LOGGER_STD_PRINT
+#ifndef LOGGER_USE_STD_PRINT
         logger->log(msg.get_location(), spdlog::level::info, full_message);
 #else
         printMessage(msg.get_location(), LogLevel::info, full_message);
@@ -128,7 +128,7 @@ public:
     template <typename... Args>
     void warn(format_with_source_location<Args...> msg, Args&&... args) const noexcept {
         const auto full_message = std::format(msg.get_format(), std::forward<Args>(args)...);
-#ifndef LOGGER_STD_PRINT
+#ifndef LOGGER_USE_STD_PRINT
         logger->log(msg.get_location(), spdlog::level::warn, full_message);
 #else
         printMessage(msg.get_location(), LogLevel::warn, full_message);
@@ -138,7 +138,7 @@ public:
     template <typename... Args>
     void error(format_with_source_location<Args...> msg, Args&&... args) const noexcept {
         const auto full_message = std::format(msg.get_format(), std::forward<Args>(args)...);
-#ifndef LOGGER_STD_PRINT
+#ifndef LOGGER_USE_STD_PRINT
         logger->log(msg.get_location(), spdlog::level::err, full_message);
 #else
         printMessage(msg.get_location(), LogLevel::err, full_message);
@@ -148,7 +148,7 @@ public:
     template <typename... Args>
     void critical(format_with_source_location<Args...> msg, Args&&... args) const noexcept {
         const auto full_message = std::format(msg.get_format(), std::forward<Args>(args)...);
-#ifndef LOGGER_STD_PRINT
+#ifndef LOGGER_USE_STD_PRINT
         logger->log(msg.get_location(), spdlog::level::critical, full_message);
 #else
         printMessage(msg.get_location(), LogLevel::critical, full_message);
@@ -156,7 +156,7 @@ public:
     }
 
 private:
-#ifndef LOGGER_STD_PRINT
+#ifndef LOGGER_USE_STD_PRINT
     std::shared_ptr<spdlog::logger> logger;
 #else
     LogLevel m_current_log_level;

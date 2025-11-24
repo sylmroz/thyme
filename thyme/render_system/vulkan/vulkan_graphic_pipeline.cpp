@@ -69,7 +69,7 @@ VulkanScenePipeline::VulkanScenePipeline(const VulkanDevice& device,
     }
 
     const auto currentDir = std::filesystem::current_path();
-    const auto shaderPath = currentDir / "../../../../thyme/shaders/glsl";
+    const auto shaderPath = currentDir / "shaders" / "glsl";
     const auto shaderAbsolutePath = std::filesystem::absolute(shaderPath);
     const auto vertShader = readFile<std::string>(shaderAbsolutePath / "triangle.vert");
     const auto fragShader = readFile<std::string>(shaderAbsolutePath / "triangle.frag");

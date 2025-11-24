@@ -11,7 +11,7 @@
       "cacheVariables": {
         "CMAKE_C_COMPILER": "cl.exe",
         "CMAKE_CXX_COMPILER": "cl.exe",
-        "LOGGER_STD_PRINT": "ON"
+        "LOGGER_USE_STD_PRINT": "ON"
       },
       "condition": {
         "type": "equals",

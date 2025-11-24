@@ -33,8 +33,8 @@ add_subdirectory(scene)
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20 cxx_std_23)
 
-if (LOGGER_STD_PRINT)
-	add_compile_definitions(LOGGER_STD_PRINT)
+if (LOGGER_USE_STD_PRINT)
+	add_compile_definitions(LOGGER_USE_STD_PRINT)
 endif ()
 
 configure_file(version.hpp.in version.hpp)
