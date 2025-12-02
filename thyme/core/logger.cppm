@@ -167,7 +167,7 @@ private:
             std::println("[{}][{}][{}][{}]: {}",
                          now,
                          m_logger_name,
-                         toString(m_current_log_level),
+                         toString(level),
                          std::format("{}:{}", location.file_name(), location.line()),
                          message);
         }

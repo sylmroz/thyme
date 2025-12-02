@@ -68,23 +68,11 @@ VulkanScenePipeline::VulkanScenePipeline(const VulkanDevice& device,
         device.logical_device.updateDescriptorSets(writeDescriptorSets, {});
     }
 
-    const auto currentDir = std::filesystem::current_path();
-    const auto shaderPath = currentDir / "shaders" / "glsl";
-    const auto shaderAbsolutePath = std::filesystem::absolute(shaderPath);
-    const auto vertShader = readFile<std::string>(shaderAbsolutePath / "triangle.vert");
-    const auto fragShader = readFile<std::string>(shaderAbsolutePath / "triangle.frag");
-    VulkanShader vertex_shader(ShaderType::vertex, vertShader, logger);
-    const auto vertexShaderModule = device.logical_device.createShaderModuleUnique(vk::ShaderModuleCreateInfo{
-            .codeSize = vertex_shader.getSpirV().size() * 4, .pCode = vertex_shader.getSpirV().data() });
-    VulkanShader fragment_shader(ShaderType::fragment, fragShader, logger);
-    const auto fragmentShaderModule = device.logical_device.createShaderModuleUnique(vk::ShaderModuleCreateInfo{
-            .codeSize = fragment_shader.getSpirV().size() * 4, .pCode = fragment_shader.getSpirV().data() });
-    const auto vertexShaderStageInfo = vk::PipelineShaderStageCreateInfo{ .stage = vk::ShaderStageFlagBits::eVertex,
-                                                                          .module = vertexShaderModule.get(),
-                                                                          .pName = "main" };
-    const auto fragmentShaderStageInfo = vk::PipelineShaderStageCreateInfo{ .stage = vk::ShaderStageFlagBits::eFragment,
-                                                                            .module = fragmentShaderModule.get(),
-                                                                            .pName = "main" };
+    const auto vertex_shader = VulkanShader::create(ShaderType::vertex, "triangle.vert", device.logical_device, logger);
+    const auto fragment_shader = VulkanShader::create(ShaderType::fragment, "triangle.frag", device.logical_device, logger);
+
+    const auto vertexShaderStageInfo = vertex_shader.getShaderStage();
+    const auto fragmentShaderStageInfo = fragment_shader.getShaderStage();
     const auto shaderStages = std::vector{ vertexShaderStageInfo, fragmentShaderStageInfo };
 
     m_pipeline_layout = device.logical_device.createPipelineLayoutUnique(vk::PipelineLayoutCreateInfo{
