@@ -17,12 +17,12 @@ import :uniform_buffer_object;
 namespace th {
 
 export [[nodiscard]] auto
-        createVulkanGraphicsPipeline(vk::Device logical_device,
+        createVulkanGraphicsPipeline(const vk::raii::Device& logical_device,
                                      vk::PipelineLayout pipeline_layout,
                                      vk::SampleCountFlagBits samples,
                                      const vk::PipelineRenderingCreateInfo& pipeline_rendering_create_info,
                                      const std::vector<vk::PipelineShaderStageCreateInfo>& shader_stages)
-                -> vk::UniquePipeline;
+                -> vk::raii::Pipeline;
 
 export class VulkanGraphicPipeline {
 public:
@@ -40,7 +40,7 @@ public:
 
 export class VulkanScenePipeline final: public VulkanGraphicPipeline {
 public:
-    explicit VulkanScenePipeline(const VulkanDevice& device,
+    explicit VulkanScenePipeline(const VulkanDeviceRAII& device,
                                  const vk::PipelineRenderingCreateInfo& pipeline_rendering_create_info,
                                  std::vector<VulkanModel>& models,
                                  const VulkanUniformBuffer<CameraMatrices>& camera_matrices, Logger& logger);
@@ -48,7 +48,18 @@ public:
     void draw(vk::CommandBuffer command_buffer, const std::vector<VulkanModel>& models) const override;
 
 private:
-    vk::UniquePipeline m_pipeline;
+    vk::raii::Pipeline m_pipeline = nullptr;
+    vk::raii::PipelineLayout m_pipeline_layout = nullptr;
+
+    vk::raii::DescriptorSetLayout m_descriptor_set_layout = nullptr;
+
+    vk::UniqueDescriptorPool m_descriptor_pool;
+    std::vector<vk::raii::DescriptorSet> m_descriptor_sets;
+};
+
+class VulkanGraphicsPipelineBuilder {
+public:
+private:
     vk::UniquePipelineLayout m_pipeline_layout;
 
     vk::UniqueDescriptorSetLayout m_descriptor_set_layout;

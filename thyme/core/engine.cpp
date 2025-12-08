@@ -42,7 +42,7 @@ void Engine::run() {
 
     const auto physical_devices_manager = VulkanPhysicalDevicesManager(framework.getInstance(), *surface, m_logger);
 
-    const auto& device = physical_devices_manager.getSelectedDevice();
+    auto& device = physical_devices_manager.getCurrentDevice();
     const auto swapchain_support_details = SwapChainSupportDetails(device.physical_device, *surface);
     const auto graphic_context =
             VulkanGraphicContext{ .max_frames_in_flight = 2,
@@ -62,23 +62,23 @@ void Engine::run() {
     const auto frame_buffer_size = m_window.getFrameBufferSize();
     m_camera.setResolution(
             glm::vec2{ static_cast<float>(frame_buffer_size.x), static_cast<float>(frame_buffer_size.y) });
-    VulkanSwapchain swapChain(device,
+    VulkanSwapchain swapchain(device,
                               *surface,
                               graphic_context,
                               swapchain_support_details.getSwapExtent(frame_buffer_size),
                               buffers_pool,
                               m_logger);
-    VulkanRenderer renderer(device, swapChain, m_model_storage, m_camera, gui, graphic_context, buffers_pool, m_logger);
+    VulkanRenderer renderer(device, swapchain, m_model_storage, m_camera, gui, graphic_context, buffers_pool, m_logger);
 
-    m_window_event_handler.addEventListener<WindowResizedEvent>([&swapChain](const WindowResizedEvent& window_resized) {
+    m_window_event_handler.addEventListener<WindowResizedEvent>([&swapchain](const WindowResizedEvent& window_resized) {
         const auto [width, height] = window_resized;
-        swapChain.frameResized(vk::Extent2D{ static_cast<uint32_t>(width), static_cast<uint32_t>(height) });
+        swapchain.frameResized(vk::Extent2D{ static_cast<uint32_t>(width), static_cast<uint32_t>(height) });
     });
 
     while (!m_window.shouldClose()) {
         m_window.poolEvents();
         if (!m_window.isMinimalized()) {
-            renderer.draw();
+            renderer.draw(device);
         }
     }
 

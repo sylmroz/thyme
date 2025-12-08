@@ -21,7 +21,8 @@ export struct SwapchainFrame {
 
 export class SwapchainFrames {
 public:
-    explicit SwapchainFrames(vk::Device device, vk::SwapchainKHR swapchain, vk::Format format);
+    explicit SwapchainFrames(const vk::raii::Device& device, const vk::raii::SwapchainKHR& swapchain,
+                             vk::Format format);
 
     [[nodiscard]] auto getSwapchainFramesCount() const noexcept -> std::size_t {
         return m_images.size();
@@ -40,28 +41,28 @@ private:
             constexpr auto message = "SwapChainFrames index out of range";
             throw std::out_of_range(message);
         }
-        return SwapchainFrame{ .image = m_images[index], .image_view = m_imageViews[index].get() };
+        return SwapchainFrame{ .image = m_images[index], .image_view = m_imageViews[index] };
     }
 
 private:
     std::vector<vk::Image> m_images;
-    std::vector<vk::UniqueImageView> m_imageViews;
+    std::vector<vk::raii::ImageView> m_imageViews;
 };
 
 export class SwapchainData {
 public:
-    explicit SwapchainData(const VulkanDevice& device, const SwapChainSettings& swapchain_settings,
+    explicit SwapchainData(const VulkanDeviceRAII& device, const SwapChainSettings& swapchain_settings,
                            const vk::Extent2D swapchain_extent, const vk::SurfaceKHR surface,
                            const vk::SwapchainKHR old_swapchain = {})
         : m_swapchain{ createSwapchain(device, swapchain_settings, swapchain_extent, surface, old_swapchain) },
-          m_swapchain_frames{ device.logical_device, m_swapchain.get(), swapchain_settings.surfaceFormat.format } {}
+          m_swapchain_frames{ device.logical_device, m_swapchain, swapchain_settings.surfaceFormat.format } {}
 
-    [[nodiscard]] auto getSwapchain() noexcept -> vk::SwapchainKHR {
-        return m_swapchain.get();
+    [[nodiscard]] auto getSwapchain() noexcept -> const vk::raii::SwapchainKHR& {
+        return m_swapchain;
     }
 
-    [[nodiscard]] auto getSwapchain() const noexcept -> vk::SwapchainKHR {
-        return m_swapchain.get();
+    [[nodiscard]] auto getSwapchain() const noexcept -> const vk::raii::SwapchainKHR& {
+        return m_swapchain;
     }
 
     [[nodiscard]] auto getSwapchainFramesCount() const noexcept -> std::size_t {
@@ -77,18 +78,18 @@ public:
     }
 
 private:
-    vk::UniqueSwapchainKHR m_swapchain;
+    vk::raii::SwapchainKHR m_swapchain;
     SwapchainFrames m_swapchain_frames;
 
 private:
-    static [[nodiscard]] auto createSwapchain(const VulkanDevice& device, SwapChainSettings swapchain_settings,
+    static [[nodiscard]] auto createSwapchain(const VulkanDeviceRAII& device, SwapChainSettings swapchain_settings,
                                               vk::Extent2D swapchain_extent, vk::SurfaceKHR surface,
-                                              vk::SwapchainKHR old_swapchain) -> vk::UniqueSwapchainKHR;
+                                              vk::SwapchainKHR old_swapchain) -> vk::raii::SwapchainKHR;
 };
 
 export class VulkanSwapchain final {
 public:
-    VulkanSwapchain(const VulkanDevice& device, vk::SurfaceKHR surface, const VulkanGraphicContext& context,
+    VulkanSwapchain(const VulkanDeviceRAII& device, vk::SurfaceKHR surface, const VulkanGraphicContext& context,
                     vk::Extent2D swapchain_extent, VulkanCommandBuffersPool& command_pool, Logger& logger);
     void frameResized(vk::Extent2D resolution);
     auto prepareFrame() -> bool;
@@ -117,12 +118,12 @@ private:
     vk::Extent2D m_swapchain_extent;
     vk::Extent2D m_fallback_extent;
     VulkanGraphicContext m_context;
-    VulkanDevice m_device;
+    const VulkanDeviceRAII& m_device;
     SwapchainData m_swapchain_data;
     VulkanCommandBuffersPool& m_command_buffers_pool;
     Logger& m_logger;
 
-    std::vector<vk::UniqueSemaphore> m_image_rendering_semaphore;
+    std::vector<vk::raii::Semaphore> m_image_rendering_semaphore;
 };
 
 }// namespace th

@@ -6,7 +6,7 @@ import th.scene.camera;
 
 namespace th {
 
-VulkanScenePipeline::VulkanScenePipeline(const VulkanDevice& device,
+VulkanScenePipeline::VulkanScenePipeline(const VulkanDeviceRAII& device,
                                          const vk::PipelineRenderingCreateInfo& pipeline_rendering_create_info,
                                          std::vector<VulkanModel>& models,
                                          const VulkanUniformBuffer<CameraMatrices>& camera_matrices, Logger& logger) {
@@ -18,7 +18,7 @@ VulkanScenePipeline::VulkanScenePipeline(const VulkanDevice& device,
             2, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eFragment);
     constexpr auto bindings = std::array{ uboBinding, cameraUboBinding, samplerLayoutBinding };
 
-    m_descriptor_set_layout = device.logical_device.createDescriptorSetLayoutUnique(
+    m_descriptor_set_layout = device.logical_device.createDescriptorSetLayout(
             vk::DescriptorSetLayoutCreateInfo(vk::DescriptorSetLayoutCreateInfo{
                     .bindingCount = static_cast<uint32_t>(bindings.size()), .pBindings = bindings.data() }));
 
@@ -29,7 +29,7 @@ VulkanScenePipeline::VulkanScenePipeline(const VulkanDevice& device,
               vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler,
                                      static_cast<uint32_t>(models.size())) });
 
-    const auto descriptorSetLayouts = std::vector{ models.size(), m_descriptor_set_layout.get() };
+    const auto descriptorSetLayouts = std::vector{ models.size(), *m_descriptor_set_layout };
     m_descriptor_sets = device.logical_device.allocateDescriptorSets(
             vk::DescriptorSetAllocateInfo{ .descriptorPool = m_descriptor_pool.get(),
                                            .descriptorSetCount = static_cast<uint32_t>(descriptorSetLayouts.size()),
@@ -75,32 +75,32 @@ VulkanScenePipeline::VulkanScenePipeline(const VulkanDevice& device,
     const auto fragmentShaderStageInfo = fragment_shader.getShaderStage();
     const auto shaderStages = std::vector{ vertexShaderStageInfo, fragmentShaderStageInfo };
 
-    m_pipeline_layout = device.logical_device.createPipelineLayoutUnique(vk::PipelineLayoutCreateInfo{
+    m_pipeline_layout = device.logical_device.createPipelineLayout(vk::PipelineLayoutCreateInfo{
             .setLayoutCount = 1,
-            .pSetLayouts = &(m_descriptor_set_layout.get()),
+            .pSetLayouts = &(*m_descriptor_set_layout),
     });
     m_pipeline = createVulkanGraphicsPipeline(device.logical_device,
-                                              m_pipeline_layout.get(),
+                                              *m_pipeline_layout,
                                               device.max_msaa_samples,
                                               pipeline_rendering_create_info,
                                               shaderStages);
 }
 
 void VulkanScenePipeline::draw(const vk::CommandBuffer command_buffer, const std::vector<VulkanModel>& models) const {
-    command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline.get());
+    command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_pipeline);
     for (const auto& [model, descriptor] : std::views::zip(models, m_descriptor_sets)) {
         command_buffer.bindDescriptorSets(
-                vk::PipelineBindPoint::eGraphics, m_pipeline_layout.get(), 0, { descriptor }, {});
+                vk::PipelineBindPoint::eGraphics, *m_pipeline_layout, 0, { descriptor }, {});
         model.draw(command_buffer);
     }
 }
 
-auto createVulkanGraphicsPipeline(const vk::Device logical_device,
+auto createVulkanGraphicsPipeline(const vk::raii::Device& logical_device,
                                   const vk::PipelineLayout pipeline_layout,
                                   const vk::SampleCountFlagBits samples,
                                   const vk::PipelineRenderingCreateInfo& pipeline_rendering_create_info,
                                   const std::vector<vk::PipelineShaderStageCreateInfo>& shader_stages)
-        -> vk::UniquePipeline {
+        -> vk::raii::Pipeline {
     constexpr auto dynamic_states = std::array{ vk::DynamicState::eViewport, vk::DynamicState::eScissor };
     const auto dynamic_state_create_info = vk::PipelineDynamicStateCreateInfo{
         .dynamicStateCount = static_cast<uint32_t>(dynamic_states.size()),
@@ -170,7 +170,7 @@ auto createVulkanGraphicsPipeline(const vk::Device logical_device,
                                                      .maxDepthBounds = 1.0f };
 
     return logical_device
-            .createGraphicsPipelineUnique({},
+            .createGraphicsPipeline(nullptr,
                                           vk::GraphicsPipelineCreateInfo{
                                                   .pNext = &pipeline_rendering_create_info,
                                                   .stageCount = static_cast<uint32_t>(shader_stages.size()),
@@ -184,8 +184,7 @@ auto createVulkanGraphicsPipeline(const vk::Device logical_device,
                                                   .pColorBlendState = &color_blend_state_create_info,
                                                   .pDynamicState = &dynamic_state_create_info,
                                                   .layout = pipeline_layout,
-                                          })
-            .value;
+                                          });
 }
 
 }// namespace th

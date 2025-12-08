@@ -11,7 +11,7 @@ static constexpr auto g_sDeviceExtensions = std::array{ vk::KHRSwapchainExtensio
                                                         vk::KHRSynchronization2ExtensionName,
                                                         vk::KHRBufferDeviceAddressExtensionName };
 
-[[nodiscard]] auto VulkanPhysicalDevicesManager::PhysicalDevice::createLogicalDevice() const -> vk::raii::Device {
+[[nodiscard]] auto PhysicalDevice::createLogicalDevice() const -> vk::raii::Device {
     const std::set<uint32_t> indices = { queue_family_indices.graphic_family.value(),
                                          queue_family_indices.present_family.value() };
     std::vector<vk::DeviceQueueCreateInfo> deviceQueueCreateInfos;

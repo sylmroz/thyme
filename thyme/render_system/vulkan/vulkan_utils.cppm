@@ -89,10 +89,10 @@ public:
 };
 
 [[nodiscard]] inline auto createDescriptorPool(const vk::Device device,
-                                               const std::vector<vk::DescriptorPoolSize>& descriptorSizes)
+                                               const std::vector<vk::DescriptorPoolSize>& descriptor_sizes)
         -> vk::UniqueDescriptorPool {
-    const auto maxSet = std::accumulate(std::begin(descriptorSizes),
-                                        std::end(descriptorSizes),
+    const auto maxSet = std::accumulate(std::begin(descriptor_sizes),
+                                        std::end(descriptor_sizes),
                                         uint32_t{ 0 },
                                         [](const uint32_t sum, const vk::DescriptorPoolSize& descriptorPoolSize) {
                                             return sum + descriptorPoolSize.descriptorCount;
@@ -102,8 +102,27 @@ public:
     return device.createDescriptorPoolUnique(vk::DescriptorPoolCreateInfo{
             .flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
             .maxSets = maxSet,
-            .poolSizeCount = static_cast<uint32_t>(descriptorSizes.size()),
-            .pPoolSizes = descriptorSizes.data(),
+            .poolSizeCount = static_cast<uint32_t>(descriptor_sizes.size()),
+            .pPoolSizes = descriptor_sizes.data(),
+    });
+}
+
+[[nodiscard]] inline auto createDescriptorPool(const vk::raii::Device& device,
+                                               const std::span<const vk::DescriptorPoolSize> descriptor_sizes)
+        -> vk::raii::DescriptorPool {
+    const auto max_set = std::accumulate(std::begin(descriptor_sizes),
+                                        std::end(descriptor_sizes),
+                                        uint32_t{ 0 },
+                                        [](const uint32_t sum, const vk::DescriptorPoolSize& descriptorPoolSize) {
+                                            return sum + descriptorPoolSize.descriptorCount;
+                                        });
+
+
+    return device.createDescriptorPool(vk::DescriptorPoolCreateInfo{
+            .flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
+            .maxSets = max_set,
+            .poolSizeCount = static_cast<uint32_t>(descriptor_sizes.size()),
+            .pPoolSizes = descriptor_sizes.data(),
     });
 }
 
@@ -165,9 +184,9 @@ constexpr auto getAttributeDescriptions() -> std::array<vk::VertexInputAttribute
 }
 
 inline void copyBuffer(const vk::Device device, const vk::CommandPool commandPool, const vk::Queue graphicQueue,
-                       const vk::Buffer srcBuffer, const vk::Buffer dstBuffer, const size_t size) {
+                       const vk::Buffer src_buffer, const vk::Buffer dstBuffer, const size_t size) {
     singleTimeCommand(device, commandPool, graphicQueue, [&](const vk::CommandBuffer& commandBuffer) -> void {
-        commandBuffer.copyBuffer(srcBuffer, dstBuffer, { vk::BufferCopy(0, 0, size) });
+        commandBuffer.copyBuffer(src_buffer, dstBuffer, { vk::BufferCopy(0, 0, size) });
     });
 }
 

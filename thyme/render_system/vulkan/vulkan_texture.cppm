@@ -17,70 +17,86 @@ export void copyImage(vk::CommandBuffer command_buffer, vk::Image src_image, vk:
 export void blitImage(vk::CommandBuffer command_buffer, vk::Image src_image, vk::Extent3D src_resolution,
                       vk::Image dst_image, vk::Extent3D dst_resolution);
 
+struct ImageMemoryImageView {
+    vk::raii::Image image;
+    vk::raii::DeviceMemory memory;
+    vk::raii::ImageView image_view;
+};
+
+export class VulkanImageMemoryCreator {
+public:
+    VulkanImageMemoryCreator(vk::Format format, vk::ImageUsageFlags image_usage_flags,
+                             vk::MemoryPropertyFlags memory_property_flags, vk::ImageAspectFlags aspect_flags,
+                             vk::SampleCountFlagBits msaa, uint32_t mip_levels);
+
+    [[nodiscard]] auto create(const VulkanDeviceRAII& device, vk::Extent3D resolution) const -> ImageMemoryImageView;
+
+    [[nodiscard]] auto getMipLevels() const -> uint32_t {
+        return m_mip_levels;
+    }
+
+private:
+    vk::Format m_format;
+    vk::ImageUsageFlags m_image_usage_flags;
+    vk::MemoryPropertyFlags m_memory_property_flags;
+    vk::ImageAspectFlags m_aspect_flags;
+    vk::SampleCountFlagBits m_msaa;
+    uint32_t m_mip_levels{ 1 };
+};
+
 export class VulkanImageMemory {
 public:
-    VulkanImageMemory(const VulkanDevice& device, vk::Extent3D resolution, vk::Format format,
-                      vk::ImageUsageFlags image_usage_flags, vk::MemoryPropertyFlags memory_property_flags,
-                      vk::ImageAspectFlags aspect_flags, vk::SampleCountFlagBits msaa, uint32_t mip_levels);
+    VulkanImageMemory(const VulkanDeviceRAII& device, vk::Extent3D resolution, VulkanImageMemoryCreator memory_creator);
 
     [[nodiscard]] auto getImage() const noexcept -> vk::Image {
-        return m_image.get();
+        return *m_image_memory_image_view.image;
     }
 
     [[nodiscard]] auto getMemory() const noexcept -> vk::DeviceMemory {
-        return m_memory.get();
+        return *m_image_memory_image_view.memory;
     }
 
     [[nodiscard]] auto getImageView() const noexcept -> vk::ImageView {
-        return m_imageView.get();
+        return *m_image_memory_image_view.image_view;
     }
 
     [[nodiscard]] auto getExtent() const noexcept -> vk::Extent3D {
         return m_extent;
     }
 
-    void resize(vk::Extent2D resolution);
-    void resize(vk::Extent3D resolution);
+    void resize(const VulkanDeviceRAII& device, vk::Extent2D resolution);
+    void resize(const VulkanDeviceRAII& device, vk::Extent3D resolution);
 
-    void transitImageLayout(ImageLayoutTransition layout_transition);
-    void transitImageLayout(vk::CommandBuffer command_buffer, ImageLayoutTransition layout_transition);
+    void transitImageLayout(const VulkanDeviceRAII& device, ImageLayoutTransition layout_transition) const;
+    void transitImageLayout(vk::CommandBuffer command_buffer, ImageLayoutTransition layout_transition) const;
 
-    void copyTo(vk::CommandBuffer command_buffer, const VulkanImageMemory& dst_image);
-    void copyTo(vk::CommandBuffer command_buffer, vk::Image image);
-    void blitTo(vk::CommandBuffer command_buffer, const VulkanImageMemory& dst_image);
-    void blitTo(vk::CommandBuffer command_buffer, vk::Image dst_image, vk::Extent3D dst_resolution);
+    void copyTo(vk::CommandBuffer command_buffer, const VulkanImageMemory& dst_image) const;
+    void copyTo(vk::CommandBuffer command_buffer, vk::Image image) const;
+    void blitTo(vk::CommandBuffer command_buffer, const VulkanImageMemory& dst_image) const;
+    void blitTo(vk::CommandBuffer command_buffer, vk::Image dst_image, vk::Extent3D dst_resolution) const;
 
 private:
-    vk::UniqueImage m_image;
-    vk::UniqueDeviceMemory m_memory;
-    vk::UniqueImageView m_imageView;
-
-    vk::Format m_format;
-    vk::ImageUsageFlags m_imageUsageFlags;
-    vk::MemoryPropertyFlags m_memoryPropertyFlags;
-    vk::ImageAspectFlags m_aspectFlags;
-    vk::SampleCountFlagBits m_msaa;
-    uint32_t m_mipLevels{ 1 };
+    ImageMemoryImageView m_image_memory_image_view;
     vk::Extent3D m_extent{};
 
-    VulkanDevice m_device;
+    VulkanImageMemoryCreator m_image_memory_creator;
 };
 
 export class VulkanDepthImageMemory: public VulkanImageMemory {
 public:
-    VulkanDepthImageMemory(const VulkanDevice& device, vk::Extent2D resolution, vk::Format format,
+    VulkanDepthImageMemory(const VulkanDeviceRAII& device, vk::Extent2D resolution, vk::Format format,
                            vk::SampleCountFlagBits msaa);
 };
 
 export class VulkanColorImageMemory: public VulkanImageMemory {
 public:
-    VulkanColorImageMemory(const VulkanDevice& device, vk::Extent2D resolution, vk::Format format,
+    VulkanColorImageMemory(const VulkanDeviceRAII& device, vk::Extent2D resolution, vk::Format format,
                            vk::SampleCountFlagBits msaa);
 };
 
 export class Vulkan2DTexture {
 public:
-    Vulkan2DTexture(const VulkanDevice& device, const TextureData& texture,
+    Vulkan2DTexture(const VulkanDeviceRAII& device, const TextureData& texture,
                     vk::Format format = vk::Format::eR8G8B8A8Unorm);
 
     [[nodiscard]] auto getImage() const noexcept -> vk::Image {
@@ -90,27 +106,25 @@ public:
         return m_imageMemory.getImageView();
     }
     [[nodiscard]] auto getSampler() const noexcept -> vk::Sampler {
-        return m_sampler.get();
+        return *m_sampler;
     }
     [[nodiscard]] auto getImageMemory() const noexcept -> const VulkanImageMemory& {
         return m_imageMemory;
     }
-    [[nodiscard]] auto getDescriptorImageInfo(const vk::ImageLayout imageLayout) const noexcept
+    [[nodiscard]] auto getDescriptorImageInfo(const vk::ImageLayout image_layout) const noexcept
             -> vk::DescriptorImageInfo {
-        return { m_sampler.get(), getImageView(), imageLayout };
+        return { *m_sampler, getImageView(), image_layout };
     }
 
-    void setData(const TextureData& texture);
+    void setData(const VulkanDeviceRAII& device, const TextureData& texture);
 
 private:
-    void generateMipmaps() const;
+    void generateMipmaps(const VulkanDeviceRAII& device) const;
 
 private:
     VulkanImageMemory m_imageMemory;
-    vk::UniqueSampler m_sampler;
+    vk::raii::Sampler m_sampler;
     vk::Format m_format;
-
-    VulkanDevice m_device;
 
     vk::Extent2D m_extent{};
     uint32_t m_mipLevels{};

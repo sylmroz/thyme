@@ -47,7 +47,7 @@ void updateUBO(const Camera& camera, const VulkanUniformBuffer<CameraMatrices>& 
     }
 }
 
-VulkanRenderer::VulkanRenderer(const VulkanDevice& device, VulkanSwapchain& swapchain, ModelStorage& model_storage,
+VulkanRenderer::VulkanRenderer(const VulkanDeviceRAII& device, VulkanSwapchain& swapchain, ModelStorage& model_storage,
                                Camera& camera, Gui& gui, const VulkanGraphicContext& context,
                                VulkanCommandBuffersPool& command_buffers_pool, Logger& logger) noexcept
     : m_gui{ gui }, m_swapchain{ swapchain }, m_command_buffers_pool{ command_buffers_pool },
@@ -73,16 +73,16 @@ VulkanRenderer::VulkanRenderer(const VulkanDevice& device, VulkanSwapchain& swap
             logger));
 }
 
-void VulkanRenderer::draw() {
+void VulkanRenderer::draw(const VulkanDeviceRAII& device) {
     if (!m_swapchain.prepareFrame()) {
         return;
     }
     updateUBO(m_camera, m_camera_matrices, m_models, m_model_storage);
-    m_color_image_memory.resize(m_swapchain.getSwapchainExtent());
-    m_resolve_color_image_memory.resize(m_swapchain.getSwapchainExtent());
-    m_depth_image_memory.resize(m_swapchain.getSwapchainExtent());
+    m_color_image_memory.resize(device, m_swapchain.getSwapchainExtent());
+    m_resolve_color_image_memory.resize(device, m_swapchain.getSwapchainExtent());
+    m_depth_image_memory.resize(device, m_swapchain.getSwapchainExtent());
 
-    const auto command_buffer = m_command_buffers_pool.get().getBuffer();
+    const auto command_buffer = m_command_buffers_pool.get().getBuffer(device.logical_device);
     setCommandBufferFrameSize(command_buffer, m_swapchain.getSwapchainExtent());
     constexpr auto clear_color_values = vk::ClearValue(vk::ClearColorValue(1.0f, 0.0f, 1.0f, 1.0f));
     constexpr auto depth_clear_value = vk::ClearValue(vk::ClearDepthStencilValue(1.0f, 0));

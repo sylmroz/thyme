@@ -12,10 +12,9 @@ import :graphic_context;
 import :utils;
 
 namespace th {
-
 export class Gui final {
 public:
-    explicit Gui(const VulkanDevice& device, const GlfwWindow& window, const VulkanGraphicContext& context,
+    explicit Gui(const VulkanDeviceRAII& device, const GlfwWindow& window, const VulkanGraphicContext& context,
                  vk::Instance instance, Logger& logger);
 
     Gui(Gui&& other) noexcept = delete;
@@ -30,41 +29,41 @@ public:
     ~Gui() noexcept;
 
 private:
-    vk::UniquePipelineCache m_pipelineCache;
-    vk::UniqueDescriptorPool m_descriptorPool;
+    vk::raii::PipelineCache m_pipelineCache;
+    vk::raii::DescriptorPool m_descriptorPool;
     VulkanGraphicContext m_context;
     Logger& m_logger;
 };
 
-Gui::Gui(const VulkanDevice& device, const GlfwWindow& window, const VulkanGraphicContext& context,
+constexpr auto g_descriptorSets = { vk::DescriptorPoolSize(vk::DescriptorType::eSampler, 1000),
+                                    vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, 1000),
+                                    vk::DescriptorPoolSize(vk::DescriptorType::eSampledImage, 1000),
+                                    vk::DescriptorPoolSize(vk::DescriptorType::eStorageImage, 1000),
+                                    vk::DescriptorPoolSize(vk::DescriptorType::eUniformTexelBuffer, 1000),
+                                    vk::DescriptorPoolSize(vk::DescriptorType::eStorageTexelBuffer, 1000),
+                                    vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, 1000),
+                                    vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, 1000),
+                                    vk::DescriptorPoolSize(vk::DescriptorType::eUniformBufferDynamic, 1000),
+                                    vk::DescriptorPoolSize(vk::DescriptorType::eStorageBufferDynamic, 1000),
+                                    vk::DescriptorPoolSize(vk::DescriptorType::eInputAttachment, 1000) };
+
+Gui::Gui(const VulkanDeviceRAII& device, const GlfwWindow& window, const VulkanGraphicContext& context,
          const vk::Instance instance, Logger& logger)
-    : m_context{ context }, m_logger{ logger } {
+    : m_pipelineCache{ device.logical_device.createPipelineCache(vk::PipelineCacheCreateInfo{}) },
+      m_descriptorPool{ createDescriptorPool(device.logical_device, g_descriptorSets) }, m_context{ context },
+      m_logger{ logger } {
     logger.debug("Create Gui Class");
     [[maybe_unused]] static ImGuiContext im_gui_context;
-    m_pipelineCache = device.logical_device.createPipelineCacheUnique(vk::PipelineCacheCreateInfo());
-    m_descriptorPool = createDescriptorPool(device.logical_device,
-                                            { vk::DescriptorPoolSize(vk::DescriptorType::eSampler, 1000),
-                                              vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, 1000),
-                                              vk::DescriptorPoolSize(vk::DescriptorType::eSampledImage, 1000),
-                                              vk::DescriptorPoolSize(vk::DescriptorType::eStorageImage, 1000),
-                                              vk::DescriptorPoolSize(vk::DescriptorType::eUniformTexelBuffer, 1000),
-                                              vk::DescriptorPoolSize(vk::DescriptorType::eStorageTexelBuffer, 1000),
-                                              vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, 1000),
-                                              vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, 1000),
-                                              vk::DescriptorPoolSize(vk::DescriptorType::eUniformBufferDynamic, 1000),
-                                              vk::DescriptorPoolSize(vk::DescriptorType::eStorageBufferDynamic, 1000),
-                                              vk::DescriptorPoolSize(vk::DescriptorType::eInputAttachment, 1000) });
-
     ImGui_ImplGlfw_InitForVulkan(window.getHandler().get(), true);
     ImGui_ImplVulkan_InitInfo init_info{};
     init_info.Instance = instance;
-    init_info.PhysicalDevice = device.physical_device;
-    init_info.Device = device.logical_device;
+    init_info.PhysicalDevice = *device.physical_device;
+    init_info.Device = *device.logical_device;
     init_info.QueueFamily = device.queue_family_indices.graphic_family.value();
     init_info.Queue = device.getGraphicQueue();
 
-    init_info.PipelineCache = m_pipelineCache.get();
-    init_info.DescriptorPool = m_descriptorPool.get();
+    init_info.PipelineCache = *m_pipelineCache;
+    init_info.DescriptorPool = *m_descriptorPool;
     init_info.Subpass = vk::SubpassExternal;
     init_info.MinImageCount = m_context.image_count;
     init_info.ImageCount = m_context.image_count;

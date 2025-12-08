@@ -12,16 +12,15 @@ export namespace th {
 template <typename T>
 class VulkanUniformBuffer final {
 public:
-    explicit VulkanUniformBuffer(const VulkanDevice& device)
+    explicit VulkanUniformBuffer(const VulkanDeviceRAII& device)
         : m_uniformMemoryBuffer{ VulkanBufferMemory(device,
-                                              sizeof(T),
-                                              vk::BufferUsageFlagBits::eUniformBuffer,
-                                              vk::MemoryPropertyFlagBits::eHostVisible
-                                                      | vk::MemoryPropertyFlagBits::eHostCoherent) },
-          m_device{ device.logical_device } {
-        [[maybe_unused]] const auto result = device.logical_device.mapMemory(
-                *m_uniformMemoryBuffer.getMemory(), 0, sizeof(T), vk::MemoryMapFlags(), &m_mappedMemoryBuffer);
-    }
+                                                    sizeof(T),
+                                                    vk::BufferUsageFlagBits::eUniformBuffer,
+                                                    vk::MemoryPropertyFlagBits::eHostVisible
+                                                            | vk::MemoryPropertyFlagBits::eHostCoherent) },
+          m_mappedMemoryBuffer{ m_uniformMemoryBuffer.getMemory().mapMemory(0, sizeof(T), vk::MemoryMapFlags()) }
+
+    {}
 
     explicit VulkanUniformBuffer(const VulkanUniformBuffer&) = delete;
     explicit VulkanUniformBuffer(VulkanUniformBuffer&&) = default;
@@ -37,16 +36,12 @@ public:
     }
 
     ~VulkanUniformBuffer() {
-        if (m_uniformMemoryBuffer.getMemory().get() != nullptr) {
-            m_device.unmapMemory(m_uniformMemoryBuffer.getMemory().get());
-        }
+        m_uniformMemoryBuffer.unmapMemory();
     }
 
 private:
     VulkanBufferMemory m_uniformMemoryBuffer;
     void* m_mappedMemoryBuffer{ nullptr };
-
-    vk::Device m_device;
 };
 
-}// namespace th::render_system::vulkan
+}// namespace th

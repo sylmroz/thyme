@@ -50,11 +50,11 @@ private:
 // };
 export class VulkanRenderer {
 public:
-    explicit VulkanRenderer(const VulkanDevice& device, VulkanSwapchain& swapchain, ModelStorage& model_storage,
+    explicit VulkanRenderer(const VulkanDeviceRAII& device, VulkanSwapchain& swapchain, ModelStorage& model_storage,
                             Camera& camera, Gui& gui, const VulkanGraphicContext& context,
                             VulkanCommandBuffersPool& command_buffers_pool, Logger& logger) noexcept;
 
-    void draw();
+    void draw(const VulkanDeviceRAII& device);
 
 private:
     void transitDepthImageLayout(const vk::CommandBuffer command_buffer) const {
