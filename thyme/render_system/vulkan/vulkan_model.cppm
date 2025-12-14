@@ -1,7 +1,7 @@
 export module th.render_system.vulkan:model;
 
 import glm;
-import vulkan_hpp;
+import vulkan;
 
 import th.scene.model;
 

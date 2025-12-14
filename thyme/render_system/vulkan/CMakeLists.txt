@@ -31,6 +31,6 @@ set(SRC_FILES
 
 target_sources(${PROJECT_NAME}
         PUBLIC FILE_SET thyme_render_target_vulkan TYPE CXX_MODULES FILES ${MODULE_FILES}
-        PUBLIC FILE_SET CXX_MODULES BASE_DIRS ${Vulkan_INCLUDE_DIR} FILES ${Vulkan_INCLUDE_DIR}/vulkan/vulkan.cppm
+        PUBLIC FILE_SET CXX_MODULES BASE_DIRS ${Vulkan_INCLUDE_DIR} FILES ${Vulkan_INCLUDE_DIR}/vulkan/vulkan.cppm ${Vulkan_INCLUDE_DIR}/vulkan/vulkan_video.cppm
         PRIVATE ${SRC_FILES}
 )

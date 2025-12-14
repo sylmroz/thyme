@@ -4,7 +4,7 @@ import std;
 
 import glfw;
 import glm;
-import vulkan_hpp;
+import vulkan;
 
 import th.platform.window;
 import th.platform.window_event_handler;

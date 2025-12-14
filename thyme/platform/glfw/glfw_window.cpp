@@ -6,7 +6,7 @@ module th.platform.glfw.glfw_window;
 
 import std;
 
-import vulkan_hpp;
+import vulkan;
 import glfw;
 
 namespace th {

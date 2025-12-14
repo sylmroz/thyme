@@ -70,6 +70,7 @@ target_link_libraries(${PROJECT_NAME}
         glfw
         Vulkan::Vulkan
         Vulkan::Headers
+		#Vulkan::HppModule
 		imgui::imgui
 		GPUOpen::VulkanMemoryAllocator
 		nlohmann_json::nlohmann_json
@@ -77,7 +78,6 @@ target_link_libraries(${PROJECT_NAME}
 		glslang::glslang
 		glslang::glslang-default-resource-limits
 		glslang::SPIRV
-		glslang::SPVRemapper
 )
 
 # copy dlls to the app

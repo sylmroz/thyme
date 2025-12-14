@@ -2,7 +2,7 @@ export module th.core.engine;
 
 import std;
 
-import vulkan_hpp;
+import vulkan;
 
 import th.render_system.vulkan;
 import th.platform.glfw.glfw_window;

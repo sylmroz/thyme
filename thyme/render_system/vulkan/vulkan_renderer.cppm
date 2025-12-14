@@ -2,7 +2,7 @@ export module th.render_system.vulkan:renderer;
 
 import std;
 
-import vulkan_hpp;
+import vulkan;
 
 import th.scene.camera;
 import th.scene.model;

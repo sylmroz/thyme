@@ -3,7 +3,7 @@ export module th.render_system.vulkan:shader;
 import std;
 
 import glslang;
-import vulkan_hpp;
+import vulkan;
 
 import th.core.logger;
 import th.core.utils;
@@ -29,9 +29,9 @@ private:
 
 namespace th {
 
-export enum struct ShaderLanguageType {
+export enum struct ShaderLanguage {
     glsl,
-    hlsl
+    slang
 };
 
 export enum struct ShaderType {
@@ -71,12 +71,8 @@ auto toGlslang(const ShaderType type) -> EShLanguage {
     std::unreachable();
 }
 
-auto toEshSource(const ShaderLanguageType type) -> glslang::EShSource {
-    switch (type) {
-        case ShaderLanguageType::glsl: return glslang::EShSource::EShSourceGlsl;
-        case ShaderLanguageType::hlsl: return glslang::EShSource::EShSourceHlsl;
-    }
-    std::unreachable();
+auto toEshSource(const ShaderLanguage type) -> glslang::EShSource {
+    return glslang::EShSource::EShSourceGlsl;
 }
 
 auto toVkShaderStageFlag(const ShaderType type) -> vk::ShaderStageFlagBits {
@@ -99,7 +95,13 @@ auto toVkShaderStageFlag(const ShaderType type) -> vk::ShaderStageFlagBits {
     std::unreachable();
 }
 
-auto getBasePath() -> std::filesystem::path {
+auto getBasePath(const ShaderLanguage shader_language) -> std::filesystem::path {
+    const auto shader_language_folder = [shader_language] {
+        if (shader_language == ShaderLanguage::glsl) {
+            return "glsl";
+        }
+        return "slang";
+    }();
     return std::filesystem::current_path() / "shaders" / "glsl";
 }
 
@@ -152,12 +154,25 @@ private:
     std::string m_data;
 };
 
+export auto createShaderModule(const ShaderType type, const std::string_view file_name, const vk::raii::Device& device, const Logger& logger) -> vk::raii::ShaderModule {
+    try {
+        const auto data = readFile<std::string>(getBasePath(ShaderLanguage::glsl) / file_name);
+        const auto spir_v = ShaderCompiler(type, data).compile();
+        return device.createShaderModule(
+                vk::ShaderModuleCreateInfo{ .codeSize = spir_v.size() * 4, .pCode = spir_v.data() });
+    } catch (const std::exception& e) {
+        logger.error("Cannot create shader module, {}", e.what());
+        throw;
+    }
+
+}
+
 export class VulkanShader {
 public:
 
-    static auto create(const ShaderType type, const std::string_view file_name, const vk::Device device, const Logger& logger) -> VulkanShader {
+    static auto create(const ShaderType type, const std::string_view file_name, const vk::raii::Device& device, const Logger& logger) -> VulkanShader {
         try {
-            const auto data = readFile<std::string>(getBasePath() / file_name);
+            const auto data = readFile<std::string>(getBasePath(ShaderLanguage::glsl) / file_name);
             return VulkanShader(type, data, device, logger);
         } catch (const std::exception& e) {
             logger.error("Cannot create shader module, {}", e.what());
@@ -166,11 +181,11 @@ public:
 
     }
 
-    VulkanShader(const ShaderType type, const std::string& data, const vk::Device device, const Logger& logger) {
+    VulkanShader(const ShaderType type, const std::string& data, const vk::raii::Device& device, const Logger& logger) {
         try {
             const auto spir_v = ShaderCompiler(type, data).compile();
             m_shader_stage = toVkShaderStageFlag(type);
-            m_shader_module = device.createShaderModuleUnique(
+            m_shader_module = device.createShaderModule(
                     vk::ShaderModuleCreateInfo{ .codeSize = spir_v.size() * 4, .pCode = spir_v.data() });
         } catch (const std::exception& e) {
             logger.error("Cannot create shader module: {}", e.what());
@@ -181,14 +196,14 @@ public:
     [[nodiscard]] auto getShaderStage() const -> vk::PipelineShaderStageCreateInfo {
         return vk::PipelineShaderStageCreateInfo{
             .stage = m_shader_stage,
-            .module = m_shader_module.get(),
+            .module = *m_shader_module,
             .pName = "main",
         };
     }
 
 private:
     vk::ShaderStageFlagBits m_shader_stage;
-    vk::UniqueShaderModule m_shader_module;
+    vk::raii::ShaderModule m_shader_module{nullptr};
 };
 
 }// namespace th

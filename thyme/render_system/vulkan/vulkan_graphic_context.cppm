@@ -2,7 +2,7 @@ export module th.render_system.vulkan:graphic_context;
 
 import std;
 
-import vulkan_hpp;
+import vulkan;
 
 namespace th {
 

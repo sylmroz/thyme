@@ -2,7 +2,7 @@ export module th.render_system.vulkan:uniform_buffer_object;
 
 import std;
 
-import vulkan_hpp;
+import vulkan;
 
 import :buffer;
 import :device;

@@ -73,13 +73,13 @@ auto VulkanSwapchain::prepareFrame() -> bool {
     auto imageAvailableSemaphore = m_device.logical_device.createSemaphore(vk::SemaphoreCreateInfo());
     const auto [result, image_index] = [&] {
         try {
-            return m_swapchain_data.getSwapchain().acquireNextImage(std::numeric_limits<uint64_t>::max(),
+            return m_swapchain_data.getSwapchain().acquireNextImage(std::numeric_limits<std::uint64_t>::max(),
                                                                     imageAvailableSemaphore);
         } catch (const vk::OutOfDateKHRError&) {
             recreateSwapchain();
         };
 
-        return std::make_pair(vk::Result::eErrorOutOfDateKHR, std::numeric_limits<uint32_t>::max());
+        return vk::ResultValue(vk::Result::eErrorOutOfDateKHR, std::numeric_limits<std::uint32_t>::max());
     }();
     if (result != vk::Result::eSuccess) {
         return false;
@@ -164,7 +164,7 @@ auto VulkanSwapchain::recreateSwapchain() -> bool {
     m_swapchain_extent =
             [resolution = m_fallback_extent, surface = m_surface, physicalDevice = m_device.physical_device] {
                 const auto capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface);
-                if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
+                if (capabilities.currentExtent.width != std::numeric_limits<std::uint32_t>::max()) {
                     return capabilities.currentExtent;
                 }
                 const auto [width, height] = resolution;

@@ -2,7 +2,7 @@ export module th.render_system.vulkan:texture;
 
 import std;
 
-import vulkan_hpp;
+import vulkan;
 
 import th.scene.texture_data;
 

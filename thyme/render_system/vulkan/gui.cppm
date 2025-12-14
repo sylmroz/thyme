@@ -1,7 +1,7 @@
 export module th.render_system.vulkan:gui;
 
 import imgui;
-import vulkan_hpp;
+import vulkan;
 
 import th.platform.glfw.glfw_window;
 import th.core.logger;

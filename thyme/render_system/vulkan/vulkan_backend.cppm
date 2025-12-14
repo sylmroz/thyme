@@ -3,7 +3,7 @@ export module th.render_system.vulkan;
 import std;
 
 import glm;
-import vulkan_hpp;
+import vulkan;
 
 import th.core.logger;
 

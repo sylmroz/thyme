@@ -2,7 +2,7 @@ export module th.render_system.vulkan:framework;
 
 import std;
 
-import vulkan_hpp;
+import vulkan;
 
 import th.core.logger;
 import th.core.utils;
