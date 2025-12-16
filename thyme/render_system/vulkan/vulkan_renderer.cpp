@@ -87,7 +87,10 @@ void VulkanRenderer::draw(const VulkanDeviceRAII& device) {
     constexpr auto clear_color_values = vk::ClearValue(vk::ClearColorValue(1.0f, 0.0f, 1.0f, 1.0f));
     constexpr auto depth_clear_value = vk::ClearValue(vk::ClearDepthStencilValue(1.0f, 0));
 
-
+    m_color_image_memory.transitImageLayout(
+        command_buffer,
+        ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eUndefined,
+                               .newLayout = vk::ImageLayout::eColorAttachmentOptimal });
     m_resolve_color_image_memory.transitImageLayout(
             command_buffer,
             ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eUndefined,
@@ -103,6 +106,11 @@ void VulkanRenderer::draw(const VulkanDeviceRAII& device) {
         .storeOp = vk::AttachmentStoreOp::eStore,
         .clearValue = clear_color_values,
     };
+
+    m_depth_image_memory.transitImageLayout(
+            command_buffer,
+            ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eUndefined,
+                                   .newLayout = vk::ImageLayout::eDepthAttachmentOptimal });
 
     const auto depth_attachment = vk::RenderingAttachmentInfo{
         .imageView = m_depth_image_memory.getImageView(),
@@ -140,7 +148,9 @@ void VulkanRenderer::draw(const VulkanDeviceRAII& device) {
                        m_swapchain.getCurrentSwapchainFrame().image,
                        ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eTransferDstOptimal,
                                               .newLayout = vk::ImageLayout::eColorAttachmentOptimal },
-                       1);
+                       1,
+                       vk::ImageAspectFlagBits::eColor
+                       );
 
     const auto gui_color_attachment = vk::RenderingAttachmentInfo{
         .imageView = m_swapchain.getCurrentSwapchainFrame().image_view,

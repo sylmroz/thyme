@@ -111,11 +111,11 @@ public:
                                                const std::span<const vk::DescriptorPoolSize> descriptor_sizes)
         -> vk::raii::DescriptorPool {
     const auto max_set = std::accumulate(std::begin(descriptor_sizes),
-                                        std::end(descriptor_sizes),
-                                        uint32_t{ 0 },
-                                        [](const uint32_t sum, const vk::DescriptorPoolSize& descriptorPoolSize) {
-                                            return sum + descriptorPoolSize.descriptorCount;
-                                        });
+                                         std::end(descriptor_sizes),
+                                         uint32_t{ 0 },
+                                         [](const uint32_t sum, const vk::DescriptorPoolSize& descriptorPoolSize) {
+                                             return sum + descriptorPoolSize.descriptorCount;
+                                         });
 
 
     return device.createDescriptorPool(vk::DescriptorPoolCreateInfo{
@@ -301,9 +301,10 @@ void transitImageLayout(const vk::CommandBuffer command_buffer, const vk::Image 
 }
 
 void transitImageLayout(const vk::CommandBuffer command_buffer, const vk::Image image,
-                        const ImageLayoutTransition layout_transition, const uint32_t mip_levels) {
+                        const ImageLayoutTransition layout_transition, const uint32_t mip_levels,
+                        const vk::ImageAspectFlags aspect_flags) {
     const auto [old_layout, new_layout] = layout_transition;
-    if (old_layout == vk::ImageLayout::eUndefined && new_layout == vk::ImageLayout::eTransferDstOptimal) {
+    /*if (old_layout == vk::ImageLayout::eUndefined && new_layout == vk::ImageLayout::eTransferDstOptimal) {
         transitImageLayout(command_buffer,
                            image,
                            layout_transition,
@@ -311,7 +312,7 @@ void transitImageLayout(const vk::CommandBuffer command_buffer, const vk::Image 
                                                          .newStage = vk::PipelineStageFlagBits::eTransfer },
                            ImageAccessFlagsTransition{ .oldAccess = vk::AccessFlags(),
                                                        .newAccess = vk::AccessFlagBits::eTransferWrite },
-                           vk::ImageAspectFlagBits::eColor,
+                           aspect_flags,
                            mip_levels);
         return;
     }
@@ -323,7 +324,7 @@ void transitImageLayout(const vk::CommandBuffer command_buffer, const vk::Image 
                                                          .newStage = vk::PipelineStageFlagBits::eFragmentShader },
                            ImageAccessFlagsTransition{ .oldAccess = vk::AccessFlagBits::eTransferWrite,
                                                        .newAccess = vk::AccessFlagBits::eShaderRead },
-                           vk::ImageAspectFlagBits::eColor,
+                           aspect_flags,
                            mip_levels);
         return;
     }
@@ -337,7 +338,7 @@ void transitImageLayout(const vk::CommandBuffer command_buffer, const vk::Image 
                                               .newStage = vk::PipelineStageFlagBits::eColorAttachmentOutput },
                 ImageAccessFlagsTransition{ .oldAccess = vk::AccessFlagBits::eNone,
                                             .newAccess = vk::AccessFlagBits::eColorAttachmentWrite },
-                vk::ImageAspectFlagBits::eColor,
+                aspect_flags,
                 mip_levels);
         return;
     }
@@ -349,10 +350,10 @@ void transitImageLayout(const vk::CommandBuffer command_buffer, const vk::Image 
                                                          .newStage = vk::PipelineStageFlagBits::eBottomOfPipe },
                            ImageAccessFlagsTransition{ .oldAccess = vk::AccessFlagBits::eColorAttachmentWrite,
                                                        .newAccess = vk::AccessFlagBits() },
-                           vk::ImageAspectFlagBits::eColor,
+                           aspect_flags,
                            mip_levels);
         return;
-    }
+    }*/
     transitImageLayout(command_buffer,
                        image,
                        layout_transition,
@@ -361,7 +362,7 @@ void transitImageLayout(const vk::CommandBuffer command_buffer, const vk::Image 
                        ImageAccessFlagsTransition{ .oldAccess = vk::AccessFlagBits::eMemoryWrite,
                                                    .newAccess = vk::AccessFlagBits::eMemoryWrite
                                                                 | vk::AccessFlagBits::eMemoryRead },
-                       vk::ImageAspectFlagBits::eColor,
+                       aspect_flags,
                        mip_levels);
 }
 

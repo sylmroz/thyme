@@ -146,15 +146,19 @@ void VulkanImageMemory::transitImageLayout(const VulkanDeviceRAII& device,
     device.singleTimeCommand(
             [layout_transition,
              image = *m_image_memory_image_view.image,
-             mipLevels = m_image_memory_creator.getMipLevels()](const vk::CommandBuffer commandBuffer) {
-                th::transitImageLayout(commandBuffer, image, layout_transition, mipLevels);
+             mipLevels = m_image_memory_creator.getMipLevels(),
+             usage_flags = m_image_memory_creator.getImageAspectFlags()](const vk::CommandBuffer commandBuffer) {
+                th::transitImageLayout(commandBuffer, image, layout_transition, mipLevels, usage_flags);
             });
 }
 
 void VulkanImageMemory::transitImageLayout(const vk::CommandBuffer command_buffer,
                                            const ImageLayoutTransition layout_transition) const {
-    th::transitImageLayout(
-            command_buffer, m_image_memory_image_view.image, layout_transition, m_image_memory_creator.getMipLevels());
+    th::transitImageLayout(command_buffer,
+                           m_image_memory_image_view.image,
+                           layout_transition,
+                           m_image_memory_creator.getMipLevels(),
+                           m_image_memory_creator.getImageAspectFlags());
 }
 
 void VulkanImageMemory::copyTo(const vk::CommandBuffer command_buffer, const VulkanImageMemory& dst_image) const {

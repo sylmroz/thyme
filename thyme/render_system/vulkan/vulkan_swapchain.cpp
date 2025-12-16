@@ -118,7 +118,8 @@ void VulkanSwapchain::preparePresentMode() {
                        m_swapchain_data.getSwapchainFrame(m_current_image_index).image,
                        ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eColorAttachmentOptimal,
                                               .newLayout = vk::ImageLayout::ePresentSrcKHR },
-                       1);
+                       1,
+                       vk::ImageAspectFlagBits::eColor);
 }
 
 void VulkanSwapchain::submitFrame() {
@@ -149,7 +150,11 @@ void VulkanSwapchain::renderImage(const vk::Image image) {
     prepareRenderMode();
     const auto blitSize =
             vk::Extent3D{ .width = getSwapchainExtent().width, .height = getSwapchainExtent().height, .depth = 1 };
-    blitImage(m_command_buffers_pool.get().getBuffer(m_device.logical_device), image, blitSize, getCurrentSwapchainFrame().image, blitSize);
+    blitImage(m_command_buffers_pool.get().getBuffer(m_device.logical_device),
+              image,
+              blitSize,
+              getCurrentSwapchainFrame().image,
+              blitSize);
 }
 
 auto VulkanSwapchain::hasResized() const -> bool {

@@ -35,6 +35,10 @@ public:
         return m_mip_levels;
     }
 
+    [[nodiscard]] auto getImageAspectFlags() const noexcept -> vk::ImageAspectFlags {
+        return m_aspect_flags;
+    }
+
 private:
     vk::Format m_format;
     vk::ImageUsageFlags m_image_usage_flags;

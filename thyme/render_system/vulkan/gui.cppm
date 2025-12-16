@@ -1,7 +1,7 @@
 export module th.render_system.vulkan:gui;
 
 import imgui;
-import vulkan;
+//import vulkan;
 
 import th.platform.glfw.glfw_window;
 import th.core.logger;
@@ -86,6 +86,7 @@ void Gui::draw(const vk::CommandBuffer command_buffer) {
 
     bool show_demo_window{ true };
     ImGui::ShowDemoWindow(&show_demo_window);
+
     ImGui::Render();
 
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer);

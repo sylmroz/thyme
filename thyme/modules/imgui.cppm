@@ -13,6 +13,57 @@ using ::ImVec4;
 using ::ImVector;
 using ::ImFont;
 using ::ImGuiID;
+using ::ImGuiViewport;
+using ::ImGuiWindowFlags;
+
+
+using ::ImGuiDockNodeFlags;
+using ::ImGuiDockNodeFlags_::ImGuiDockNodeFlags_None;
+using ::ImGuiDockNodeFlags_::ImGuiDockNodeFlags_KeepAliveOnly;
+using ::ImGuiDockNodeFlags_::ImGuiDockNodeFlags_NoDockingOverCentralNode;
+using ::ImGuiDockNodeFlags_::ImGuiDockNodeFlags_PassthruCentralNode;
+using ::ImGuiDockNodeFlags_::ImGuiDockNodeFlags_NoDockingSplit;
+using ::ImGuiDockNodeFlags_::ImGuiDockNodeFlags_NoResize;
+using ::ImGuiDockNodeFlags_::ImGuiDockNodeFlags_AutoHideTabBar;
+using ::ImGuiDockNodeFlags_::ImGuiDockNodeFlags_NoUndocking;
+
+using ::ImGuiStyleVar;
+using ::ImGuiStyleVar_WindowRounding;
+using ::ImGuiStyleVar_WindowPadding;
+using ::ImGuiStyleVar_WindowBorderSize;
+using ::ImGuiStyleVar_WindowPadding;
+using ::ImGuiStyleVar_ChildRounding;
+
+using ::ImGuiWindowFlags_;
+using ::ImGuiWindowFlags_None;
+using ::ImGuiWindowFlags_NoTitleBar;
+using ::ImGuiWindowFlags_NoResize;
+using ::ImGuiWindowFlags_NoMove;
+using ::ImGuiWindowFlags_NoScrollbar;
+using ::ImGuiWindowFlags_NoScrollWithMouse;
+using ::ImGuiWindowFlags_NoCollapse;
+using ::ImGuiWindowFlags_AlwaysAutoResize;
+using ::ImGuiWindowFlags_NoBackground;
+using ::ImGuiWindowFlags_NoSavedSettings;
+using ::ImGuiWindowFlags_NoMouseInputs;
+using ::ImGuiWindowFlags_MenuBar;
+using ::ImGuiWindowFlags_HorizontalScrollbar;
+using ::ImGuiWindowFlags_NoFocusOnAppearing;
+using ::ImGuiWindowFlags_NoBringToFrontOnFocus;
+using ::ImGuiWindowFlags_AlwaysVerticalScrollbar;
+using ::ImGuiWindowFlags_AlwaysHorizontalScrollbar;
+using ::ImGuiWindowFlags_NoNavInputs;
+using ::ImGuiWindowFlags_NoNavFocus;
+using ::ImGuiWindowFlags_UnsavedDocument;
+using ::ImGuiWindowFlags_NoNav;
+using ::ImGuiWindowFlags_NoDecoration;
+using ::ImGuiWindowFlags_NoInputs;
+using ::ImGuiWindowFlags_ChildWindow;
+using ::ImGuiWindowFlags_Tooltip;
+using ::ImGuiWindowFlags_Popup;
+using ::ImGuiWindowFlags_Modal;
+using ::ImGuiWindowFlags_ChildMenu;
+
 
 using ::ImGuiConfigFlags_::ImGuiConfigFlags_None;
 using ::ImGuiConfigFlags_::ImGuiConfigFlags_NavEnableKeyboard;
@@ -120,6 +171,15 @@ using ::ImGui::NewFrame;
 using ::ImGui::GetDrawData;
 using ::ImGui::UpdatePlatformWindows;
 using ::ImGui::RenderPlatformWindowsDefault;
+using ::ImGui::GetMainViewport;
+using ::ImGui::SetNextWindowPos;
+using ::ImGui::SetNextWindowSize;
+using ::ImGui::SetNextWindowViewport;
+using ::ImGui::PushStyleVar;
+using ::ImGui::GetID;
+using ::ImGui::GetWindowPos;
+using ::ImGui::DockSpace;
+using ::ImGui::PopStyleVar;
 
 using ::ImGui::ShowDemoWindow;
 
