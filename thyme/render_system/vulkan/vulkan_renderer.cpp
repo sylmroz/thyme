@@ -69,7 +69,7 @@ VulkanRenderer::VulkanRenderer(const VulkanDeviceRAII& device, VulkanSwapchain& 
                                              .pColorAttachmentFormats = &context.color_format,
                                              .depthAttachmentFormat = context.depth_format },
             m_models,
-            m_camera_matrices,
+            m_camera_matrices.getDescriptorBufferInfos(),
             logger));
 }
 

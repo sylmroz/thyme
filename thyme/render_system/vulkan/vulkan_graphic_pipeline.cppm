@@ -43,7 +43,7 @@ public:
     explicit VulkanScenePipeline(const VulkanDeviceRAII& device,
                                  const vk::PipelineRenderingCreateInfo& pipeline_rendering_create_info,
                                  std::vector<VulkanModel>& models,
-                                 const VulkanUniformBuffer<CameraMatrices>& camera_matrices, Logger& logger);
+                                 vk::DescriptorBufferInfo descriptor_buffer_info, Logger& logger);
 
     void draw(vk::CommandBuffer command_buffer, const std::vector<VulkanModel>& models) const override;
 
@@ -60,11 +60,9 @@ private:
 class VulkanGraphicsPipelineBuilder {
 public:
 private:
-    vk::UniquePipelineLayout m_pipeline_layout;
-
-    vk::UniqueDescriptorSetLayout m_descriptor_set_layout;
-
-    vk::UniqueDescriptorPool m_descriptor_pool;
+    vk::raii::PipelineLayout m_pipeline_layout{nullptr};
+    vk::raii::DescriptorSetLayout m_descriptor_set_layout{nullptr};
+    vk::raii::DescriptorPool m_descriptor_pool{nullptr};
     std::vector<vk::DescriptorSet> m_descriptor_sets;
 };
 

@@ -51,7 +51,7 @@ export enum struct ShaderType {
     mesh
 };
 
-auto toGlslang(const ShaderType type) -> EShLanguage {
+constexpr auto toGlslang(const ShaderType type) -> EShLanguage {
     switch (type) {
         case ShaderType::vertex: return EShLangVertex;
         case ShaderType::fragment: return EShLangFragment;
@@ -71,11 +71,11 @@ auto toGlslang(const ShaderType type) -> EShLanguage {
     std::unreachable();
 }
 
-auto toEshSource(const ShaderLanguage type) -> glslang::EShSource {
+constexpr auto toEshSource(const ShaderLanguage type) -> glslang::EShSource {
     return glslang::EShSource::EShSourceGlsl;
 }
 
-auto toVkShaderStageFlag(const ShaderType type) -> vk::ShaderStageFlagBits {
+constexpr auto toVkShaderStageFlag(const ShaderType type) -> vk::ShaderStageFlagBits {
     switch (type) {
         case ShaderType::vertex: return vk::ShaderStageFlagBits::eVertex;
         case ShaderType::fragment: return vk::ShaderStageFlagBits::eFragment;
@@ -96,13 +96,13 @@ auto toVkShaderStageFlag(const ShaderType type) -> vk::ShaderStageFlagBits {
 }
 
 auto getBasePath(const ShaderLanguage shader_language) -> std::filesystem::path {
-    const auto shader_language_folder = [shader_language] {
+    const auto shader_language_folder = [shader_language] -> std::string {
         if (shader_language == ShaderLanguage::glsl) {
             return "glsl";
         }
         return "slang";
     }();
-    return std::filesystem::current_path() / "shaders" / "glsl";
+    return std::filesystem::current_path() / "shaders" / shader_language_folder;
 }
 
 export class ShaderCompiler {
@@ -111,38 +111,7 @@ public:
         initializeContext();
     }
 
-    [[nodiscard]] auto compile() const -> std::vector<uint32_t> {
-        auto shader = glslang::TShader(m_type);
-        const char* d = m_data.c_str();
-        shader.setStrings(&d, 1);
-        constexpr int client_input_semantic_version = 100;
-        shader.setEnvInput(
-                glslang::EShSource::EShSourceGlsl, m_type, glslang::EShClientVulkan, client_input_semantic_version);
-        shader.setEnvClient(glslang::EShClient::EShClientVulkan, glslang::EShTargetClientVersion::EShTargetVulkan_1_0);
-        shader.setEnvTarget(glslang::EShTargetLanguage::EshTargetSpv,
-                            glslang::EShTargetLanguageVersion::EShTargetSpv_1_4);
-        constexpr auto message = static_cast<EShMessages>(EShMsgSpvRules | EShMsgDebugInfo | EShMsgSpvRules);
-        if (constexpr int default_version = 100;
-            !shader.parse(GetDefaultResources(), default_version, false, message)) {
-            throw std::runtime_error(
-                    std::format("Can't parse shader: {}, {}", shader.getInfoLog(), shader.getInfoDebugLog()));
-        }
-
-        glslang::TProgram program;
-        program.addShader(&shader);
-        if (!program.link(message)) {
-            throw std::runtime_error(
-                    std::format("Can't link shader: {}, {}", program.getInfoLog(), program.getInfoDebugLog()));
-        }
-        std::vector<uint32_t> spir_v;
-        spv::SpvBuildLogger build_logger;
-        glslang::SpvOptions spir_v_options{ .generateDebugInfo = true,
-                                            .emitNonSemanticShaderDebugInfo = true,
-                                            .emitNonSemanticShaderDebugSource = true };
-
-        glslang::GlslangToSpv(*program.getIntermediate(m_type), spir_v, &build_logger, &spir_v_options);
-        return spir_v;
-    };
+    [[nodiscard]] auto compile() const -> std::vector<uint32_t>;
 
 private:
     static void initializeContext() {
@@ -154,56 +123,73 @@ private:
     std::string m_data;
 };
 
-export auto createShaderModule(const ShaderType type, const std::string_view file_name, const vk::raii::Device& device, const Logger& logger) -> vk::raii::ShaderModule {
+
+export auto createShaderModule(const vk::raii::Device& device, const std::span<const uint32_t> spir_v,
+                               const Logger& logger) -> vk::raii::ShaderModule {
     try {
-        const auto data = readFile<std::string>(getBasePath(ShaderLanguage::glsl) / file_name);
-        const auto spir_v = ShaderCompiler(type, data).compile();
         return device.createShaderModule(
                 vk::ShaderModuleCreateInfo{ .codeSize = spir_v.size() * 4, .pCode = spir_v.data() });
     } catch (const std::exception& e) {
         logger.error("Cannot create shader module, {}", e.what());
         throw;
     }
+}
 
+
+export template <typename Compiler>
+auto createShaderModule(const vk::raii::Device& device, const Compiler& compiler, const Logger& logger)
+        -> vk::raii::ShaderModule {
+    try {
+        const auto spir_v = compiler.compile();
+        return createShaderModule(device, std::span(spir_v), logger);
+    } catch (const std::exception& e) {
+        logger.error("Cannot create shader module, {}", e.what());
+        throw;
+    }
+}
+
+export auto createShaderModule(const ShaderType type, const std::string_view file_name, const vk::raii::Device& device,
+                               const Logger& logger) -> vk::raii::ShaderModule {
+    try {
+        const auto data = readFile<std::string>(getBasePath(ShaderLanguage::glsl) / file_name);
+        return createShaderModule(device, ShaderCompiler(type, data), logger);
+        const auto spir_v = ShaderCompiler(type, data).compile();
+    } catch (const std::exception& e) {
+        logger.error("Cannot create shader module, {}", e.what());
+        throw;
+    }
 }
 
 export class VulkanShader {
 public:
-
-    static auto create(const ShaderType type, const std::string_view file_name, const vk::raii::Device& device, const Logger& logger) -> VulkanShader {
+    static auto create(const ShaderType type, const std::string_view file_name, const vk::raii::Device& device,
+                       const Logger& logger) -> VulkanShader {
         try {
-            const auto data = readFile<std::string>(getBasePath(ShaderLanguage::glsl) / file_name);
-            return VulkanShader(type, data, device, logger);
+            auto shader = createShaderModule(type, file_name, device, logger);
+            return VulkanShader(toVkShaderStageFlag(type), std::move(shader));
         } catch (const std::exception& e) {
             logger.error("Cannot create shader module, {}", e.what());
             throw;
         }
-
     }
 
-    VulkanShader(const ShaderType type, const std::string& data, const vk::raii::Device& device, const Logger& logger) {
-        try {
-            const auto spir_v = ShaderCompiler(type, data).compile();
-            m_shader_stage = toVkShaderStageFlag(type);
-            m_shader_module = device.createShaderModule(
-                    vk::ShaderModuleCreateInfo{ .codeSize = spir_v.size() * 4, .pCode = spir_v.data() });
-        } catch (const std::exception& e) {
-            logger.error("Cannot create shader module: {}", e.what());
-            throw std::runtime_error("Cannot create shader module");
-        }
-    }
+    VulkanShader(vk::ShaderStageFlagBits shader_stage_flag_bits, vk::raii::ShaderModule shader_module,
+                 const std::string_view entry_point = "main")
+        : m_shader_stage(std::move(shader_stage_flag_bits)), m_shader_module(std::move(shader_module)),
+          m_entry_point(entry_point) {}
 
     [[nodiscard]] auto getShaderStage() const -> vk::PipelineShaderStageCreateInfo {
         return vk::PipelineShaderStageCreateInfo{
             .stage = m_shader_stage,
             .module = *m_shader_module,
-            .pName = "main",
+            .pName = m_entry_point.c_str(),
         };
     }
 
 private:
     vk::ShaderStageFlagBits m_shader_stage;
-    vk::raii::ShaderModule m_shader_module{nullptr};
+    vk::raii::ShaderModule m_shader_module;
+    std::string m_entry_point;
 };
 
 }// namespace th

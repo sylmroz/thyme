@@ -9,7 +9,7 @@ namespace th {
 VulkanScenePipeline::VulkanScenePipeline(const VulkanDeviceRAII& device,
                                          const vk::PipelineRenderingCreateInfo& pipeline_rendering_create_info,
                                          std::vector<VulkanModel>& models,
-                                         const VulkanUniformBuffer<CameraMatrices>& camera_matrices, Logger& logger) {
+                                         const vk::DescriptorBufferInfo descriptor_buffer_info, Logger& logger) {
     constexpr auto uboBinding =
             vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex);
     constexpr auto cameraUboBinding =
@@ -35,7 +35,11 @@ VulkanScenePipeline::VulkanScenePipeline(const VulkanDeviceRAII& device,
                                            .descriptorSetCount = static_cast<uint32_t>(descriptorSetLayouts.size()),
                                            .pSetLayouts = descriptorSetLayouts.data() });
 
-    const auto cameraDescriptorBufferInfo = camera_matrices.getDescriptorBufferInfos();
+    m_pipeline_layout = device.logical_device.createPipelineLayout(vk::PipelineLayoutCreateInfo{
+        .setLayoutCount = 1,
+        .pSetLayouts = &(*m_descriptor_set_layout),
+    });
+
     for (const auto [descriptorSet, model] : std::views::zip(m_descriptor_sets, models)) {
         const auto descriptorBufferInfo = model.getUniformBufferObject().getDescriptorBufferInfos();
         const auto descriptorImageInfo =
@@ -47,7 +51,7 @@ VulkanScenePipeline::VulkanScenePipeline(const VulkanDeviceRAII& device,
                                     .dstArrayElement = 0u,
                                     .descriptorCount = 1u,
                                     .descriptorType = vk::DescriptorType::eUniformBuffer,
-                                    .pBufferInfo = &cameraDescriptorBufferInfo,
+                                    .pBufferInfo = &descriptor_buffer_info,
                             },
                             vk::WriteDescriptorSet{
                                     .dstSet = descriptorSet,
@@ -75,10 +79,6 @@ VulkanScenePipeline::VulkanScenePipeline(const VulkanDeviceRAII& device,
     const auto fragmentShaderStageInfo = fragment_shader.getShaderStage();
     const auto shaderStages = std::vector{ vertexShaderStageInfo, fragmentShaderStageInfo };
 
-    m_pipeline_layout = device.logical_device.createPipelineLayout(vk::PipelineLayoutCreateInfo{
-            .setLayoutCount = 1,
-            .pSetLayouts = &(*m_descriptor_set_layout),
-    });
     m_pipeline = createVulkanGraphicsPipeline(device.logical_device,
                                               *m_pipeline_layout,
                                               device.max_msaa_samples,

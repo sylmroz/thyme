@@ -25,6 +25,7 @@ set(SRC_FILES
         vulkan_graphic_pipeline.cpp
         vulkan_model.cpp
         vulkan_renderer.cpp
+        vulkan_shader.cpp
         vulkan_swapchain.cpp
         vulkan_texture.cpp
 )
