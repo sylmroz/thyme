@@ -88,13 +88,24 @@ void VulkanRenderer::draw(const VulkanDeviceRAII& device) {
     constexpr auto depth_clear_value = vk::ClearValue(vk::ClearDepthStencilValue(1.0f, 0));
 
     m_color_image_memory.transitImageLayout(
-        command_buffer,
-        ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eUndefined,
-                               .newLayout = vk::ImageLayout::eColorAttachmentOptimal });
+            command_buffer,
+            ImageTransition{ .layout = vk::ImageLayout::eColorAttachmentOptimal,
+                             .pipeline_stage = vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                             .access_flag_bits = vk::AccessFlagBits2::eColorAttachmentWrite });
     m_resolve_color_image_memory.transitImageLayout(
             command_buffer,
+            ImageTransition{ .layout = vk::ImageLayout::eColorAttachmentOptimal,
+                             .pipeline_stage = vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                             .access_flag_bits = vk::AccessFlagBits2::eColorAttachmentWrite });
+
+    /*m_color_image_memory.transitImageLayout(
+            command_buffer,
             ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eUndefined,
-                                   .newLayout = vk::ImageLayout::eColorAttachmentOptimal });
+                                   .newLayout = vk::ImageLayout::eColorAttachmentOptimal });*/
+    /*m_resolve_color_image_memory.transitImageLayout(
+            command_buffer,
+            ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eUndefined,
+                                   .newLayout = vk::ImageLayout::eColorAttachmentOptimal });*/
 
     const auto color_attachment = vk::RenderingAttachmentInfo{
         .imageView = m_color_image_memory.getImageView(),
@@ -107,10 +118,10 @@ void VulkanRenderer::draw(const VulkanDeviceRAII& device) {
         .clearValue = clear_color_values,
     };
 
-    m_depth_image_memory.transitImageLayout(
-            command_buffer,
-            ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eUndefined,
-                                   .newLayout = vk::ImageLayout::eDepthAttachmentOptimal });
+    m_depth_image_memory.transitImageLayout(command_buffer,
+                                            ImageTransition{ .layout = vk::ImageLayout::eDepthAttachmentOptimal,
+                                                             .pipeline_stage = vk::PipelineStageFlagBits2::eAllCommands,
+                                                             .access_flag_bits = vk::AccessFlagBits2::eMemoryWrite });
 
     const auto depth_attachment = vk::RenderingAttachmentInfo{
         .imageView = m_depth_image_memory.getImageView(),
@@ -137,20 +148,36 @@ void VulkanRenderer::draw(const VulkanDeviceRAII& device) {
     }
     command_buffer.endRendering();
 
-    m_resolve_color_image_memory.transitImageLayout(
+    /*m_resolve_color_image_memory.transitImageLayout(
             command_buffer,
             ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eColorAttachmentOptimal,
-                                   .newLayout = vk::ImageLayout::eTransferSrcOptimal });
+                                   .newLayout = vk::ImageLayout::eTransferSrcOptimal });*/
 
+    m_resolve_color_image_memory.transitImageLayout(
+            command_buffer,
+            ImageTransition{ .layout = vk::ImageLayout::eTransferSrcOptimal,
+                             .pipeline_stage = vk::PipelineStageFlagBits2::eBlit,
+                             .access_flag_bits = vk::AccessFlagBits2::eMemoryRead });
+
+    m_swapchain.transitImageLayout(command_buffer,
+                                   ImageTransition{ .layout = vk::ImageLayout::eTransferDstOptimal,
+                                                    .pipeline_stage = vk::PipelineStageFlagBits2::eBlit,
+                                                    .access_flag_bits = vk::AccessFlagBits2::eMemoryWrite });
 
     m_swapchain.renderImage(m_resolve_color_image_memory.getImage());
-    transitImageLayout(command_buffer,
+
+    m_swapchain.transitImageLayout(
+            command_buffer,
+            ImageTransition{ .layout = vk::ImageLayout::eColorAttachmentOptimal,
+                             .pipeline_stage = vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                             .access_flag_bits = vk::AccessFlagBits2::eColorAttachmentWrite
+                                                 | vk::AccessFlagBits2::eColorAttachmentRead });
+    /*transitImageLayout(command_buffer,
                        m_swapchain.getCurrentSwapchainFrame().image,
                        ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eTransferDstOptimal,
                                               .newLayout = vk::ImageLayout::eColorAttachmentOptimal },
                        1,
-                       vk::ImageAspectFlagBits::eColor
-                       );
+                       vk::ImageAspectFlagBits::eColor);*/
 
     const auto gui_color_attachment = vk::RenderingAttachmentInfo{
         .imageView = m_swapchain.getCurrentSwapchainFrame().image_view,
@@ -176,6 +203,9 @@ void VulkanRenderer::draw(const VulkanDeviceRAII& device) {
 
     command_buffer.endRendering();
 
+    m_swapchain.transitImageLayout(command_buffer,
+                                   ImageTransition{ .layout = vk::ImageLayout::ePresentSrcKHR,
+                                                    .pipeline_stage = vk::PipelineStageFlagBits2::eBottomOfPipe });
     m_swapchain.submitFrame();
 }
 }// namespace th

@@ -8,7 +8,7 @@ SwapchainFrames::SwapchainFrames(const vk::raii::Device& device, const vk::raii:
                                  const vk::Format format) {
     m_images = swapchain.getImages();
     for (const auto image : m_images) {
-        m_imageViews.emplace_back(device.createImageView(vk::ImageViewCreateInfo{
+        m_image_views.emplace_back(device.createImageView(vk::ImageViewCreateInfo{
                 .image = image,
                 .viewType = vk::ImageViewType::e2D,
                 .format = format,
@@ -67,6 +67,10 @@ VulkanSwapchain::VulkanSwapchain(const VulkanDeviceRAII& device, const vk::Surfa
     std::generate_n(std::back_inserter(m_image_rendering_semaphore), context.image_count, [&device] {
         return device.logical_device.createSemaphore(vk::SemaphoreCreateInfo());
     });
+    for (int i{ 0 }; i < m_swapchain_data.getSwapchainFramesCount(); ++i) {
+        m_transition_states.emplace_back(
+                m_swapchain_data.getSwapchainFrame(i).image, vk::ImageAspectFlagBits::eColor, 1, ImageTransition{});
+    }
 }
 
 auto VulkanSwapchain::prepareFrame() -> bool {
@@ -96,7 +100,8 @@ void VulkanSwapchain::frameResized(const vk::Extent2D resolution) {
 void VulkanSwapchain::prepareRenderMode() {
     const auto commandBuffer = m_command_buffers_pool.get().getBuffer(m_device.logical_device);
     setCommandBufferFrameSize(commandBuffer, m_swapchain_extent);
-    transitImageLayout(commandBuffer,
+
+    /*transitImageLayout(commandBuffer,
                        getCurrentSwapchainFrame().image,
                        ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eUndefined,
                                               .newLayout = vk::ImageLayout::eTransferDstOptimal },
@@ -109,21 +114,21 @@ void VulkanSwapchain::prepareRenderMode() {
                                                    .newAccess = vk::AccessFlagBits::eMemoryWrite
                                                                 | vk::AccessFlagBits::eMemoryRead },
                        vk::ImageAspectFlagBits::eColor,
-                       1);
+                       1);*/
 }
 
 void VulkanSwapchain::preparePresentMode() {
-    const auto commandBuffer = m_command_buffers_pool.get().getBuffer(m_device.logical_device);
+    /*const auto commandBuffer = m_command_buffers_pool.get().getBuffer(m_device.logical_device);
     transitImageLayout(commandBuffer,
                        m_swapchain_data.getSwapchainFrame(m_current_image_index).image,
                        ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eColorAttachmentOptimal,
                                               .newLayout = vk::ImageLayout::ePresentSrcKHR },
                        1,
-                       vk::ImageAspectFlagBits::eColor);
+                       vk::ImageAspectFlagBits::eColor);*/
 }
 
 void VulkanSwapchain::submitFrame() {
-    preparePresentMode();
+    //preparePresentMode();
     const auto presentationQueue = m_device.getPresentationQueue();
     const auto renderFinishedSemaphore = *m_image_rendering_semaphore[m_current_image_index];
     m_command_buffers_pool.submit(renderFinishedSemaphore);
@@ -155,6 +160,10 @@ void VulkanSwapchain::renderImage(const vk::Image image) {
               blitSize,
               getCurrentSwapchainFrame().image,
               blitSize);
+}
+
+void VulkanSwapchain::transitImageLayout(const vk::CommandBuffer command_buffer, const ImageTransition& transition) {
+    m_transition_states[m_current_image_index].transitTo(command_buffer, transition);
 }
 
 auto VulkanSwapchain::hasResized() const -> bool {

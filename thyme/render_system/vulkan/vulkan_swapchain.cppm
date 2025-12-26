@@ -41,12 +41,12 @@ private:
             constexpr auto message = "SwapChainFrames index out of range";
             throw std::out_of_range(message);
         }
-        return SwapchainFrame{ .image = m_images[index], .image_view = m_imageViews[index] };
+        return SwapchainFrame{ .image = m_images[index], .image_view = m_image_views[index] };
     }
 
 private:
     std::vector<vk::Image> m_images;
-    std::vector<vk::raii::ImageView> m_imageViews;
+    std::vector<vk::raii::ImageView> m_image_views;
 };
 
 export class SwapchainData {
@@ -107,6 +107,8 @@ public:
         return m_swapchain_data.getSwapchainFrame(m_current_image_index);
     }
 
+    void transitImageLayout(vk::CommandBuffer command_buffer, const ImageTransition& transition);
+
     [[nodiscard]] auto hasResized() const -> bool;
 
 private:
@@ -124,6 +126,7 @@ private:
     Logger& m_logger;
 
     std::vector<vk::raii::Semaphore> m_image_rendering_semaphore;
+    std::vector<ImageLayoutTransitionState> m_transition_states;
 };
 
 }// namespace th

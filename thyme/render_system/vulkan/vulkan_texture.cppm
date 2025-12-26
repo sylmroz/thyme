@@ -50,7 +50,8 @@ private:
 
 export class VulkanImageMemory {
 public:
-    VulkanImageMemory(const VulkanDeviceRAII& device, vk::Extent3D resolution, VulkanImageMemoryCreator memory_creator);
+    VulkanImageMemory(const VulkanDeviceRAII& device, vk::Extent3D resolution, VulkanImageMemoryCreator memory_creator,
+                      const ImageTransition& image_transition);
 
     [[nodiscard]] auto getImage() const noexcept -> vk::Image {
         return *m_image_memory_image_view.image;
@@ -73,6 +74,8 @@ public:
 
     void transitImageLayout(const VulkanDeviceRAII& device, ImageLayoutTransition layout_transition) const;
     void transitImageLayout(vk::CommandBuffer command_buffer, ImageLayoutTransition layout_transition) const;
+    void transitImageLayout(const VulkanDeviceRAII& device, const ImageTransition& transition);
+    void transitImageLayout(vk::CommandBuffer command_buffer, const ImageTransition& transition);
 
     void copyTo(vk::CommandBuffer command_buffer, const VulkanImageMemory& dst_image) const;
     void copyTo(vk::CommandBuffer command_buffer, vk::Image image) const;
@@ -84,6 +87,7 @@ private:
     vk::Extent3D m_extent{};
 
     VulkanImageMemoryCreator m_image_memory_creator;
+    ImageLayoutTransitionState m_image_layout_transition;
 };
 
 export class VulkanDepthImageMemory: public VulkanImageMemory {

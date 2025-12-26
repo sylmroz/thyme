@@ -8,7 +8,6 @@ import vulkan;
 import th.scene.model;
 
 export namespace th {
-
 struct QueueFamilyIndices {
     explicit QueueFamilyIndices(vk::PhysicalDevice device, std::optional<vk::SurfaceKHR> surface);
 
@@ -174,19 +173,19 @@ constexpr auto getAttributeDescriptions() -> std::array<vk::VertexInputAttribute
 
 [[nodiscard]] inline auto findMemoryType(const vk::PhysicalDevice device, const uint32_t typeFilter,
                                          const vk::MemoryPropertyFlags properties) -> uint32_t {
-    const auto& memProperties = device.getMemoryProperties();
-    for (uint32_t i{ 0 }; i < memProperties.memoryTypeCount; ++i) {
-        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+    const auto& mem_properties = device.getMemoryProperties();
+    for (uint32_t i{ 0 }; i < mem_properties.memoryTypeCount; ++i) {
+        if ((typeFilter & (1 << i)) && (mem_properties.memoryTypes[i].propertyFlags & properties) == properties) {
             return i;
         }
     }
     throw std::runtime_error("failed to find suitable memory type!");
 }
 
-inline void copyBuffer(const vk::Device device, const vk::CommandPool commandPool, const vk::Queue graphicQueue,
-                       const vk::Buffer src_buffer, const vk::Buffer dstBuffer, const size_t size) {
-    singleTimeCommand(device, commandPool, graphicQueue, [&](const vk::CommandBuffer& commandBuffer) -> void {
-        commandBuffer.copyBuffer(src_buffer, dstBuffer, { vk::BufferCopy(0, 0, size) });
+inline void copyBuffer(const vk::Device device, const vk::CommandPool command_pool, const vk::Queue graphic_queue,
+                       const vk::Buffer src_buffer, const vk::Buffer dst_buffer, const size_t size) {
+    singleTimeCommand(device, command_pool, graphic_queue, [&](const vk::CommandBuffer& command_buffer) -> void {
+        command_buffer.copyBuffer(src_buffer, dst_buffer, { vk::BufferCopy(0, 0, size) });
     });
 }
 
@@ -203,6 +202,27 @@ struct ImagePipelineStageTransition {
 struct ImageAccessFlagsTransition {
     vk::AccessFlags oldAccess;
     vk::AccessFlags newAccess;
+};
+
+struct ImageTransition {
+    vk::ImageLayout layout{ vk::ImageLayout::eUndefined };
+    vk::PipelineStageFlags2 pipeline_stage{ vk::PipelineStageFlagBits2::eAllCommands };
+    vk::AccessFlags2 access_flag_bits{ vk::AccessFlagBits2::eNone };
+    uint32_t queue_family_index{ vk::QueueFamilyIgnored };
+};
+
+class ImageLayoutTransitionState {
+public:
+    explicit ImageLayoutTransitionState(vk::Image image, vk::ImageAspectFlags aspect_flags, uint32_t mip_levels,
+                                        ImageTransition initial_state);
+
+    void transitTo(vk::CommandBuffer command_buffer, const ImageTransition& new_state);
+
+private:
+    vk::Image m_image;
+    vk::ImageAspectFlags m_aspect_flags;
+    uint32_t m_mip_levels;
+    ImageTransition m_image_transition;
 };
 
 void transitImageLayout(vk::CommandBuffer command_buffer, vk::Image image, ImageLayoutTransition layout_transition,
@@ -273,6 +293,36 @@ SwapChainSupportDetails::SwapChainSupportDetails(const vk::PhysicalDevice& devic
     capabilities = device.getSurfaceCapabilitiesKHR(surface);
     formats = device.getSurfaceFormatsKHR(surface);
     presentModes = device.getSurfacePresentModesKHR(surface);
+}
+
+ImageLayoutTransitionState::ImageLayoutTransitionState(const vk::Image image, const vk::ImageAspectFlags aspect_flags,
+                                                       const uint32_t mip_levels, ImageTransition initial_state)
+    : m_image{ image }, m_aspect_flags{ aspect_flags }, m_mip_levels{ mip_levels },
+      m_image_transition{ std::move(initial_state) } {}
+
+void ImageLayoutTransitionState::transitTo(const vk::CommandBuffer command_buffer, const ImageTransition& new_state) {
+    const auto image_memory_barrier =
+            vk::ImageMemoryBarrier2{ .srcStageMask = m_image_transition.pipeline_stage,
+                                     .srcAccessMask = m_image_transition.access_flag_bits,
+                                     .dstStageMask = new_state.pipeline_stage,
+                                     .dstAccessMask = new_state.access_flag_bits,
+                                     .oldLayout = m_image_transition.layout,
+                                     .newLayout = new_state.layout,
+                                     .srcQueueFamilyIndex = m_image_transition.queue_family_index,
+                                     .dstQueueFamilyIndex = new_state.queue_family_index,
+                                     .image = m_image,
+                                     .subresourceRange = vk::ImageSubresourceRange{
+                                             .aspectMask = m_aspect_flags,
+                                             .baseMipLevel = 0u,
+                                             .levelCount = m_mip_levels,
+                                             .baseArrayLayer = 0u,
+                                             .layerCount = 1u,
+                                     } };
+    m_image_transition = new_state;
+    command_buffer.pipelineBarrier2(vk::DependencyInfo{
+            .imageMemoryBarrierCount = 1,
+            .pImageMemoryBarriers = &image_memory_barrier,
+    });
 }
 
 void transitImageLayout(const vk::CommandBuffer command_buffer, const vk::Image image,
