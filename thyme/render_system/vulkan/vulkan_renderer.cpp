@@ -87,16 +87,19 @@ void VulkanRenderer::draw(const VulkanDeviceRAII& device) {
     constexpr auto clear_color_values = vk::ClearValue(vk::ClearColorValue(1.0f, 0.0f, 1.0f, 1.0f));
     constexpr auto depth_clear_value = vk::ClearValue(vk::ClearDepthStencilValue(1.0f, 0));
 
-    m_color_image_memory.transitImageLayout(
-            command_buffer,
+    auto color_image_barrier = m_color_image_memory.getImageMemoryBarrier(
             ImageTransition{ .layout = vk::ImageLayout::eColorAttachmentOptimal,
                              .pipeline_stage = vk::PipelineStageFlagBits2::eColorAttachmentOutput,
                              .access_flag_bits = vk::AccessFlagBits2::eColorAttachmentWrite });
-    m_resolve_color_image_memory.transitImageLayout(
-            command_buffer,
+    auto resolve_color_image_barrier = m_resolve_color_image_memory.getImageMemoryBarrier(
             ImageTransition{ .layout = vk::ImageLayout::eColorAttachmentOptimal,
                              .pipeline_stage = vk::PipelineStageFlagBits2::eColorAttachmentOutput,
                              .access_flag_bits = vk::AccessFlagBits2::eColorAttachmentWrite });
+    const auto image_barriers = std::array{ color_image_barrier, resolve_color_image_barrier };
+    command_buffer.pipelineBarrier2(vk::DependencyInfo{
+            .imageMemoryBarrierCount = image_barriers.size(),
+            .pImageMemoryBarriers = image_barriers.data(),
+    });
 
     /*m_color_image_memory.transitImageLayout(
             command_buffer,

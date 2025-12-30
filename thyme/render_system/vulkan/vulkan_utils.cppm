@@ -218,6 +218,12 @@ public:
 
     void transitTo(vk::CommandBuffer command_buffer, const ImageTransition& new_state);
 
+    [[nodiscard]] auto getImageMemoryBarrier(const ImageTransition& new_state) -> vk::ImageMemoryBarrier2;
+
+    void setImage(const vk::Image image) {
+        m_image = image;
+    }
+
 private:
     vk::Image m_image;
     vk::ImageAspectFlags m_aspect_flags;
@@ -301,28 +307,32 @@ ImageLayoutTransitionState::ImageLayoutTransitionState(const vk::Image image, co
       m_image_transition{ std::move(initial_state) } {}
 
 void ImageLayoutTransitionState::transitTo(const vk::CommandBuffer command_buffer, const ImageTransition& new_state) {
-    const auto image_memory_barrier =
-            vk::ImageMemoryBarrier2{ .srcStageMask = m_image_transition.pipeline_stage,
-                                     .srcAccessMask = m_image_transition.access_flag_bits,
-                                     .dstStageMask = new_state.pipeline_stage,
-                                     .dstAccessMask = new_state.access_flag_bits,
-                                     .oldLayout = m_image_transition.layout,
-                                     .newLayout = new_state.layout,
-                                     .srcQueueFamilyIndex = m_image_transition.queue_family_index,
-                                     .dstQueueFamilyIndex = new_state.queue_family_index,
-                                     .image = m_image,
-                                     .subresourceRange = vk::ImageSubresourceRange{
-                                             .aspectMask = m_aspect_flags,
-                                             .baseMipLevel = 0u,
-                                             .levelCount = m_mip_levels,
-                                             .baseArrayLayer = 0u,
-                                             .layerCount = 1u,
-                                     } };
-    m_image_transition = new_state;
+    const auto image_memory_barrier = getImageMemoryBarrier(new_state);
     command_buffer.pipelineBarrier2(vk::DependencyInfo{
             .imageMemoryBarrierCount = 1,
             .pImageMemoryBarriers = &image_memory_barrier,
     });
+}
+
+auto ImageLayoutTransitionState::getImageMemoryBarrier(const ImageTransition& new_state) -> vk::ImageMemoryBarrier2 {
+    const auto barrier = vk::ImageMemoryBarrier2{ .srcStageMask = m_image_transition.pipeline_stage,
+                                            .srcAccessMask = m_image_transition.access_flag_bits,
+                                            .dstStageMask = new_state.pipeline_stage,
+                                            .dstAccessMask = new_state.access_flag_bits,
+                                            .oldLayout = m_image_transition.layout,
+                                            .newLayout = new_state.layout,
+                                            .srcQueueFamilyIndex = m_image_transition.queue_family_index,
+                                            .dstQueueFamilyIndex = new_state.queue_family_index,
+                                            .image = m_image,
+                                            .subresourceRange = vk::ImageSubresourceRange{
+                                                    .aspectMask = m_aspect_flags,
+                                                    .baseMipLevel = 0u,
+                                                    .levelCount = m_mip_levels,
+                                                    .baseArrayLayer = 0u,
+                                                    .layerCount = 1u,
+                                            } };
+    m_image_transition = new_state;
+    return barrier;
 }
 
 void transitImageLayout(const vk::CommandBuffer command_buffer, const vk::Image image,

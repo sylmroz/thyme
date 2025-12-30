@@ -128,7 +128,7 @@ void VulkanSwapchain::preparePresentMode() {
 }
 
 void VulkanSwapchain::submitFrame() {
-    //preparePresentMode();
+    // preparePresentMode();
     const auto presentationQueue = m_device.getPresentationQueue();
     const auto renderFinishedSemaphore = *m_image_rendering_semaphore[m_current_image_index];
     m_command_buffers_pool.submit(renderFinishedSemaphore);
@@ -197,6 +197,10 @@ auto VulkanSwapchain::recreateSwapchain() -> bool {
                                      m_swapchain_extent,
                                      m_surface,
                                      m_swapchain_data.getSwapchain());
+    for (int i{ 0 }; i < m_swapchain_data.getSwapchainFramesCount(); ++i) {
+        m_transition_states[i] = ImageLayoutTransitionState(
+                m_swapchain_data.getSwapchainFrame(i).image, vk::ImageAspectFlagBits::eColor, 1, ImageTransition{});
+    }
     return true;
 }
 

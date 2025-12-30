@@ -77,6 +77,10 @@ public:
     void transitImageLayout(const VulkanDeviceRAII& device, const ImageTransition& transition);
     void transitImageLayout(vk::CommandBuffer command_buffer, const ImageTransition& transition);
 
+    [[nodiscard]] auto getImageMemoryBarrier(const ImageTransition& transition) -> vk::ImageMemoryBarrier2 {
+        return m_image_layout_transition.getImageMemoryBarrier(transition);
+    }
+
     void copyTo(vk::CommandBuffer command_buffer, const VulkanImageMemory& dst_image) const;
     void copyTo(vk::CommandBuffer command_buffer, vk::Image image) const;
     void blitTo(vk::CommandBuffer command_buffer, const VulkanImageMemory& dst_image) const;
@@ -88,6 +92,7 @@ private:
 
     VulkanImageMemoryCreator m_image_memory_creator;
     ImageLayoutTransitionState m_image_layout_transition;
+    ImageTransition m_initial_state;
 };
 
 export class VulkanDepthImageMemory: public VulkanImageMemory {

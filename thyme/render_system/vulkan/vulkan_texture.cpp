@@ -127,7 +127,8 @@ VulkanImageMemory::VulkanImageMemory(const VulkanDeviceRAII& device, const vk::E
     : m_image_memory_image_view(memory_creator.create(device, resolution)), m_extent(resolution),
       m_image_memory_creator(std::move(memory_creator)),
       m_image_layout_transition(m_image_memory_image_view.image, m_image_memory_creator.getImageAspectFlags(),
-                                m_image_memory_creator.getMipLevels(), image_transition) {
+                                m_image_memory_creator.getMipLevels(), image_transition),
+      m_initial_state{ image_transition } {
     resize(device, resolution);
 }
 
@@ -141,6 +142,10 @@ void VulkanImageMemory::resize(const VulkanDeviceRAII& device, const vk::Extent3
     }
     m_extent = resolution;
     m_image_memory_image_view = m_image_memory_creator.create(device, m_extent);
+    m_image_layout_transition = ImageLayoutTransitionState(m_image_memory_image_view.image,
+                                                           m_image_memory_creator.getImageAspectFlags(),
+                                                           m_image_memory_creator.getMipLevels(),
+                                                           m_initial_state);
 }
 
 void VulkanImageMemory::transitImageLayout(const VulkanDeviceRAII& device,
