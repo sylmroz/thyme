@@ -87,25 +87,6 @@ public:
     }
 };
 
-[[nodiscard]] inline auto createDescriptorPool(const vk::Device device,
-                                               const std::vector<vk::DescriptorPoolSize>& descriptor_sizes)
-        -> vk::UniqueDescriptorPool {
-    const auto maxSet = std::accumulate(std::begin(descriptor_sizes),
-                                        std::end(descriptor_sizes),
-                                        uint32_t{ 0 },
-                                        [](const uint32_t sum, const vk::DescriptorPoolSize& descriptorPoolSize) {
-                                            return sum + descriptorPoolSize.descriptorCount;
-                                        });
-
-
-    return device.createDescriptorPoolUnique(vk::DescriptorPoolCreateInfo{
-            .flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
-            .maxSets = maxSet,
-            .poolSizeCount = static_cast<uint32_t>(descriptor_sizes.size()),
-            .pPoolSizes = descriptor_sizes.data(),
-    });
-}
-
 [[nodiscard]] inline auto createDescriptorPool(const vk::raii::Device& device,
                                                const std::span<const vk::DescriptorPoolSize> descriptor_sizes)
         -> vk::raii::DescriptorPool {
@@ -363,7 +344,7 @@ void transitImageLayout(const vk::CommandBuffer command_buffer, const vk::Image 
 void transitImageLayout(const vk::CommandBuffer command_buffer, const vk::Image image,
                         const ImageLayoutTransition layout_transition, const uint32_t mip_levels,
                         const vk::ImageAspectFlags aspect_flags) {
-    //const auto [old_layout, new_layout] = layout_transition;
+    // const auto [old_layout, new_layout] = layout_transition;
     /*if (old_layout == vk::ImageLayout::eUndefined && new_layout == vk::ImageLayout::eTransferDstOptimal) {
         transitImageLayout(command_buffer,
                            image,

@@ -9,7 +9,7 @@ namespace th {
 VulkanScenePipeline::VulkanScenePipeline(const VulkanDeviceRAII& device,
                                          const vk::PipelineRenderingCreateInfo& pipeline_rendering_create_info,
                                          std::vector<VulkanModel>& models,
-                                         const vk::DescriptorBufferInfo descriptor_buffer_info, Logger& logger) {
+                                         const vk::DescriptorBufferInfo& descriptor_buffer_info, Logger& logger) {
     constexpr auto uboBinding =
             vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex);
     constexpr auto cameraUboBinding =
@@ -24,20 +24,21 @@ VulkanScenePipeline::VulkanScenePipeline(const VulkanDeviceRAII& device,
 
     m_descriptor_pool = createDescriptorPool(
             device.logical_device,
-            { vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, static_cast<uint32_t>(models.size())),
-              vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, static_cast<uint32_t>(models.size())),
-              vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler,
-                                     static_cast<uint32_t>(models.size())) });
+            std::array{
+                    vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, static_cast<uint32_t>(models.size())),
+                    vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, static_cast<uint32_t>(models.size())),
+                    vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler,
+                                           static_cast<uint32_t>(models.size())) });
 
     const auto descriptorSetLayouts = std::vector{ models.size(), *m_descriptor_set_layout };
     m_descriptor_sets = device.logical_device.allocateDescriptorSets(
-            vk::DescriptorSetAllocateInfo{ .descriptorPool = m_descriptor_pool.get(),
+            vk::DescriptorSetAllocateInfo{ .descriptorPool = m_descriptor_pool,
                                            .descriptorSetCount = static_cast<uint32_t>(descriptorSetLayouts.size()),
                                            .pSetLayouts = descriptorSetLayouts.data() });
 
     m_pipeline_layout = device.logical_device.createPipelineLayout(vk::PipelineLayoutCreateInfo{
-        .setLayoutCount = 1,
-        .pSetLayouts = &(*m_descriptor_set_layout),
+            .setLayoutCount = 1,
+            .pSetLayouts = &(*m_descriptor_set_layout),
     });
 
     for (const auto [descriptorSet, model] : std::views::zip(m_descriptor_sets, models)) {
@@ -73,7 +74,8 @@ VulkanScenePipeline::VulkanScenePipeline(const VulkanDeviceRAII& device,
     }
 
     const auto vertex_shader = VulkanShader::create(ShaderType::vertex, "triangle.vert", device.logical_device, logger);
-    const auto fragment_shader = VulkanShader::create(ShaderType::fragment, "triangle.frag", device.logical_device, logger);
+    const auto fragment_shader =
+            VulkanShader::create(ShaderType::fragment, "triangle.frag", device.logical_device, logger);
 
     const auto vertexShaderStageInfo = vertex_shader.getShaderStage();
     const auto fragmentShaderStageInfo = fragment_shader.getShaderStage();
@@ -89,8 +91,7 @@ VulkanScenePipeline::VulkanScenePipeline(const VulkanDeviceRAII& device,
 void VulkanScenePipeline::draw(const vk::CommandBuffer command_buffer, const std::vector<VulkanModel>& models) const {
     command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_pipeline);
     for (const auto& [model, descriptor] : std::views::zip(models, m_descriptor_sets)) {
-        command_buffer.bindDescriptorSets(
-                vk::PipelineBindPoint::eGraphics, *m_pipeline_layout, 0, { descriptor }, {});
+        command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *m_pipeline_layout, 0, { descriptor }, {});
         model.draw(command_buffer);
     }
 }
@@ -169,22 +170,21 @@ auto createVulkanGraphicsPipeline(const vk::raii::Device& logical_device,
                                                      .minDepthBounds = 0.0f,
                                                      .maxDepthBounds = 1.0f };
 
-    return logical_device
-            .createGraphicsPipeline(nullptr,
-                                          vk::GraphicsPipelineCreateInfo{
-                                                  .pNext = &pipeline_rendering_create_info,
-                                                  .stageCount = static_cast<uint32_t>(shader_stages.size()),
-                                                  .pStages = shader_stages.data(),
-                                                  .pVertexInputState = &vertex_input_state_create_info,
-                                                  .pInputAssemblyState = &input_assembly_state_create_info,
-                                                  .pViewportState = &viewport_state,
-                                                  .pRasterizationState = &rasterizer,
-                                                  .pMultisampleState = &multisampling,
-                                                  .pDepthStencilState = &dept_stencil_state_create_info,
-                                                  .pColorBlendState = &color_blend_state_create_info,
-                                                  .pDynamicState = &dynamic_state_create_info,
-                                                  .layout = pipeline_layout,
-                                          });
+    return logical_device.createGraphicsPipeline(nullptr,
+                                                 vk::GraphicsPipelineCreateInfo{
+                                                         .pNext = &pipeline_rendering_create_info,
+                                                         .stageCount = static_cast<uint32_t>(shader_stages.size()),
+                                                         .pStages = shader_stages.data(),
+                                                         .pVertexInputState = &vertex_input_state_create_info,
+                                                         .pInputAssemblyState = &input_assembly_state_create_info,
+                                                         .pViewportState = &viewport_state,
+                                                         .pRasterizationState = &rasterizer,
+                                                         .pMultisampleState = &multisampling,
+                                                         .pDepthStencilState = &dept_stencil_state_create_info,
+                                                         .pColorBlendState = &color_blend_state_create_info,
+                                                         .pDynamicState = &dynamic_state_create_info,
+                                                         .layout = pipeline_layout,
+                                                 });
 }
 
 }// namespace th

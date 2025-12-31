@@ -86,21 +86,17 @@ void VulkanRenderer::draw(const VulkanDeviceRAII& device) {
 
     const auto command_buffer = m_command_buffers_pool.get().getBuffer(device.logical_device);
     setCommandBufferFrameSize(command_buffer, m_swapchain.getSwapchainExtent());
+
+    dependency_tracker.addImageBarrier(m_color_image_memory.getImageMemoryBarrier(
+            ImageTransition{ .layout = vk::ImageLayout::eColorAttachmentOptimal,
+                             .pipeline_stage = vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                             .access_flag_bits = vk::AccessFlagBits2::eColorAttachmentWrite }));
+    dependency_tracker.addImageBarrier(m_resolve_color_image_memory.getImageMemoryBarrier(
+            ImageTransition{ .layout = vk::ImageLayout::eColorAttachmentOptimal,
+                             .pipeline_stage = vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                             .access_flag_bits = vk::AccessFlagBits2::eColorAttachmentWrite }));
+
     constexpr auto clear_color_values = vk::ClearValue(vk::ClearColorValue(1.0f, 0.0f, 1.0f, 1.0f));
-    constexpr auto depth_clear_value = vk::ClearValue(vk::ClearDepthStencilValue(1.0f, 0));
-
-    auto color_image_barrier = m_color_image_memory.getImageMemoryBarrier(
-            ImageTransition{ .layout = vk::ImageLayout::eColorAttachmentOptimal,
-                             .pipeline_stage = vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-                             .access_flag_bits = vk::AccessFlagBits2::eColorAttachmentWrite });
-    dependency_tracker.addImageBarrier(color_image_barrier);
-    auto resolve_color_image_barrier = m_resolve_color_image_memory.getImageMemoryBarrier(
-            ImageTransition{ .layout = vk::ImageLayout::eColorAttachmentOptimal,
-                             .pipeline_stage = vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-                             .access_flag_bits = vk::AccessFlagBits2::eColorAttachmentWrite });
-    dependency_tracker.addImageBarrier(resolve_color_image_barrier);
-
-
     const auto color_attachment = vk::RenderingAttachmentInfo{
         .imageView = m_color_image_memory.getImageView(),
         .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
@@ -117,6 +113,7 @@ void VulkanRenderer::draw(const VulkanDeviceRAII& device) {
                              .pipeline_stage = vk::PipelineStageFlagBits2::eAllCommands,
                              .access_flag_bits = vk::AccessFlagBits2::eMemoryWrite }));
 
+    constexpr auto depth_clear_value = vk::ClearValue(vk::ClearDepthStencilValue(1.0f, 0));
     const auto depth_attachment = vk::RenderingAttachmentInfo{
         .imageView = m_depth_image_memory.getImageView(),
         .imageLayout = vk::ImageLayout::eDepthAttachmentOptimal,
