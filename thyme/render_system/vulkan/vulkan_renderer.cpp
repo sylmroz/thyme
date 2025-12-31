@@ -82,6 +82,8 @@ void VulkanRenderer::draw(const VulkanDeviceRAII& device) {
     m_resolve_color_image_memory.resize(device, m_swapchain.getSwapchainExtent());
     m_depth_image_memory.resize(device, m_swapchain.getSwapchainExtent());
 
+    DependencyTracker dependency_tracker;
+
     const auto command_buffer = m_command_buffers_pool.get().getBuffer(device.logical_device);
     setCommandBufferFrameSize(command_buffer, m_swapchain.getSwapchainExtent());
     constexpr auto clear_color_values = vk::ClearValue(vk::ClearColorValue(1.0f, 0.0f, 1.0f, 1.0f));
@@ -91,24 +93,13 @@ void VulkanRenderer::draw(const VulkanDeviceRAII& device) {
             ImageTransition{ .layout = vk::ImageLayout::eColorAttachmentOptimal,
                              .pipeline_stage = vk::PipelineStageFlagBits2::eColorAttachmentOutput,
                              .access_flag_bits = vk::AccessFlagBits2::eColorAttachmentWrite });
+    dependency_tracker.addImageBarrier(color_image_barrier);
     auto resolve_color_image_barrier = m_resolve_color_image_memory.getImageMemoryBarrier(
             ImageTransition{ .layout = vk::ImageLayout::eColorAttachmentOptimal,
                              .pipeline_stage = vk::PipelineStageFlagBits2::eColorAttachmentOutput,
                              .access_flag_bits = vk::AccessFlagBits2::eColorAttachmentWrite });
-    const auto image_barriers = std::array{ color_image_barrier, resolve_color_image_barrier };
-    command_buffer.pipelineBarrier2(vk::DependencyInfo{
-            .imageMemoryBarrierCount = image_barriers.size(),
-            .pImageMemoryBarriers = image_barriers.data(),
-    });
+    dependency_tracker.addImageBarrier(resolve_color_image_barrier);
 
-    /*m_color_image_memory.transitImageLayout(
-            command_buffer,
-            ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eUndefined,
-                                   .newLayout = vk::ImageLayout::eColorAttachmentOptimal });*/
-    /*m_resolve_color_image_memory.transitImageLayout(
-            command_buffer,
-            ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eUndefined,
-                                   .newLayout = vk::ImageLayout::eColorAttachmentOptimal });*/
 
     const auto color_attachment = vk::RenderingAttachmentInfo{
         .imageView = m_color_image_memory.getImageView(),
@@ -121,10 +112,10 @@ void VulkanRenderer::draw(const VulkanDeviceRAII& device) {
         .clearValue = clear_color_values,
     };
 
-    m_depth_image_memory.transitImageLayout(command_buffer,
-                                            ImageTransition{ .layout = vk::ImageLayout::eDepthAttachmentOptimal,
-                                                             .pipeline_stage = vk::PipelineStageFlagBits2::eAllCommands,
-                                                             .access_flag_bits = vk::AccessFlagBits2::eMemoryWrite });
+    dependency_tracker.addImageBarrier(m_depth_image_memory.getImageMemoryBarrier(
+            ImageTransition{ .layout = vk::ImageLayout::eDepthAttachmentOptimal,
+                             .pipeline_stage = vk::PipelineStageFlagBits2::eAllCommands,
+                             .access_flag_bits = vk::AccessFlagBits2::eMemoryWrite }));
 
     const auto depth_attachment = vk::RenderingAttachmentInfo{
         .imageView = m_depth_image_memory.getImageView(),
@@ -145,27 +136,24 @@ void VulkanRenderer::draw(const VulkanDeviceRAII& device) {
         .pDepthAttachment = &depth_attachment,
     };
 
+    dependency_tracker.flush(command_buffer);
+
     command_buffer.beginRendering(rendering_info);
     for (const auto& pipeline : m_pipelines) {
         pipeline->draw(command_buffer, m_models);
     }
     command_buffer.endRendering();
 
-    /*m_resolve_color_image_memory.transitImageLayout(
-            command_buffer,
-            ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eColorAttachmentOptimal,
-                                   .newLayout = vk::ImageLayout::eTransferSrcOptimal });*/
-
-    m_resolve_color_image_memory.transitImageLayout(
-            command_buffer,
+    dependency_tracker.addImageBarrier(m_resolve_color_image_memory.getImageMemoryBarrier(
             ImageTransition{ .layout = vk::ImageLayout::eTransferSrcOptimal,
                              .pipeline_stage = vk::PipelineStageFlagBits2::eBlit,
-                             .access_flag_bits = vk::AccessFlagBits2::eMemoryRead });
+                             .access_flag_bits = vk::AccessFlagBits2::eMemoryRead }));
 
-    m_swapchain.transitImageLayout(command_buffer,
-                                   ImageTransition{ .layout = vk::ImageLayout::eTransferDstOptimal,
-                                                    .pipeline_stage = vk::PipelineStageFlagBits2::eBlit,
-                                                    .access_flag_bits = vk::AccessFlagBits2::eMemoryWrite });
+    dependency_tracker.addImageBarrier(m_swapchain.getImageMemoryBarrier(
+            ImageTransition{ .layout = vk::ImageLayout::eTransferDstOptimal,
+                             .pipeline_stage = vk::PipelineStageFlagBits2::eBlit,
+                             .access_flag_bits = vk::AccessFlagBits2::eMemoryWrite }));
+    dependency_tracker.flush(command_buffer);
 
     m_swapchain.renderImage(m_resolve_color_image_memory.getImage());
 
@@ -175,12 +163,6 @@ void VulkanRenderer::draw(const VulkanDeviceRAII& device) {
                              .pipeline_stage = vk::PipelineStageFlagBits2::eColorAttachmentOutput,
                              .access_flag_bits = vk::AccessFlagBits2::eColorAttachmentWrite
                                                  | vk::AccessFlagBits2::eColorAttachmentRead });
-    /*transitImageLayout(command_buffer,
-                       m_swapchain.getCurrentSwapchainFrame().image,
-                       ImageLayoutTransition{ .oldLayout = vk::ImageLayout::eTransferDstOptimal,
-                                              .newLayout = vk::ImageLayout::eColorAttachmentOptimal },
-                       1,
-                       vk::ImageAspectFlagBits::eColor);*/
 
     const auto gui_color_attachment = vk::RenderingAttachmentInfo{
         .imageView = m_swapchain.getCurrentSwapchainFrame().image_view,

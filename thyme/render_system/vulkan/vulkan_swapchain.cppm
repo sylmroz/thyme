@@ -108,6 +108,7 @@ public:
     }
 
     void transitImageLayout(vk::CommandBuffer command_buffer, const ImageTransition& transition);
+    auto getImageMemoryBarrier(const ImageTransition& transition) -> vk::ImageMemoryBarrier2;
 
     [[nodiscard]] auto hasResized() const -> bool;
 

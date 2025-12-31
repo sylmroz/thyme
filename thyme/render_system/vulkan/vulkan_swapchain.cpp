@@ -166,6 +166,10 @@ void VulkanSwapchain::transitImageLayout(const vk::CommandBuffer command_buffer,
     m_transition_states[m_current_image_index].transitTo(command_buffer, transition);
 }
 
+auto VulkanSwapchain::getImageMemoryBarrier(const ImageTransition& transition) -> vk::ImageMemoryBarrier2 {
+    return m_transition_states[m_current_image_index].getImageMemoryBarrier(transition);
+}
+
 auto VulkanSwapchain::hasResized() const -> bool {
     const auto caps = m_device.physical_device.getSurfaceCapabilitiesKHR(m_surface);
     return caps.currentExtent.width != m_swapchain_extent.width

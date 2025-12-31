@@ -316,21 +316,21 @@ void ImageLayoutTransitionState::transitTo(const vk::CommandBuffer command_buffe
 
 auto ImageLayoutTransitionState::getImageMemoryBarrier(const ImageTransition& new_state) -> vk::ImageMemoryBarrier2 {
     const auto barrier = vk::ImageMemoryBarrier2{ .srcStageMask = m_image_transition.pipeline_stage,
-                                            .srcAccessMask = m_image_transition.access_flag_bits,
-                                            .dstStageMask = new_state.pipeline_stage,
-                                            .dstAccessMask = new_state.access_flag_bits,
-                                            .oldLayout = m_image_transition.layout,
-                                            .newLayout = new_state.layout,
-                                            .srcQueueFamilyIndex = m_image_transition.queue_family_index,
-                                            .dstQueueFamilyIndex = new_state.queue_family_index,
-                                            .image = m_image,
-                                            .subresourceRange = vk::ImageSubresourceRange{
-                                                    .aspectMask = m_aspect_flags,
-                                                    .baseMipLevel = 0u,
-                                                    .levelCount = m_mip_levels,
-                                                    .baseArrayLayer = 0u,
-                                                    .layerCount = 1u,
-                                            } };
+                                                  .srcAccessMask = m_image_transition.access_flag_bits,
+                                                  .dstStageMask = new_state.pipeline_stage,
+                                                  .dstAccessMask = new_state.access_flag_bits,
+                                                  .oldLayout = m_image_transition.layout,
+                                                  .newLayout = new_state.layout,
+                                                  .srcQueueFamilyIndex = m_image_transition.queue_family_index,
+                                                  .dstQueueFamilyIndex = new_state.queue_family_index,
+                                                  .image = m_image,
+                                                  .subresourceRange = vk::ImageSubresourceRange{
+                                                          .aspectMask = m_aspect_flags,
+                                                          .baseMipLevel = 0u,
+                                                          .levelCount = m_mip_levels,
+                                                          .baseArrayLayer = 0u,
+                                                          .layerCount = 1u,
+                                                  } };
     m_image_transition = new_state;
     return barrier;
 }
@@ -363,7 +363,7 @@ void transitImageLayout(const vk::CommandBuffer command_buffer, const vk::Image 
 void transitImageLayout(const vk::CommandBuffer command_buffer, const vk::Image image,
                         const ImageLayoutTransition layout_transition, const uint32_t mip_levels,
                         const vk::ImageAspectFlags aspect_flags) {
-    const auto [old_layout, new_layout] = layout_transition;
+    //const auto [old_layout, new_layout] = layout_transition;
     /*if (old_layout == vk::ImageLayout::eUndefined && new_layout == vk::ImageLayout::eTransferDstOptimal) {
         transitImageLayout(command_buffer,
                            image,
@@ -450,5 +450,39 @@ void setCommandBufferFrameSize(const vk::CommandBuffer command_buffer, const vk:
                                               1.0f) });
     command_buffer.setScissor(0, { vk::Rect2D(vk::Offset2D(0, 0), frame_size) });
 }
+
+class DependencyTracker {
+public:
+    void addImageBarrier(const vk::ImageMemoryBarrier2& image_barrier) {
+        m_image_memory_barriers.push_back(image_barrier);
+    }
+
+    void addMemoryBarrier(const vk::MemoryBarrier2& memory_barrier) {
+        m_memory_barriers.push_back(memory_barrier);
+    }
+
+    void addBufferMemoryBarrier(const vk::BufferMemoryBarrier2& memory_barrier) {
+        m_buffer_memory_barriers.push_back(memory_barrier);
+    }
+
+    void flush(const vk::CommandBuffer command_buffer) {
+        command_buffer.pipelineBarrier2(vk::DependencyInfo{
+                .memoryBarrierCount = static_cast<std::uint32_t>(m_memory_barriers.size()),
+                .pMemoryBarriers = m_memory_barriers.data(),
+                .bufferMemoryBarrierCount = static_cast<std::uint32_t>(m_buffer_memory_barriers.size()),
+                .pBufferMemoryBarriers = m_buffer_memory_barriers.data(),
+                .imageMemoryBarrierCount = static_cast<std::uint32_t>(m_image_memory_barriers.size()),
+                .pImageMemoryBarriers = m_image_memory_barriers.data(),
+        });
+        m_memory_barriers.clear();
+        m_buffer_memory_barriers.clear();
+        m_image_memory_barriers.clear();
+    }
+
+private:
+    std::vector<vk::MemoryBarrier2> m_memory_barriers;
+    std::vector<vk::BufferMemoryBarrier2> m_buffer_memory_barriers;
+    std::vector<vk::ImageMemoryBarrier2> m_image_memory_barriers;
+};
 
 }// namespace th
