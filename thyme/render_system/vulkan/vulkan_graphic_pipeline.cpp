@@ -18,9 +18,8 @@ VulkanScenePipeline::VulkanScenePipeline(const VulkanDeviceRAII& device,
             2, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eFragment);
     constexpr auto bindings = std::array{ uboBinding, cameraUboBinding, samplerLayoutBinding };
 
-    m_descriptor_set_layout = device.logical_device.createDescriptorSetLayout(
-            vk::DescriptorSetLayoutCreateInfo(vk::DescriptorSetLayoutCreateInfo{
-                    .bindingCount = static_cast<uint32_t>(bindings.size()), .pBindings = bindings.data() }));
+    m_descriptor_set_layout = device.logical_device.createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo{
+            .bindingCount = static_cast<uint32_t>(bindings.size()), .pBindings = bindings.data() });
 
     m_descriptor_pool = createDescriptorPool(
             device.logical_device,
@@ -94,6 +93,13 @@ void VulkanScenePipeline::draw(const vk::CommandBuffer command_buffer, const std
         command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *m_pipeline_layout, 0, { descriptor }, {});
         model.draw(command_buffer);
     }
+}
+
+[[nodiscard]] auto DescriptorLayoutBuilder::build(const vk::raii::Device& device) const
+        -> vk::raii::DescriptorSetLayout {
+    return device.createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo{
+            .bindingCount = static_cast<uint32_t>(m_descriptor_sets_layout_bindings.size()),
+            .pBindings = m_descriptor_sets_layout_bindings.data() });
 }
 
 auto createVulkanGraphicsPipeline(const vk::raii::Device& logical_device,

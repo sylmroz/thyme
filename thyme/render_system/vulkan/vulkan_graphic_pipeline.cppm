@@ -57,12 +57,33 @@ private:
     std::vector<vk::raii::DescriptorSet> m_descriptor_sets;
 };
 
+class DescriptorLayoutBuilder {
+public:
+    void addBinding(const uint32_t binding, const vk::DescriptorType type, const vk::ShaderStageFlagBits stage) {
+        m_descriptor_sets_layout_bindings.emplace_back(vk::DescriptorSetLayoutBinding{
+                .binding = binding,
+                .descriptorType = type,
+                .descriptorCount = 1,
+                .stageFlags = stage,
+        });
+    }
+
+    void addBiding(vk::DescriptorSetLayoutBinding binding) {
+        m_descriptor_sets_layout_bindings.emplace_back(binding);
+    }
+
+    [[nodiscard]] auto build(const vk::raii::Device& device) const -> vk::raii::DescriptorSetLayout;
+
+private:
+    std::vector<vk::DescriptorSetLayoutBinding> m_descriptor_sets_layout_bindings;
+};
+
 class VulkanGraphicsPipelineBuilder {
 public:
 private:
-    vk::raii::PipelineLayout m_pipeline_layout{nullptr};
-    vk::raii::DescriptorSetLayout m_descriptor_set_layout{nullptr};
-    vk::raii::DescriptorPool m_descriptor_pool{nullptr};
+    vk::raii::PipelineLayout m_pipeline_layout{ nullptr };
+    vk::raii::DescriptorSetLayout m_descriptor_set_layout{ nullptr };
+    vk::raii::DescriptorPool m_descriptor_pool{ nullptr };
     std::vector<vk::DescriptorSet> m_descriptor_sets;
 };
 

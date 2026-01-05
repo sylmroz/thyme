@@ -151,6 +151,7 @@ using ::ImGui_ImplVulkan_NewFrame;
 using ::ImGui_ImplVulkan_Shutdown;
 using ::ImGui_ImplVulkan_RenderDrawData;
 using ::ImGui_ImplGlfw_Shutdown;
+using ::ImGui_ImplVulkan_PipelineInfo;
 }
 
 export namespace ImGui {

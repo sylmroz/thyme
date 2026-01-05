@@ -1,7 +1,7 @@
 export module th.render_system.vulkan:gui;
 
 import imgui;
-//import vulkan;
+// import vulkan;
 
 import th.platform.glfw.glfw_window;
 import th.core.logger;
@@ -64,14 +64,17 @@ Gui::Gui(const VulkanDeviceRAII& device, const GlfwWindow& window, const VulkanG
 
     init_info.PipelineCache = *m_pipelineCache;
     init_info.DescriptorPool = *m_descriptorPool;
-    init_info.Subpass = vk::SubpassExternal;
     init_info.MinImageCount = m_context.image_count;
     init_info.ImageCount = m_context.image_count;
     init_info.UseDynamicRendering = true;
-    init_info.PipelineRenderingCreateInfo = vk::PipelineRenderingCreateInfo{
-        .colorAttachmentCount = 1,
-        .pColorAttachmentFormats = &m_context.surface_format.format,
-    };
+    init_info.PipelineInfoMain =
+            ImGui_ImplVulkan_PipelineInfo{ .Subpass = vk::SubpassExternal,
+                                           .PipelineRenderingCreateInfo =
+                                                   vk::PipelineRenderingCreateInfo{
+                                                           .colorAttachmentCount = 1,
+                                                           .pColorAttachmentFormats = &m_context.surface_format.format,
+                                                   }
+            };
     init_info.Allocator = nullptr;
     init_info.CheckVkResultFn = [](const auto vk_result) -> auto {
         if (static_cast<vk::Result>(vk_result) == vk::Result::eSuccess) {
