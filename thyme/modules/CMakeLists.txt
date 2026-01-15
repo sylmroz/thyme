@@ -3,10 +3,11 @@ set(MODULE_FILES
         glslang.cppm
         imgui.cppm
         json.cppm
+        slang.cppm
         stb_image.cppm
 )
 
-if (NOT DEFINED LOGGER_USE_STD_PRINT OR ${LOGGER_USE_STD_PRINT} EQUAL "OFF")
+if (NOT LOGGER_USE_STD_PRINT)
     set (MODULE_FILES ${MODULE_FILES} spdlog.cppm)
 endif ()
 

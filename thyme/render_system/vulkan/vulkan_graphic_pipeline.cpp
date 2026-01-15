@@ -72,13 +72,17 @@ VulkanScenePipeline::VulkanScenePipeline(const VulkanDeviceRAII& device,
         device.logical_device.updateDescriptorSets(writeDescriptorSets, {});
     }
 
-    const auto vertex_shader = VulkanShader::create(ShaderType::vertex, "triangle.vert", device.logical_device, logger);
-    const auto fragment_shader =
-            VulkanShader::create(ShaderType::fragment, "triangle.frag", device.logical_device, logger);
+    const auto slang_shader = compileSlangShader("triangle");
+    auto shader_module = createShaderModule(device.logical_device, std::span{slang_shader}, logger);
+    auto vertex_shader_stage_info = vk::PipelineShaderStageCreateInfo{ .stage = vk::ShaderStageFlagBits::eVertex,
+                                                                       .module = shader_module,
+                                                                       .pName = "main" };
 
-    const auto vertexShaderStageInfo = vertex_shader.getShaderStage();
-    const auto fragmentShaderStageInfo = fragment_shader.getShaderStage();
-    const auto shaderStages = std::vector{ vertexShaderStageInfo, fragmentShaderStageInfo };
+    auto frag_shader_stage_info = vk::PipelineShaderStageCreateInfo{ .stage = vk::ShaderStageFlagBits::eFragment,
+                                                                     .module = shader_module,
+                                                                     .pName = "main" };
+
+    const auto shaderStages = std::vector{ vertex_shader_stage_info, frag_shader_stage_info };
 
     m_pipeline = createVulkanGraphicsPipeline(device.logical_device,
                                               *m_pipeline_layout,

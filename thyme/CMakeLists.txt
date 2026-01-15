@@ -63,6 +63,7 @@ find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(glslang CONFIG REQUIRED)
+find_package(slang)
 
 target_link_libraries(${PROJECT_NAME} 
     PRIVATE
@@ -78,6 +79,7 @@ target_link_libraries(${PROJECT_NAME}
 		glslang::glslang
 		glslang::glslang-default-resource-limits
 		glslang::SPIRV
+		slang::slang
 )
 
 # copy dlls to the app

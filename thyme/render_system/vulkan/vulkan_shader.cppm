@@ -3,6 +3,7 @@ export module th.render_system.vulkan:shader;
 import std;
 
 import glslang;
+import slang;
 import vulkan;
 
 import th.core.logger;
@@ -71,7 +72,7 @@ constexpr auto toGlslang(const ShaderType type) -> EShLanguage {
     std::unreachable();
 }
 
-constexpr auto toEshSource(const ShaderLanguage type) -> glslang::EShSource {
+constexpr auto toEshSource([[maybe_unused]] const ShaderLanguage type) -> glslang::EShSource {
     return glslang::EShSource::EShSourceGlsl;
 }
 
@@ -95,7 +96,7 @@ constexpr auto toVkShaderStageFlag(const ShaderType type) -> vk::ShaderStageFlag
     std::unreachable();
 }
 
-auto getBasePath(const ShaderLanguage shader_language) -> std::filesystem::path {
+export auto getBasePath(const ShaderLanguage shader_language) -> std::filesystem::path {
     const auto shader_language_folder = [shader_language] -> std::string {
         if (shader_language == ShaderLanguage::glsl) {
             return "glsl";
@@ -123,6 +124,15 @@ private:
     std::string m_data;
 };
 
+export class SlangShaderCompiler {
+public:
+    void compile(const std::string_view target);
+
+//private:
+    Slang::ComPtr<slang::IBlob> m_spir_vv_code;
+};
+
+export [[nodiscard]] auto compileSlangShader(std::string_view shader_name) -> std::vector<uint32_t>;
 
 export auto createShaderModule(const vk::raii::Device& device, const std::span<const uint32_t> spir_v,
                                const Logger& logger) -> vk::raii::ShaderModule {
@@ -134,7 +144,6 @@ export auto createShaderModule(const vk::raii::Device& device, const std::span<c
         throw;
     }
 }
-
 
 export template <typename Compiler>
 auto createShaderModule(const vk::raii::Device& device, const Compiler& compiler, const Logger& logger)
@@ -153,7 +162,6 @@ export auto createShaderModule(const ShaderType type, const std::string_view fil
     try {
         const auto data = readFile<std::string>(getBasePath(ShaderLanguage::glsl) / file_name);
         return createShaderModule(device, ShaderCompiler(type, data), logger);
-        const auto spir_v = ShaderCompiler(type, data).compile();
     } catch (const std::exception& e) {
         logger.error("Cannot create shader module, {}", e.what());
         throw;

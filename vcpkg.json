@@ -14,7 +14,8 @@
     "stb",
     "vulkan-sdk-components",
     "vulkan-memory-allocator",
-    "nlohmann-json"
+    "nlohmann-json",
+    "shader-slang"
   ],
   "version": "0.0.1",
   "name": "thyme"
