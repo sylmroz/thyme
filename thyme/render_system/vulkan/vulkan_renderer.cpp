@@ -4,39 +4,6 @@ module th.render_system.vulkan;
 
 namespace th {
 
-RenderTarget::RenderTarget(const vk::ImageView image_view, const vk::ImageView resolved_image_view,
-                           const vk::ImageLayout image_layout, const vk::AttachmentLoadOp load_op,
-                           const vk::AttachmentStoreOp store_op, const vk::ClearValue clear_value) {
-    m_attachmentInfo = vk::RenderingAttachmentInfo{
-        .imageView = image_view,
-        .imageLayout = image_layout,
-        .resolveMode = vk::ResolveModeFlagBits::eAverage,
-        .resolveImageView = resolved_image_view,
-        .resolveImageLayout = image_layout,
-        .loadOp = load_op,
-        .storeOp = store_op,
-        .clearValue = clear_value,
-    };
-}
-
-RenderTarget::RenderTarget(const vk::ImageView image_view, const vk::ImageLayout image_layout,
-                           const vk::AttachmentLoadOp load_op, const vk::AttachmentStoreOp store_op,
-                           const vk::ClearValue clear_value) {
-    m_attachmentInfo = vk::RenderingAttachmentInfo{
-        .imageView = image_view,
-        .imageLayout = image_layout,
-        .resolveMode = vk::ResolveModeFlagBits::eNone,
-        .loadOp = load_op,
-        .storeOp = store_op,
-        .clearValue = clear_value,
-    };
-}
-
-// VulkanRenderingInfo::VulkanRenderingInfo(VulkanSwapChain* swapChain, const vk::SampleCountFlagBits samples)
-//     : m_swapChain{ swapChain }, m_samples{ samples } {
-//     m_colorMemory = ColorImageMemory()
-// }
-
 void updateUBO(const Camera& camera, const VulkanUniformBuffer<CameraMatrices>& camera_matrices,
                std::vector<VulkanModel>& models, ModelStorage& model_storage) {
     camera_matrices.update(
