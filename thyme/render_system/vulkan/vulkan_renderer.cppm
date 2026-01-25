@@ -77,6 +77,8 @@ private:
     VulkanSwapchain& m_swapchain;
     VulkanCommandBuffersPool& m_command_buffers_pool;
     std::vector<std::unique_ptr<VulkanGraphicPipeline>> m_pipelines;
+    vk::raii::DescriptorPool m_descriptor_pool;
+    std::unique_ptr<GradientPipeline> m_gradient_pipeline;
 
     VulkanDepthImageMemory m_depth_image_memory;
     VulkanColorImageMemory m_color_image_memory;

@@ -8,37 +8,30 @@ namespace th {
 
 VulkanScenePipeline::VulkanScenePipeline(const VulkanDeviceRAII& device,
                                          const vk::PipelineRenderingCreateInfo& pipeline_rendering_create_info,
+                                         const vk::DescriptorPool descriptor_pool,
                                          std::vector<VulkanModel>& models,
                                          const vk::DescriptorBufferInfo& descriptor_buffer_info, Logger& logger) {
-    constexpr auto uboBinding =
-            vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex);
-    constexpr auto cameraUboBinding =
-            vk::DescriptorSetLayoutBinding(1, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex);
-    constexpr auto samplerLayoutBinding = vk::DescriptorSetLayoutBinding(
-            2, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eFragment);
-    constexpr auto bindings = std::array{ uboBinding, cameraUboBinding, samplerLayoutBinding };
 
-    m_descriptor_set_layout = device.logical_device.createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo{
-            .bindingCount = static_cast<uint32_t>(bindings.size()), .pBindings = bindings.data() });
-
-    m_descriptor_pool = createDescriptorPool(
-            device.logical_device,
-            std::array{
-                    vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, static_cast<uint32_t>(models.size())),
-                    vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, static_cast<uint32_t>(models.size())),
-                    vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler,
-                                           static_cast<uint32_t>(models.size())) });
-
-    const auto descriptorSetLayouts = std::vector{ models.size(), *m_descriptor_set_layout };
-    m_descriptor_sets = device.logical_device.allocateDescriptorSets(
-            vk::DescriptorSetAllocateInfo{ .descriptorPool = m_descriptor_pool,
-                                           .descriptorSetCount = static_cast<uint32_t>(descriptorSetLayouts.size()),
-                                           .pSetLayouts = descriptorSetLayouts.data() });
+    DescriptorLayoutBuilder layout_builder;
+    layout_builder.addBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex);
+    layout_builder.addBinding(1, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex);
+    layout_builder.addBinding(2, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment);
+    m_descriptor_set_layout = layout_builder.build(device.logical_device);
 
     m_pipeline_layout = device.logical_device.createPipelineLayout(vk::PipelineLayoutCreateInfo{
             .setLayoutCount = 1,
             .pSetLayouts = &(*m_descriptor_set_layout),
     });
+
+    /*const auto descriptor_types_ratio = layout_builder.getDescriptorTypesRatio();
+    m_descriptor_pool =
+            createDescriptorPool(device.logical_device, descriptor_types_ratio, static_cast<uint32_t>(models.size()));*/
+
+    const auto descriptorSetLayouts = std::vector{ models.size(), *m_descriptor_set_layout };
+    m_descriptor_sets = device.logical_device.allocateDescriptorSets(
+            vk::DescriptorSetAllocateInfo{ .descriptorPool = descriptor_pool,
+                                           .descriptorSetCount = static_cast<uint32_t>(descriptorSetLayouts.size()),
+                                           .pSetLayouts = descriptorSetLayouts.data() });
 
     for (const auto [descriptorSet, model] : std::views::zip(m_descriptor_sets, models)) {
         const auto descriptorBufferInfo = model.getUniformBufferObject().getDescriptorBufferInfos();
@@ -73,7 +66,7 @@ VulkanScenePipeline::VulkanScenePipeline(const VulkanDeviceRAII& device,
     }
 
     const auto slang_shader = compileSlangShader("triangle");
-    auto shader_module = createShaderModule(device.logical_device, std::span{slang_shader}, logger);
+    auto shader_module = createShaderModule(device.logical_device, std::span{ slang_shader }, logger);
     auto vertex_shader_stage_info = vk::PipelineShaderStageCreateInfo{ .stage = vk::ShaderStageFlagBits::eVertex,
                                                                        .module = shader_module,
                                                                        .pName = "main" };
@@ -99,11 +92,59 @@ void VulkanScenePipeline::draw(const vk::CommandBuffer command_buffer, const std
     }
 }
 
+[[nodiscard]] auto DescriptorLayoutBuilder::getDescriptorTypesRatio() const
+        -> std::vector<std::pair<vk::DescriptorType, uint32_t>> {
+    return m_descriptor_types_ratio | std::views::transform([](auto pair) {
+               return pair;
+           })
+           | std::ranges::to<std::vector<std::pair<vk::DescriptorType, uint32_t>>>();
+}
+
 [[nodiscard]] auto DescriptorLayoutBuilder::build(const vk::raii::Device& device) const
         -> vk::raii::DescriptorSetLayout {
     return device.createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo{
             .bindingCount = static_cast<uint32_t>(m_descriptor_sets_layout_bindings.size()),
             .pBindings = m_descriptor_sets_layout_bindings.data() });
+}
+
+GradientPipeline::GradientPipeline(const vk::raii::Device& device, const vk::DescriptorPool descriptor_pool,
+                                   const vk::ImageView image_view, Logger& logger) {
+    logger.info("Create gradient pipeline");
+    {
+        DescriptorLayoutBuilder descriptor_layout_builder;
+        descriptor_layout_builder.addBinding(0, vk::DescriptorType::eStorageImage, vk::ShaderStageFlagBits::eCompute);
+        m_descriptor_set_layout = descriptor_layout_builder.build(device);
+    }
+    m_descriptor_set = std::move(
+            device.allocateDescriptorSets(vk::DescriptorSetAllocateInfo{ .descriptorPool = descriptor_pool,
+                                                                         .descriptorSetCount = 1,
+                                                                         .pSetLayouts = &(*m_descriptor_set_layout) })
+                    .front());
+
+    const auto descriptor_image_info =
+            vk::DescriptorImageInfo{ .imageView = image_view, .imageLayout = vk::ImageLayout::eGeneral };
+    const auto write_descriptor_sets =
+            std::array{ vk::WriteDescriptorSet{ .dstSet = m_descriptor_set,
+                                                .descriptorCount = 1,
+                                                .descriptorType = vk::DescriptorType::eStorageImage,
+                                                .pImageInfo = &descriptor_image_info } };
+    device.updateDescriptorSets(write_descriptor_sets, {});
+
+    m_pipeline_layout = device.createPipelineLayout(
+            vk::PipelineLayoutCreateInfo{ .setLayoutCount = 1, .pSetLayouts = &(*m_descriptor_set_layout) });
+
+    const auto compute_shader_code = compileSlangShader("compute");
+    const auto compute_shader_module = createShaderModule(device, std::span{ compute_shader_code }, logger);
+    const auto compute_shader_stage_info = vk::PipelineShaderStageCreateInfo{
+        .stage = vk::ShaderStageFlagBits::eCompute, .module = compute_shader_module, .pName = "main"
+    };
+    m_pipeline = device.createComputePipeline(
+           nullptr,
+            vk::ComputePipelineCreateInfo{ .stage = compute_shader_stage_info, .layout = m_pipeline_layout });
+}
+void GradientPipeline::dispatch(const vk::CommandBuffer command_buffer) const {
+    command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, m_pipeline);
+    command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, m_pipeline_layout, 0, { *m_descriptor_set }, {});
 }
 
 auto createVulkanGraphicsPipeline(const vk::raii::Device& logical_device,

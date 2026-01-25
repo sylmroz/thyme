@@ -70,14 +70,14 @@ public:
         return swapChainImageCount;
     }
 
-    [[nodiscard]] inline auto getSwapExtent(const glm::uvec2& fallbackResolution) const noexcept -> vk::Extent2D {
+    [[nodiscard]] inline auto getSwapExtent(const glm::uvec2& fallback_resolution) const noexcept -> vk::Extent2D {
         if (capabilities.currentExtent.width != std::numeric_limits<std::uint32_t>::max()) {
             return capabilities.currentExtent;
         }
-        const auto minImageExtent = capabilities.minImageExtent;
-        const auto maxImageExtent = capabilities.maxImageExtent;
-        return vk::Extent2D{ std::clamp(fallbackResolution.x, minImageExtent.width, maxImageExtent.width),
-                             std::clamp(fallbackResolution.y, minImageExtent.height, maxImageExtent.height) };
+        const auto min_image_extent = capabilities.minImageExtent;
+        const auto max_image_extent = capabilities.maxImageExtent;
+        return vk::Extent2D{ std::clamp(fallback_resolution.x, min_image_extent.width, max_image_extent.width),
+                             std::clamp(fallback_resolution.y, min_image_extent.height, max_image_extent.height) };
     }
 
     [[nodiscard]] auto getBestSwapChainSettings() const noexcept -> SwapChainSettings {
@@ -86,6 +86,23 @@ public:
                                   .imageCount = getImageCount() };
     }
 };
+
+[[nodiscard]] inline auto
+        createDescriptorPool(const vk::raii::Device& device,
+                             const std::span<const std::pair<vk::DescriptorType, uint32_t>> descriptor_sizes,
+                             const uint32_t max_set) -> vk::raii::DescriptorPool {
+
+    const auto descriptor_pool_sizes =
+            descriptor_sizes | std::views::transform([max_set](auto pair) {
+                return vk::DescriptorPoolSize{ .type = pair.first, .descriptorCount = max_set * pair.second };
+            }) | std::ranges::to<std::vector<vk::DescriptorPoolSize>>();
+    return device.createDescriptorPool(vk::DescriptorPoolCreateInfo{
+            .flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
+            .maxSets = max_set,
+            .poolSizeCount = static_cast<uint32_t>(descriptor_pool_sizes.size()),
+            .pPoolSizes = descriptor_pool_sizes.data(),
+    });
+}
 
 [[nodiscard]] inline auto createDescriptorPool(const vk::raii::Device& device,
                                                const std::span<const vk::DescriptorPoolSize> descriptor_sizes)

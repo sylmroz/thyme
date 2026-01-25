@@ -42,6 +42,7 @@ export class VulkanScenePipeline final: public VulkanGraphicPipeline {
 public:
     explicit VulkanScenePipeline(const VulkanDeviceRAII& device,
                                  const vk::PipelineRenderingCreateInfo& pipeline_rendering_create_info,
+                                 vk::DescriptorPool descriptor_pool,
                                  std::vector<VulkanModel>& models,
                                  const vk::DescriptorBufferInfo& descriptor_buffer_info, Logger& logger);
 
@@ -60,7 +61,7 @@ private:
 class DescriptorLayoutBuilder {
 public:
     void addBinding(const uint32_t binding, const vk::DescriptorType type, const vk::ShaderStageFlagBits stage) {
-        m_descriptor_sets_layout_bindings.emplace_back(vk::DescriptorSetLayoutBinding{
+        addBinding(vk::DescriptorSetLayoutBinding{
                 .binding = binding,
                 .descriptorType = type,
                 .descriptorCount = 1,
@@ -68,14 +69,32 @@ public:
         });
     }
 
-    void addBiding(vk::DescriptorSetLayoutBinding binding) {
+    void addBinding(vk::DescriptorSetLayoutBinding binding) {
         m_descriptor_sets_layout_bindings.emplace_back(binding);
+        m_descriptor_types_ratio.contains(binding.descriptorType)
+                ? m_descriptor_types_ratio[binding.descriptorType]++
+                : m_descriptor_types_ratio[binding.descriptorType] = 1;
     }
+
+    [[nodiscard]] auto getDescriptorTypesRatio() const -> std::vector<std::pair<vk::DescriptorType, uint32_t>>;
 
     [[nodiscard]] auto build(const vk::raii::Device& device) const -> vk::raii::DescriptorSetLayout;
 
 private:
     std::vector<vk::DescriptorSetLayoutBinding> m_descriptor_sets_layout_bindings;
+    std::map<vk::DescriptorType, uint32_t> m_descriptor_types_ratio;
+};
+
+class GradientPipeline {
+public:
+    GradientPipeline(const vk::raii::Device& device, vk::DescriptorPool descriptor_pool, vk::ImageView image_view, Logger& logger);
+    void dispatch(vk::CommandBuffer command_buffer) const;
+
+private:
+    vk::raii::Pipeline m_pipeline{ nullptr };
+    vk::raii::PipelineLayout m_pipeline_layout{ nullptr };
+    vk::raii::DescriptorSetLayout m_descriptor_set_layout{ nullptr };
+    vk::raii::DescriptorSet m_descriptor_set{ nullptr };
 };
 
 class VulkanGraphicsPipelineBuilder {

@@ -209,7 +209,7 @@ VulkanColorImageMemory::VulkanColorImageMemory(const VulkanDeviceRAII& device, c
                         VulkanImageMemoryCreator(
                                 format,
                                 vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst
-                                        | vk::ImageUsageFlagBits::eColorAttachment,
+                                        | vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eStorage,
                                 vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor, msaa, 1),
                         ImageTransition{ .pipeline_stage = vk::PipelineStageFlagBits2::eAllCommands }) {}
 
