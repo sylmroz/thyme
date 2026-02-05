@@ -8,8 +8,7 @@ namespace th {
 
 VulkanScenePipeline::VulkanScenePipeline(const VulkanDeviceRAII& device,
                                          const vk::PipelineRenderingCreateInfo& pipeline_rendering_create_info,
-                                         const vk::DescriptorPool descriptor_pool,
-                                         std::vector<VulkanModel>& models,
+                                         const vk::DescriptorPool descriptor_pool, std::vector<VulkanModel>& models,
                                          const vk::DescriptorBufferInfo& descriptor_buffer_info, Logger& logger) {
 
     DescriptorLayoutBuilder layout_builder;
@@ -23,13 +22,13 @@ VulkanScenePipeline::VulkanScenePipeline(const VulkanDeviceRAII& device,
             .pSetLayouts = &(*m_descriptor_set_layout),
     });
 
-    /*const auto descriptor_types_ratio = layout_builder.getDescriptorTypesRatio();
+    const auto descriptor_types_ratio = layout_builder.getDescriptorTypesRatio();
     m_descriptor_pool =
-            createDescriptorPool(device.logical_device, descriptor_types_ratio, static_cast<uint32_t>(models.size()));*/
+            createDescriptorPool(device.logical_device, descriptor_types_ratio, static_cast<uint32_t>(models.size()));
 
     const auto descriptorSetLayouts = std::vector{ models.size(), *m_descriptor_set_layout };
     m_descriptor_sets = device.logical_device.allocateDescriptorSets(
-            vk::DescriptorSetAllocateInfo{ .descriptorPool = descriptor_pool,
+            vk::DescriptorSetAllocateInfo{ .descriptorPool = m_descriptor_pool,
                                            .descriptorSetCount = static_cast<uint32_t>(descriptorSetLayouts.size()),
                                            .pSetLayouts = descriptorSetLayouts.data() });
 
@@ -75,13 +74,54 @@ VulkanScenePipeline::VulkanScenePipeline(const VulkanDeviceRAII& device,
                                                                      .module = shader_module,
                                                                      .pName = "main" };
 
-    const auto shaderStages = std::vector{ vertex_shader_stage_info, frag_shader_stage_info };
+    const auto shader_stages = std::vector{ vertex_shader_stage_info, frag_shader_stage_info };
 
-    m_pipeline = createVulkanGraphicsPipeline(device.logical_device,
+    const auto formats = std::array{ *pipeline_rendering_create_info.pColorAttachmentFormats };
+
+    constexpr auto binding_description = getBindingDescription();
+    constexpr auto attribute_descriptions = getAttributeDescriptions();
+    const auto vertex_input_state_create_info = vk::PipelineVertexInputStateCreateInfo{
+        .vertexBindingDescriptionCount = 1,
+        .pVertexBindingDescriptions = &binding_description,
+        .vertexAttributeDescriptionCount = static_cast<uint32_t>(attribute_descriptions.size()),
+        .pVertexAttributeDescriptions = attribute_descriptions.data(),
+    };
+
+    m_pipeline =
+            VulkanGraphicsPipelineBuilder{}
+                    .setMultisampling(device.max_msaa_samples)
+                    .setColorAttachmentFormats(formats)
+                    .setDepthAttachmentFormat(pipeline_rendering_create_info.depthAttachmentFormat)
+                    .enableBlending(vk::PipelineColorBlendAttachmentState{
+                            .blendEnable = vk::False,
+                            .srcColorBlendFactor = vk::BlendFactor::eOne,
+                            .dstColorBlendFactor = vk::BlendFactor::eZero,
+                            .colorBlendOp = vk::BlendOp::eAdd,
+                            .srcAlphaBlendFactor = vk::BlendFactor::eOne,
+                            .dstAlphaBlendFactor = vk::BlendFactor::eZero,
+                            .alphaBlendOp = vk::BlendOp::eAdd,
+                            .colorWriteMask = vk::ColorComponentFlagBits::eA | vk::ColorComponentFlagBits::eR
+                                              | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB })
+                    .enableDepthStencil(vk::PipelineDepthStencilStateCreateInfo{ .depthTestEnable = vk::True,
+                                                                                 .depthWriteEnable = vk::True,
+                                                                                 .depthCompareOp = vk::CompareOp::eLess,
+                                                                                 .depthBoundsTestEnable = vk::False,
+                                                                                 .stencilTestEnable = vk::False,
+                                                                                 .front = {},
+                                                                                 .back = {},
+                                                                                 .minDepthBounds = 0.0f,
+                                                                                 .maxDepthBounds = 1.0f })
+                    .setCullMode(vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise)
+                    .setShaders(shader_stages)
+                    .setInputTopology(vk::PrimitiveTopology::eTriangleList)
+                    .setVertexInputState(vertex_input_state_create_info)
+                    .build(device.logical_device, *m_pipeline_layout);
+
+    /*m_pipeline = createVulkanGraphicsPipeline(device.logical_device,
                                               *m_pipeline_layout,
                                               device.max_msaa_samples,
                                               pipeline_rendering_create_info,
-                                              shaderStages);
+                                              shader_stages);*/
 }
 
 void VulkanScenePipeline::draw(const vk::CommandBuffer command_buffer, const std::vector<VulkanModel>& models) const {
@@ -139,12 +179,145 @@ GradientPipeline::GradientPipeline(const vk::raii::Device& device, const vk::Des
         .stage = vk::ShaderStageFlagBits::eCompute, .module = compute_shader_module, .pName = "main"
     };
     m_pipeline = device.createComputePipeline(
-           nullptr,
-            vk::ComputePipelineCreateInfo{ .stage = compute_shader_stage_info, .layout = m_pipeline_layout });
+            nullptr, vk::ComputePipelineCreateInfo{ .stage = compute_shader_stage_info, .layout = m_pipeline_layout });
 }
+
 void GradientPipeline::dispatch(const vk::CommandBuffer command_buffer) const {
     command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, m_pipeline);
     command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, m_pipeline_layout, 0, { *m_descriptor_set }, {});
+}
+
+auto VulkanGraphicsPipelineBuilder::build(const vk::raii::Device& device, const vk::PipelineLayout& pipeline_layout,
+                                          const vk::Optional<const vk::raii::PipelineCache>& pipeline_cache) const
+        -> vk::raii::Pipeline {
+    constexpr auto viewport_state = vk::PipelineViewportStateCreateInfo{
+        .viewportCount = 1,
+        .scissorCount = 1,
+    };
+
+    const auto color_blend_state_create_info =
+            vk::PipelineColorBlendStateCreateInfo{ .logicOpEnable = vk::False,
+                                                   .logicOp = vk::LogicOp::eCopy,
+                                                   .attachmentCount = 1,
+                                                   .pAttachments = &m_blend_attachment_state,
+                                                   .blendConstants = std::array{ 0.0f, 0.0f, 0.0f, 0.0f } };
+    constexpr auto dynamic_states = std::array{ vk::DynamicState::eViewport, vk::DynamicState::eScissor };
+    const auto dynamic_state_create_info = vk::PipelineDynamicStateCreateInfo{
+        .dynamicStateCount = static_cast<uint32_t>(dynamic_states.size()),
+        .pDynamicStates = dynamic_states.data(),
+    };
+
+    return device.createGraphicsPipeline(pipeline_cache,
+                                         vk::GraphicsPipelineCreateInfo{
+                                                 .pNext = &m_rendering_create_info,
+                                                 .stageCount = static_cast<uint32_t>(m_shader_stages.size()),
+                                                 .pStages = m_shader_stages.data(),
+                                                 .pVertexInputState = &m_vertex_input_state_create_info,
+                                                 .pInputAssemblyState = &m_input_assembly_state_create_info,
+                                                 .pTessellationState = nullptr,
+                                                 .pViewportState = &viewport_state,
+                                                 .pRasterizationState = &m_rasterization_state_create_info,
+                                                 .pMultisampleState = &m_multisample_state_create_info,
+                                                 .pDepthStencilState = &m_depth_stencil_state_create_info,
+                                                 .pColorBlendState = &color_blend_state_create_info,
+                                                 .pDynamicState = &dynamic_state_create_info,
+                                                 .layout = pipeline_layout,
+                                         });
+}
+
+auto VulkanGraphicsPipelineBuilder::setShader(vk::PipelineShaderStageCreateInfo shader_stage_create_info)
+        -> VulkanGraphicsPipelineBuilder& {
+    m_shader_stages.emplace_back(shader_stage_create_info);
+    return *this;
+}
+
+auto VulkanGraphicsPipelineBuilder::setShaders(
+        std::span<const vk::PipelineShaderStageCreateInfo> shader_stage_create_info_list)
+        -> VulkanGraphicsPipelineBuilder& {
+    m_shader_stages.clear();
+    std::ranges::copy(shader_stage_create_info_list, std::back_inserter(m_shader_stages));
+    return *this;
+}
+
+auto VulkanGraphicsPipelineBuilder::setInputTopology(const vk::PrimitiveTopology primitive_topology)
+        -> VulkanGraphicsPipelineBuilder& {
+    m_input_assembly_state_create_info.primitiveRestartEnable = vk::False;
+    m_input_assembly_state_create_info.topology = primitive_topology;
+    return *this;
+}
+
+auto VulkanGraphicsPipelineBuilder::setCullMode(const vk::CullModeFlags cull_mode_flags, const vk::FrontFace front_face)
+        -> VulkanGraphicsPipelineBuilder& {
+    m_rasterization_state_create_info = vk::PipelineRasterizationStateCreateInfo{ .depthClampEnable = vk::False,
+                                                                                  .rasterizerDiscardEnable = vk::False,
+                                                                                  .polygonMode = vk::PolygonMode::eFill,
+                                                                                  .cullMode = cull_mode_flags,
+                                                                                  .frontFace = front_face,
+                                                                                  .depthBiasEnable = vk::False,
+                                                                                  .depthBiasConstantFactor = 0.0f,
+                                                                                  .depthBiasClamp = 0.0f,
+                                                                                  .depthBiasSlopeFactor = 0.0f,
+                                                                                  .lineWidth = 1.0f };
+    return *this;
+}
+
+auto VulkanGraphicsPipelineBuilder::setMultisampling(const vk::SampleCountFlagBits samples)
+        -> VulkanGraphicsPipelineBuilder& {
+    m_multisample_state_create_info = vk::PipelineMultisampleStateCreateInfo{
+        .rasterizationSamples = samples,
+        .sampleShadingEnable = vk::False,
+        .minSampleShading = 1.0f,
+        .alphaToCoverageEnable = vk::False,
+        .alphaToOneEnable = vk::False,
+    };
+    return *this;
+}
+auto VulkanGraphicsPipelineBuilder::enableBlending(vk::PipelineColorBlendAttachmentState state)
+        -> VulkanGraphicsPipelineBuilder& {
+    m_blend_attachment_state = state;
+    return *this;
+}
+
+auto VulkanGraphicsPipelineBuilder::setColorAttachmentFormats(std::span<const vk::Format> formats)
+        -> VulkanGraphicsPipelineBuilder& {
+    m_color_attachment_formats.clear();
+    std::ranges::copy(formats, std::back_inserter(m_color_attachment_formats));
+    m_rendering_create_info.colorAttachmentCount = static_cast<uint32_t>(m_color_attachment_formats.size());
+    m_rendering_create_info.pColorAttachmentFormats = m_color_attachment_formats.data();
+    return *this;
+}
+
+auto VulkanGraphicsPipelineBuilder::setDepthAttachmentFormat(const vk::Format format)
+        -> VulkanGraphicsPipelineBuilder& {
+    m_rendering_create_info.depthAttachmentFormat = format;
+    return *this;
+}
+
+auto VulkanGraphicsPipelineBuilder::disableDepthTest() -> VulkanGraphicsPipelineBuilder& {
+    m_depth_stencil_state_create_info = vk::PipelineDepthStencilStateCreateInfo{
+        .depthTestEnable = vk::False,
+        .depthWriteEnable = vk::False,
+        .depthCompareOp = vk::CompareOp::eNever,
+        .depthBoundsTestEnable = vk::False,
+        .stencilTestEnable = vk::False,
+        .front = {},
+        .back = {},
+        .minDepthBounds = 0.0f,
+        .maxDepthBounds = 1.0f,
+    };
+    return *this;
+}
+
+auto VulkanGraphicsPipelineBuilder::enableDepthStencil(const vk::PipelineDepthStencilStateCreateInfo& info)
+        -> VulkanGraphicsPipelineBuilder& {
+    m_depth_stencil_state_create_info = info;
+    return *this;
+}
+
+auto VulkanGraphicsPipelineBuilder::setVertexInputState(const vk::PipelineVertexInputStateCreateInfo& info)
+        -> VulkanGraphicsPipelineBuilder& {
+    m_vertex_input_state_create_info = info;
+    return *this;
 }
 
 auto createVulkanGraphicsPipeline(const vk::raii::Device& logical_device,

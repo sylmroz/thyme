@@ -16,7 +16,7 @@ export class VulkanCommandBuffer {
     };
 
 public:
-    VulkanCommandBuffer(const vk::raii::Device& device, vk::CommandPool command_pool, vk::Queue graphic_queue, Logger& logger);
+    VulkanCommandBuffer(const vk::raii::Device& device, vk::CommandPool command_pool, vk::Queue queue, Logger& logger);
 
     [[nodiscard]] auto getBuffer(const vk::raii::Device& device) -> vk::CommandBuffer;
 
@@ -38,7 +38,7 @@ private:
 
     Logger& m_logger;
 
-    vk::Queue m_graphic_queue;
+    vk::Queue m_queue;
 
     vk::raii::CommandBuffer m_command_buffer;
     vk::raii::Fence m_fence;

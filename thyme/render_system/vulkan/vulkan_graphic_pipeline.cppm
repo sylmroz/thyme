@@ -16,6 +16,39 @@ import :uniform_buffer_object;
 
 namespace th {
 
+class  VulkanGraphicsPipelineBuilder {
+public:
+    [[nodiscard]] auto build(const vk::raii::Device& device, const vk::PipelineLayout& pipeline_layout,
+                             const vk::Optional<const vk::raii::PipelineCache>& pipeline_cache = nullptr) const
+            -> vk::raii::Pipeline;
+
+    auto setShader(vk::PipelineShaderStageCreateInfo shader_stage_create_info) -> VulkanGraphicsPipelineBuilder&;
+    auto setShaders(std::span<const vk::PipelineShaderStageCreateInfo> shader_stage_create_info_list) -> VulkanGraphicsPipelineBuilder&;
+    auto setInputTopology(vk::PrimitiveTopology primitive_topology) -> VulkanGraphicsPipelineBuilder&;
+    auto setCullMode(vk::CullModeFlags cull_mode_flags, vk::FrontFace front_face) -> VulkanGraphicsPipelineBuilder&;
+    auto setMultisampling(vk::SampleCountFlagBits samples) -> VulkanGraphicsPipelineBuilder&;
+    auto enableBlending(vk::PipelineColorBlendAttachmentState state) -> VulkanGraphicsPipelineBuilder&;
+    auto setColorAttachmentFormats(std::span<const vk::Format> formats) -> VulkanGraphicsPipelineBuilder&;
+    auto setDepthAttachmentFormat(vk::Format format) -> VulkanGraphicsPipelineBuilder&;
+    auto disableDepthTest() -> VulkanGraphicsPipelineBuilder&;
+    auto enableDepthStencil(const vk::PipelineDepthStencilStateCreateInfo& info) -> VulkanGraphicsPipelineBuilder&;
+    auto setVertexInputState(const vk::PipelineVertexInputStateCreateInfo& info) -> VulkanGraphicsPipelineBuilder&;
+
+private:
+    std::vector<vk::Format> m_color_attachment_formats{ vk::Format::eA8B8G8R8UnormPack32 };
+    std::vector<vk::PipelineShaderStageCreateInfo> m_shader_stages;
+
+    vk::PipelineRenderingCreateInfo m_rendering_create_info;
+    vk::PipelineColorBlendAttachmentState m_blend_attachment_state;
+    vk::PipelineVertexInputStateCreateInfo m_vertex_input_state_create_info;
+    vk::PipelineInputAssemblyStateCreateInfo m_input_assembly_state_create_info;
+    // vk::PipelineTessellationStateCreateInfo m_tessellation_state_create_info;
+    vk::PipelineRasterizationStateCreateInfo m_rasterization_state_create_info;
+    vk::PipelineMultisampleStateCreateInfo m_multisample_state_create_info;
+    vk::PipelineDepthStencilStateCreateInfo m_depth_stencil_state_create_info;
+    // vk::PipelineDynamicStateCreateInfo m_dynamic_state_create_info;
+};
+
 export [[nodiscard]] auto
         createVulkanGraphicsPipeline(const vk::raii::Device& logical_device,
                                      vk::PipelineLayout pipeline_layout,
@@ -42,8 +75,7 @@ export class VulkanScenePipeline final: public VulkanGraphicPipeline {
 public:
     explicit VulkanScenePipeline(const VulkanDeviceRAII& device,
                                  const vk::PipelineRenderingCreateInfo& pipeline_rendering_create_info,
-                                 vk::DescriptorPool descriptor_pool,
-                                 std::vector<VulkanModel>& models,
+                                 vk::DescriptorPool descriptor_pool, std::vector<VulkanModel>& models,
                                  const vk::DescriptorBufferInfo& descriptor_buffer_info, Logger& logger);
 
     void draw(vk::CommandBuffer command_buffer, const std::vector<VulkanModel>& models) const override;
@@ -87,7 +119,8 @@ private:
 
 class GradientPipeline {
 public:
-    GradientPipeline(const vk::raii::Device& device, vk::DescriptorPool descriptor_pool, vk::ImageView image_view, Logger& logger);
+    GradientPipeline(const vk::raii::Device& device, vk::DescriptorPool descriptor_pool, vk::ImageView image_view,
+                     Logger& logger);
     void dispatch(vk::CommandBuffer command_buffer) const;
 
 private:
@@ -95,15 +128,6 @@ private:
     vk::raii::PipelineLayout m_pipeline_layout{ nullptr };
     vk::raii::DescriptorSetLayout m_descriptor_set_layout{ nullptr };
     vk::raii::DescriptorSet m_descriptor_set{ nullptr };
-};
-
-class VulkanGraphicsPipelineBuilder {
-public:
-private:
-    vk::raii::PipelineLayout m_pipeline_layout{ nullptr };
-    vk::raii::DescriptorSetLayout m_descriptor_set_layout{ nullptr };
-    vk::raii::DescriptorPool m_descriptor_pool{ nullptr };
-    std::vector<vk::DescriptorSet> m_descriptor_sets;
 };
 
 }// namespace th

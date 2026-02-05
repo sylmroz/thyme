@@ -9,14 +9,14 @@ import th.core.logger;
 namespace th {
 
 VulkanCommandBuffer::VulkanCommandBuffer(const vk::raii::Device& device, const vk::CommandPool command_pool,
-                                         const vk::Queue graphic_queue, Logger& logger)
-    : m_logger{ logger }, m_graphic_queue{ graphic_queue },
+                                         const vk::Queue queue, Logger& logger)
+    : m_logger{ logger }, m_queue{ queue },
       m_command_buffer{ std::move(device.allocateCommandBuffers(vk::CommandBufferAllocateInfo{
-                                                                .commandPool = command_pool,
-                                                                .level = vk::CommandBufferLevel::ePrimary,
-                                                                .commandBufferCount = 1u,
-                                                        })
-                                .front()) },
+                                                                        .commandPool = command_pool,
+                                                                        .level = vk::CommandBufferLevel::ePrimary,
+                                                                        .commandBufferCount = 1u,
+                                                                })
+                                          .front()) },
       m_fence{ device, vk::FenceCreateInfo{} } {}
 
 auto VulkanCommandBuffer::getBuffer(const vk::raii::Device& device) -> vk::CommandBuffer {
@@ -26,8 +26,7 @@ auto VulkanCommandBuffer::getBuffer(const vk::raii::Device& device) -> vk::Comma
 
 void VulkanCommandBuffer::reset(const vk::raii::Device& device) {
     if (m_state == State::Submitted) {
-        if (device.waitForFences({ m_fence }, vk::True, std::numeric_limits<uint64_t>::max())
-            != vk::Result::eSuccess) {
+        if (device.waitForFences({ m_fence }, vk::True, std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess) {
             m_logger.error("Failed to wait for a complete fence");
             throw std::runtime_error("Failed to wait for a complete fence");
         }
@@ -55,9 +54,11 @@ void VulkanCommandBuffer::submit(const vk::PipelineStageFlags stage, const vk::S
         return;
     }
     m_command_buffer.end();
-    const auto dependants = m_depend_semaphores | std::views::transform([](auto& semaphore) { return *semaphore; })
+    const auto dependants = m_depend_semaphores | std::views::transform([](auto& semaphore) {
+                                return *semaphore;
+                            })
                             | std::ranges::to<std::vector>();
-    m_graphic_queue.submit(
+    m_queue.submit(
             vk::SubmitInfo{
                     .waitSemaphoreCount = static_cast<uint32_t>(m_depend_semaphores.size()),
                     .pWaitSemaphores = dependants.data(),
@@ -79,9 +80,10 @@ void VulkanCommandBuffer::waitFor(const vk::raii::Device& device, vk::raii::Sema
 VulkanCommandBuffersPool::VulkanCommandBuffersPool(const vk::raii::Device& device, const vk::CommandPool command_pool,
                                                    const vk::Queue graphic_queue, const std::size_t capacity,
                                                    Logger& logger) {
-    std::generate_n(std::back_inserter(m_command_buffers), capacity, [&device, command_pool, graphic_queue, &logger]() mutable {
-        return VulkanCommandBuffer{ device, command_pool, graphic_queue, logger };
-    });
+    std::generate_n(
+            std::back_inserter(m_command_buffers), capacity, [&device, command_pool, graphic_queue, &logger]() mutable {
+                return VulkanCommandBuffer{ device, command_pool, graphic_queue, logger };
+            });
 }
 
 }// namespace th
