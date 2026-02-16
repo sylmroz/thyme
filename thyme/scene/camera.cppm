@@ -9,6 +9,12 @@ struct CameraMatrices {
     glm::mat4 projection;
 };
 
+struct YawPitchRoll {
+    float yaw;
+    float pitch;
+    float roll;
+};
+
 struct CameraArguments {
     float fov;
     float znear;
@@ -17,18 +23,14 @@ struct CameraArguments {
     glm::vec3 eye;
     glm::vec3 center;
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+    YawPitchRoll yaw_pitch_roll;
 };
 
 class Camera {
 public:
     explicit Camera(const CameraArguments& camera_arguments) : m_camera_arguments{ camera_arguments } {
-        m_projection_matrix = glm::gtc::perspective(glm::radians(m_camera_arguments.fov),
-                                              m_camera_arguments.resolution.x / m_camera_arguments.resolution.y,
-                                              m_camera_arguments.znear,
-                                              m_camera_arguments.zfar);
-        m_projection_matrix[1][1] *= -1.0f;
-        m_view_matrix = glm::gtc::lookAt(m_camera_arguments.eye, m_camera_arguments.center, m_camera_arguments.up);
-        m_view_projection_matrix = m_projection_matrix * m_view_matrix;
+        updateViewMatrix();
+        updateProjectionMatrix();
     }
 
     void updateProjectionMatrix() {
@@ -60,10 +62,8 @@ public:
         updateProjectionMatrix();
     }
 
-    void updateViewMatrix() {
-        m_view_matrix = glm::gtc::lookAt(m_camera_arguments.eye, m_camera_arguments.center, m_camera_arguments.up);
-        m_view_projection_matrix = m_projection_matrix * m_view_matrix;
-    }
+    void updateViewMatrix();
+
     void setCenter(const glm::vec3& center) {
         m_camera_arguments.center = center;
         updateViewMatrix();
@@ -76,6 +76,11 @@ public:
 
     void setUp(const glm::vec3& up) {
         m_camera_arguments.up = up;
+        updateViewMatrix();
+    }
+
+    void setYawPitchRoll(const YawPitchRoll& yaw_pitch_roll) {
+        m_camera_arguments.yaw_pitch_roll = yaw_pitch_roll;
         updateViewMatrix();
     }
 
@@ -97,4 +102,15 @@ private:
     glm::mat4 m_view_projection_matrix = glm::mat4(1.0f);
     CameraArguments m_camera_arguments;
 };
+
+class CameraController {
+    public:
+    explicit CameraController(const CameraArguments& camera_arguments);
+
+    void move(const glm::vec3& direction);
+
+private:
+
+};
+
 }

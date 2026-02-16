@@ -29,11 +29,10 @@ class Engine final {
 public:
     explicit Engine(const EngineConfig& engine_config, GlfwWindow& window, ModelStorage& model_storage, WindowEventsHandlers& window_event_handler, Logger& logger);
 
-    void run();
+    void run(Camera& camera);
 
 private:
     EngineConfig m_engine_config;
-    Camera m_camera;
     GlfwWindow& m_window;
     WindowEventsHandlers& m_window_event_handler;
 

@@ -6,7 +6,7 @@ set(MODULE_FILES
 )
 
 set(SRC_FILES
-
+        camera.cpp
 )
 
 target_sources(${PROJECT_NAME}

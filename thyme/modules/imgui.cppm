@@ -181,6 +181,10 @@ using ::ImGui::GetID;
 using ::ImGui::GetWindowPos;
 using ::ImGui::DockSpace;
 using ::ImGui::PopStyleVar;
+using ::ImGui::InputFloat;
+using ::ImGui::InputFloat2;
+using ::ImGui::InputFloat3;
+using ::ImGui::InputFloat4;
 
 using ::ImGui::ShowDemoWindow;
 

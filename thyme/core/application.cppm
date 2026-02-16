@@ -5,6 +5,7 @@ import std;
 import th.core.engine;
 import th.core.logger;
 import th.scene.model;
+import th.scene.camera;
 import th.platform.imgui_context;
 
 namespace th {

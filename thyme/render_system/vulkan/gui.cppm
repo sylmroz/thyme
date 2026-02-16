@@ -69,12 +69,10 @@ Gui::Gui(const VulkanDeviceRAII& device, const GlfwWindow& window, const VulkanG
     init_info.UseDynamicRendering = true;
     init_info.PipelineInfoMain =
             ImGui_ImplVulkan_PipelineInfo{ .Subpass = vk::SubpassExternal,
-                                           .PipelineRenderingCreateInfo =
-                                                   vk::PipelineRenderingCreateInfo{
-                                                           .colorAttachmentCount = 1,
-                                                           .pColorAttachmentFormats = &m_context.surface_format.format,
-                                                   }
-            };
+                                           .PipelineRenderingCreateInfo = vk::PipelineRenderingCreateInfo{
+                                                   .colorAttachmentCount = 1,
+                                                   .pColorAttachmentFormats = &m_context.surface_format.format,
+                                           } };
     init_info.Allocator = nullptr;
     init_info.CheckVkResultFn = [](const auto vk_result) -> auto {
         if (static_cast<vk::Result>(vk_result) == vk::Result::eSuccess) {
@@ -87,8 +85,19 @@ Gui::Gui(const VulkanDeviceRAII& device, const GlfwWindow& window, const VulkanG
 
 void Gui::draw(const vk::CommandBuffer command_buffer) {
 
-    bool show_demo_window{ true };
-    ImGui::ShowDemoWindow(&show_demo_window);
+    /*bool show_demo_window{ true };
+    ImGui::ShowDemoWindow(&show_demo_window);*/
+
+    constexpr ImGuiWindowFlags window_flags{};
+    ImGui::Begin("viewport settings", nullptr, window_flags);
+
+    static float fov{ 0.0f };
+    ImGui::InputFloat("FOV", &fov, 0.01f, 0.1f, "%.2f");
+
+    static glm::vec3 camera_position{ 0.0f, 0.0f, 0.0f };
+    ImGui::InputFloat3("position", glm::value_ptr(camera_position));
+
+    ImGui::End();
 
     ImGui::Render();
 

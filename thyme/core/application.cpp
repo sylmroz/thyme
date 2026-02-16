@@ -23,18 +23,32 @@ void Application::run() {
         auto window_settings =
                 WindowSettings(WindowConfig{ .width = 1280, .height = 720, .name = "Thyme", .maximized = false });
         auto window_event_handlers = WindowEventsHandlers();
-        window_event_handlers.addEventListener<WindowResizedEvent>([&window_settings](const WindowResizedEvent& window_resize) {
-            window_settings.setResolution(glm::uvec2(window_resize.width, window_resize.height));
-        });
-
-        window_event_handlers.addEventListener<WindowMaximizedEvent>([&window_settings](const WindowMaximizedEvent maximize) {
-            window_settings.setMaximized(maximize.maximized);
-        });
         auto window = GlfwWindow(window_settings.getConfig(), window_event_handlers, m_logger);
+        auto camera =
+                Camera{ CameraArguments{ .fov = 45.0f,
+                                         .znear = 0.1f,
+                                         .zfar = 100.0f,
+                                         .resolution = window.getFrameBufferSize(),
+                                         .eye = { 2.0f, 2.0f, 2.0f },
+                                         .center = { 0.0f, 0.0f, 0.0f },
+                                         .up = { 0.0f, 0.0f, 1.0f },
+                                         .yaw_pitch_roll = YawPitchRoll{ .yaw = 0.0f, .pitch = 0.0f, .roll = 0.0f } } };
+
+        window_event_handlers.addEventListener<WindowResizedEvent>(
+                [&window_settings, &camera](const WindowResizedEvent& window_resize) {
+                    const auto [width, height] = window_resize;
+                    window_settings.setResolution(glm::uvec2(width, height));
+                    camera.setResolution(glm::vec2{ static_cast<float>(width), static_cast<float>(height) });
+                });
+
+        window_event_handlers.addEventListener<WindowMaximizedEvent>(
+                [&window_settings](const WindowMaximizedEvent maximize) {
+                    window_settings.setMaximized(maximize.maximized);
+                });
 
         auto engine =
                 Engine(EngineConfig{ .app_name = m_name }, window, m_model_storage, window_event_handlers, m_logger);
-        engine.run();
+        engine.run(camera);
     } catch (const std::exception& e) {
         m_logger.error("Error occurred during app runtime\n Error: {}"sv, e.what());
     } catch (...) {
