@@ -11,7 +11,7 @@ void Camera::updateViewMatrix() {
     const auto rot_quat = pith_quat * roll_quat * yaw_quat;
     const auto rot_matrix = glm::toMat4(rot_quat);
 
-    m_view_matrix = glm::gtc::lookAt(m_camera_arguments.eye, m_camera_arguments.center, m_camera_arguments.up);
+    m_view_matrix = glm::gtc::lookAt(m_camera_arguments.position, m_camera_arguments.center, m_camera_arguments.up);
     m_view_matrix *= rot_matrix;
     m_view_projection_matrix = m_projection_matrix * m_view_matrix;
 }

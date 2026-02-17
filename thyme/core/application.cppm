@@ -7,6 +7,7 @@ import th.core.logger;
 import th.scene.model;
 import th.scene.camera;
 import th.platform.imgui_context;
+import th.gui;
 
 namespace th {
 
@@ -20,7 +21,7 @@ public:
     auto operator=(Application&&) -> Application& = delete;
     virtual ~Application() = default;
 
-    void run();
+    void run(ui::IComponent& component, Camera& camera);
 
 protected:
     ModelStorage m_model_storage;

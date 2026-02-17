@@ -12,6 +12,7 @@ import th.core.events;
 import th.core.logger;
 import th.scene.model;
 import th.scene.camera;
+import th.gui;
 
 export namespace th {
 
@@ -29,7 +30,7 @@ class Engine final {
 public:
     explicit Engine(const EngineConfig& engine_config, GlfwWindow& window, ModelStorage& model_storage, WindowEventsHandlers& window_event_handler, Logger& logger);
 
-    void run(Camera& camera);
+    void run(Camera& camera, ui::IComponent& ui_component);
 
 private:
     EngineConfig m_engine_config;

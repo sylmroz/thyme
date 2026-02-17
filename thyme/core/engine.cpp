@@ -17,7 +17,7 @@ Engine::Engine(const EngineConfig& engine_config,
       m_window{ window }, m_window_event_handler{ window_event_handler }, m_model_storage{ model_storage },
       m_logger{ logger } {}
 
-void Engine::run(Camera& camera) {
+void Engine::run(Camera& camera, ui::IComponent& ui_component) {
     m_logger.info("Start {} engine", m_engine_config.engine_name);
 
     const auto framework = VulkanFramework::create<GlfwWindow>(
@@ -42,7 +42,7 @@ void Engine::run(Camera& camera) {
                                   .present_mode = swapchain_support_details.getBestPresetMode() };
 
 
-    Gui gui(device, m_window, graphic_context, *framework.getInstance(), m_logger);
+    Gui gui(device, m_window, graphic_context, *framework.getInstance(), ui_component, m_logger);
     auto buffers_pool = VulkanCommandBuffersPool(device.logical_device,
                                                  device.command_pool,
                                                  device.getGraphicQueue(),

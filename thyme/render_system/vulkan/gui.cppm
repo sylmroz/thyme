@@ -6,6 +6,7 @@ import imgui;
 import th.platform.glfw.glfw_window;
 import th.core.logger;
 import th.platform.imgui_context;
+import th.gui;
 
 import :device;
 import :graphic_context;
@@ -15,7 +16,7 @@ namespace th {
 export class Gui final {
 public:
     explicit Gui(const VulkanDeviceRAII& device, const GlfwWindow& window, const VulkanGraphicContext& context,
-                 vk::Instance instance, Logger& logger);
+                 vk::Instance instance, ui::IComponent& ui_component, Logger& logger);
 
     Gui(Gui&& other) noexcept = delete;
     auto operator=(Gui&& other) noexcept -> Gui& = delete;
@@ -32,6 +33,7 @@ private:
     vk::raii::PipelineCache m_pipelineCache;
     vk::raii::DescriptorPool m_descriptorPool;
     VulkanGraphicContext m_context;
+    ui::IComponent& m_ui_component;
     Logger& m_logger;
 };
 
@@ -48,10 +50,10 @@ constexpr auto g_descriptorSets = { vk::DescriptorPoolSize(vk::DescriptorType::e
                                     vk::DescriptorPoolSize(vk::DescriptorType::eInputAttachment, 1000) };
 
 Gui::Gui(const VulkanDeviceRAII& device, const GlfwWindow& window, const VulkanGraphicContext& context,
-         const vk::Instance instance, Logger& logger)
+         const vk::Instance instance, ui::IComponent& ui_component, Logger& logger)
     : m_pipelineCache{ device.logical_device.createPipelineCache(vk::PipelineCacheCreateInfo{}) },
       m_descriptorPool{ createDescriptorPool(device.logical_device, g_descriptorSets) }, m_context{ context },
-      m_logger{ logger } {
+      m_ui_component{ ui_component }, m_logger{ logger } {
     logger.debug("Create Gui Class");
     [[maybe_unused]] static ImGuiContext im_gui_context;
     ImGui_ImplGlfw_InitForVulkan(window.getHandler().get(), true);
@@ -84,20 +86,7 @@ Gui::Gui(const VulkanDeviceRAII& device, const GlfwWindow& window, const VulkanG
 }
 
 void Gui::draw(const vk::CommandBuffer command_buffer) {
-
-    /*bool show_demo_window{ true };
-    ImGui::ShowDemoWindow(&show_demo_window);*/
-
-    constexpr ImGuiWindowFlags window_flags{};
-    ImGui::Begin("viewport settings", nullptr, window_flags);
-
-    static float fov{ 0.0f };
-    ImGui::InputFloat("FOV", &fov, 0.01f, 0.1f, "%.2f");
-
-    static glm::vec3 camera_position{ 0.0f, 0.0f, 0.0f };
-    ImGui::InputFloat3("position", glm::value_ptr(camera_position));
-
-    ImGui::End();
+    m_ui_component.draw();
 
     ImGui::Render();
 

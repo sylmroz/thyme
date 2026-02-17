@@ -15,8 +15,7 @@ const auto terminate_handler = [](const std::string_view message) -> void {
 
 export class GlfwContext {
 public:
-    explicit GlfwContext(Logger& logger) : m_logger{ logger } {
-        m_logger.info("Initializing GLFW...");
+    explicit GlfwContext() {
         glfwSetErrorCallback([]([[maybe_unused]] int error, [[maybe_unused]] const char* description) -> void {
             // std::println("Error {} : msg: {}", error, description);
         });
@@ -46,11 +45,7 @@ public:
 
     ~GlfwContext() {
         glfwTerminate();
-        m_logger.info("Terminating GLFW...");
     }
-
-private:
-    Logger& m_logger;
 };
 
 }// namespace th

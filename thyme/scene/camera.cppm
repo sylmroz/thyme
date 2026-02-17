@@ -20,7 +20,7 @@ struct CameraArguments {
     float znear;
     float zfar;
     glm::vec2 resolution;
-    glm::vec3 eye;
+    glm::vec3 position;
     glm::vec3 center;
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
     YawPitchRoll yaw_pitch_roll;
@@ -69,8 +69,8 @@ public:
         updateViewMatrix();
     }
 
-    void setEyePosition(const glm::vec3& eye) {
-        m_camera_arguments.eye = eye;
+    void setPosition(const glm::vec3& position) {
+        m_camera_arguments.position = position;
         updateViewMatrix();
     }
 
@@ -94,6 +94,10 @@ public:
 
     [[nodiscard]] inline auto getViewProjectionMatrix() const noexcept -> const glm::mat4& {
         return m_view_projection_matrix;
+    }
+
+    [[nodiscard]] inline auto getPosition() const noexcept -> const glm::vec3& {
+        return m_camera_arguments.position;
     }
 
 private:

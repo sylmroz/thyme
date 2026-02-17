@@ -1,14 +1,18 @@
 import std;
 import glm;
+import imgui;
 
 import th.core.logger;
 import th.core.application;
 
 import th.scene.model;
+import th.scene.camera;
 import th.scene.texture_data;
 
 import th.platform.window;
 import th.platform.glfw.glfw_window;
+
+import th.gui;
 
 class ExampleApp: public th::Application {
 public:
@@ -50,9 +54,43 @@ public:
     }
 };
 
+class CameraSettings : public th::ui::IComponent {
+public:
+    explicit CameraSettings(th::Camera& camera) : m_camera(camera) {
+        m_camera_position = m_camera.getPosition();
+    }
+    void draw() override {
+        constexpr ImGuiWindowFlags window_flags{};
+        ImGui::Begin("viewport settings", nullptr, window_flags);
+
+        static float fov{ 0.0f };
+        ImGui::InputFloat("FOV", &fov, 0.01f, 0.1f, "%.2f");
+
+        if (ImGui::InputFloat3("position", glm::value_ptr(m_camera_position))) {
+            m_camera.setPosition(m_camera_position);
+        }
+
+        ImGui::End();
+    }
+
+private:
+    th::Camera& m_camera;
+    glm::vec3 m_camera_position{ 0.0f, 0.0f, 0.0f };
+};
+
 auto main() -> int {
     auto thyme_api_logger = th::Logger(th::LogLevel::info, "ThymeApi");
     ExampleApp app(thyme_api_logger);
-    app.run();
+    auto camera =
+                th::Camera{ th::CameraArguments{ .fov = 45.0f,
+                                         .znear = 0.1f,
+                                         .zfar = 100.0f,
+                                         .resolution = {1280, 720},
+                                         .position = { 2.0f, 2.0f, 2.0f },
+                                         .center = { 0.0f, 0.0f, 0.0f },
+                                         .up = { 0.0f, 0.0f, 1.0f },
+                                         .yaw_pitch_roll = th::YawPitchRoll{ .yaw = 0.0f, .pitch = 0.0f, .roll = 0.0f } } };
+    auto camera_settings = CameraSettings(camera);
+    app.run(camera_settings, camera);
     return 0;
 }

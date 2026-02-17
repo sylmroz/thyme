@@ -37,6 +37,7 @@ add_subdirectory(modules)
 add_subdirectory(platform)
 add_subdirectory(render_system)
 add_subdirectory(scene)
+add_subdirectory(ui)
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20 cxx_std_23)
 

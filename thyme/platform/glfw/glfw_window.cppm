@@ -42,8 +42,8 @@ public:
         return { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
     }
 
-    void initializeContext() const {
-        [[maybe_unused]] static auto glfw_context = GlfwContext(m_logger);
+    static void initializeContext() {
+        [[maybe_unused]] static auto glfw_context = GlfwContext();
     }
 
     [[nodiscard]] auto createSurface(const vk::raii::Instance& instance) const -> vk::raii::SurfaceKHR;
