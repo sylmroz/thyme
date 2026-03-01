@@ -23,8 +23,7 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	target_link_options(${PROJECT_NAME} PUBLIC $<$<CONFIG:Debug>:/INCREMENTAL>)
 endif()
 
-add_compile_definitions(VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
-		GLM_FORCE_RADIANS
+add_compile_definitions(GLM_FORCE_RADIANS
 		GLM_FORCE_DEPTH_ZERO_TO_ONE
 		GLM_GTX_INLINE_NAMESPACE
 		GLM_ENABLE_EXPERIMENTAL
@@ -64,7 +63,7 @@ target_precompile_headers(${PROJECT_NAME}
 
 find_package(spdlog REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
-find_package(Vulkan REQUIRED)
+find_package(Vulkan 1.4.335 REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(Stb REQUIRED)
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
@@ -73,17 +72,18 @@ find_package(glm CONFIG REQUIRED)
 find_package(glslang CONFIG REQUIRED)
 find_package(slang)
 
+include(vulkanCppModuleLib.cmake)
+include(glmCppModuleLib.cmake)
+
 target_link_libraries(${PROJECT_NAME} 
     PRIVATE
         spdlog::spdlog_header_only
         glfw
-        Vulkan::Vulkan
-        Vulkan::Headers
-		#Vulkan::HppModule
+		Vulkan::cppm
 		imgui::imgui
 		GPUOpen::VulkanMemoryAllocator
 		nlohmann_json::nlohmann_json
-		glm::glm
+		glm::cppm
 		glslang::glslang
 		glslang::glslang-default-resource-limits
 		glslang::SPIRV

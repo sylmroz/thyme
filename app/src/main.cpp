@@ -68,15 +68,15 @@ public:
             m_camera.updateViewMatrix();
         }
 
-        if (ImGui::InputFloat("Yaw", &m_camera.camera_arguments.yaw_pitch_roll.yaw, 0.1f, 0.1f, "%.2f")) {
+        if (ImGui::InputFloat("Yaw", &m_camera.camera_arguments.yaw_pitch_roll.yaw, 0.1f, 1.0f, "%.2f")) {
             m_camera.updateViewMatrix();
         }
 
-        if (ImGui::InputFloat("Pith", &m_camera.camera_arguments.yaw_pitch_roll.pitch, 0.1f, 0.1f, "%.2f")) {
+        if (ImGui::InputFloat("Pith", &m_camera.camera_arguments.yaw_pitch_roll.pitch, 0.1f, 1.0f, "%.2f")) {
             m_camera.updateViewMatrix();
         }
 
-        if (ImGui::InputFloat("Roll", &m_camera.camera_arguments.yaw_pitch_roll.roll, 0.1f, 0.1f, "%.2f")) {
+        if (ImGui::InputFloat("Roll", &m_camera.camera_arguments.yaw_pitch_roll.roll, 0.1f, 1.0f, "%.2f")) {
             m_camera.updateViewMatrix();
         }
 
@@ -91,20 +91,14 @@ auto main() -> int {
     auto thyme_api_logger = th::Logger(th::LogLevel::info, "ThymeApi");
     ExampleApp app(thyme_api_logger);
 
-    constexpr auto position = glm::vec3{ 2.0f, 2.0f, 2.0f };
-    constexpr auto center = glm::vec3{ 0.0f, 0.0f, 0.0f };
-    const auto direction = glm::normalize(position - center);
-
-    const auto yaw_pith_roll = th::calculateYawPithRollAngles(direction, glm::identity<glm::mat3>());
-
     auto camera = th::FpsCamera(th::FpsCameraArguments{
             .perspective_camera_arguments =
                     th::PerspectiveCameraArguments{
                             .fov = 45.0f, .znear = 0.1f, .zfar = 100.0f, .resolution = { 1280, 720 } },
             .position = { 2.0f, 2.0f, 2.0f },
-            .direction = { 0.0f, 1.0f, 0.0f },
+            .direction = glm::normalize(glm::vec3{ -1.0f, -1.0f, -1.0f }),
             .up = { 0.0f, 0.0f, 1.0f },
-            .yaw_pitch_roll = th::YawPitchRoll{ .yaw = 0.0f, .pitch = 0.0f, .roll = 0.0f } });
+            .yaw_pitch_roll = th::YawPitchRoll{ .yaw = 135.0f, .pitch = -45.0f, .roll = 0.0f } });
     auto camera_settings = CameraSettings(camera);
     app.run(camera_settings, camera);
     return 0;

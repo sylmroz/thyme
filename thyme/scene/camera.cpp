@@ -14,18 +14,20 @@ void FpsCamera::updateViewProjectionMatrix() {
 }
 
 void FpsCamera::updateViewMatrix() {
-    /*const auto pith_quat =
-            glm::quat(glm::radians(camera_arguments.yaw_pitch_roll.pitch) / 2.0f, camera_arguments.up);
-    const auto right = glm::cross(camera_arguments.direction, camera_arguments.up);
-    const auto yaw_quat =
-            glm::quat(glm::radians(camera_arguments.yaw_pitch_roll.yaw) / 2.0f, right);
-    camera_arguments.direction = (pith_quat * yaw_quat) * camera_arguments.direction;*/
-    m_view_matrix = glm::lookAt(camera_arguments.position, camera_arguments.position + camera_arguments.direction, camera_arguments.up);
+    constexpr auto world_front = glm::vec3(0.0f, 1.0f, 0.0f);
+    constexpr auto world_up = glm::vec3(0.0f, 0.0f,1.0f);
+    auto direction = glm::rotate(world_front, glm::radians(camera_arguments.yaw_pitch_roll.yaw), world_up);
+    const auto right = glm::normalize(glm::cross(direction, world_up));
+    direction = glm::normalize(glm::rotate(direction, glm::radians(camera_arguments.yaw_pitch_roll.pitch), right));
+    m_view_matrix = glm::lookAt(camera_arguments.position, camera_arguments.position + direction, world_up);
+    m_view_projection_matrix = m_projection_matrix * m_view_matrix;
 }
 
 void FpsCamera::updateProjectionMatrix() {
     const auto [fov, znear, zfar, resolution] = camera_arguments.perspective_camera_arguments;
-    m_projection_matrix = glm::perspective(fov, resolution.x / resolution.y, znear, zfar);
+    m_projection_matrix = glm::perspective(glm::radians(fov), resolution.x / resolution.y, znear, zfar);
+    m_projection_matrix[1][1] *= -1.0f;
+    m_view_projection_matrix = m_projection_matrix * m_view_matrix;
 }
 
 auto calculateYawPithRollAngles(const glm::vec3 dir, glm::mat3 world_axis) noexcept -> YawPitchRoll {
