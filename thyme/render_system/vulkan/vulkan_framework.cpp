@@ -49,16 +49,12 @@ VulkanFramework::VulkanFramework(const InitInfo& info,
         .applicationVersion = app_version,
         .pEngineName = info.engine_name.c_str(),
         .engineVersion = app_version,
-        .apiVersion = vk::HeaderVersionComplete,
+        .apiVersion = vk::ApiVersion14,
     };
 
     const auto instance_create_info = [&application_info, &enabled_extensions, this] {
 #if !defined(NDEBUG)
-        const auto enable_validation = validateLayers(g_validationLayers);
-        if (!enable_validation) {
-            m_logger.warn("Validation layers are not available! Proceeding without them.");
-        }
-        if (enable_validation) {
+        if (validateLayers(g_validationLayers)) {
             return vk::InstanceCreateInfo{
                 .flags = vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR,
                 .pApplicationInfo = &application_info,
@@ -68,6 +64,7 @@ VulkanFramework::VulkanFramework(const InitInfo& info,
                 .ppEnabledExtensionNames = enabled_extensions.data(),
             };
         }
+        m_logger.warn("Validation layers are not available! Proceeding without them.");
 #endif
         return vk::InstanceCreateInfo{
             .flags = vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR,
@@ -77,7 +74,8 @@ VulkanFramework::VulkanFramework(const InitInfo& info,
         };
     }();
 #if !defined(NDEBUG)
-    constexpr auto enabled_validation_features = std::array{ vk::ValidationFeatureEnableEXT::eSynchronizationValidation };
+    constexpr auto enabled_validation_features =
+            std::array{ vk::ValidationFeatureEnableEXT::eSynchronizationValidation };
     const auto instance_create_info_chain = vk::StructureChain(
             instance_create_info,
             VulkanDebug::createDebugUtilsMessengerCreateInfo(&m_logger),
@@ -88,7 +86,7 @@ VulkanFramework::VulkanFramework(const InitInfo& info,
 #else
     const vk::StructureChain instanceCreateInfoChain(instance_create_info);
 #endif
-    return m_context.createInstance(instance_create_info_chain.get<vk::InstanceCreateInfo>());
+    return vk::raii::Instance{ m_context, instance_create_info_chain.get<vk::InstanceCreateInfo>() };
 }
 
 void VulkanFramework::dumpExtensions() const {
@@ -135,10 +133,12 @@ auto VulkanFramework::validateExtension(std::span<const char* const> requested_e
 auto VulkanFramework::validateLayers(std::span<const char* const> requested_layers) const -> bool {
 
     const auto layer_properties_names =
-            m_context.enumerateInstanceLayerProperties()
-            | std::views::transform([](const vk::LayerProperties& layer) { return std::string_view(layer.layerName); });
-    const auto requested_layers_range =
-            requested_layers | std::views::transform([](const auto& extension) { return std::string_view(extension); });
+            m_context.enumerateInstanceLayerProperties() | std::views::transform([](const vk::LayerProperties& layer) {
+                return std::string_view(layer.layerName);
+            });
+    const auto requested_layers_range = requested_layers | std::views::transform([](const auto& extension) {
+                                            return std::string_view(extension);
+                                        });
     return arrayContainsArray(requested_layers_range, layer_properties_names);
 }
 

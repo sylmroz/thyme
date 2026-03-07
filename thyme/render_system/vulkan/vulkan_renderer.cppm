@@ -24,18 +24,17 @@ namespace th {
 
 export class VulkanRenderer {
 public:
-    explicit VulkanRenderer(const VulkanDeviceRAII& device, VulkanSwapchain& swapchain, ModelStorage& model_storage,
+    explicit VulkanRenderer(const VulkanDevice& device, VulkanSwapchain& swapchain, ModelStorage& model_storage,
                             Camera& camera, Gui& gui, const VulkanGraphicContext& context,
                             VulkanCommandBuffersPool& command_buffers_pool, Logger& logger) noexcept;
 
-    void draw(const VulkanDeviceRAII& device);
+    void draw(const VulkanDevice& device);
 
 private:
     Gui& m_gui;
     VulkanSwapchain& m_swapchain;
     VulkanCommandBuffersPool& m_command_buffers_pool;
     std::vector<std::unique_ptr<VulkanGraphicPipeline>> m_pipelines;
-    vk::raii::DescriptorPool m_descriptor_pool;
     std::unique_ptr<GradientPipeline> m_gradient_pipeline;
 
     VulkanDepthImageMemory m_depth_image_memory;

@@ -29,7 +29,7 @@ public:
                              vk::MemoryPropertyFlags memory_property_flags, vk::ImageAspectFlags aspect_flags,
                              vk::SampleCountFlagBits msaa, uint32_t mip_levels);
 
-    [[nodiscard]] auto create(const VulkanDeviceRAII& device, vk::Extent3D resolution) const -> ImageMemoryImageView;
+    [[nodiscard]] auto create(const vk::raii::PhysicalDevice& physical_device, const vk::raii::Device& device, vk::Extent3D resolution) const -> ImageMemoryImageView;
 
     [[nodiscard]] auto getMipLevels() const -> uint32_t {
         return m_mip_levels;
@@ -50,7 +50,7 @@ private:
 
 export class VulkanImageMemory {
 public:
-    VulkanImageMemory(const VulkanDeviceRAII& device, vk::Extent3D resolution, VulkanImageMemoryCreator memory_creator,
+    VulkanImageMemory(const VulkanDevice& device, vk::Extent3D resolution, VulkanImageMemoryCreator memory_creator,
                       const ImageTransition& image_transition);
 
     [[nodiscard]] auto getImage() const noexcept -> vk::Image {
@@ -69,12 +69,12 @@ public:
         return m_extent;
     }
 
-    void resize(const VulkanDeviceRAII& device, vk::Extent2D resolution);
-    void resize(const VulkanDeviceRAII& device, vk::Extent3D resolution);
+    void resize(const VulkanDevice& device, vk::Extent2D resolution);
+    void resize(const VulkanDevice& device, vk::Extent3D resolution);
 
-    void transitImageLayout(const VulkanDeviceRAII& device, ImageLayoutTransition layout_transition) const;
+    void transitImageLayout(const VulkanDevice& device, ImageLayoutTransition layout_transition) const;
     void transitImageLayout(vk::CommandBuffer command_buffer, ImageLayoutTransition layout_transition) const;
-    void transitImageLayout(const VulkanDeviceRAII& device, const ImageTransition& transition);
+    void transitImageLayout(const VulkanDevice& device, const ImageTransition& transition);
     void transitImageLayout(vk::CommandBuffer command_buffer, const ImageTransition& transition);
 
     [[nodiscard]] auto getImageMemoryBarrier(const ImageTransition& transition) -> vk::ImageMemoryBarrier2 {
@@ -97,19 +97,19 @@ private:
 
 export class VulkanDepthImageMemory: public VulkanImageMemory {
 public:
-    VulkanDepthImageMemory(const VulkanDeviceRAII& device, vk::Extent2D resolution, vk::Format format,
+    VulkanDepthImageMemory(const VulkanDevice& device, vk::Extent2D resolution, vk::Format format,
                            vk::SampleCountFlagBits msaa);
 };
 
 export class VulkanColorImageMemory: public VulkanImageMemory {
 public:
-    VulkanColorImageMemory(const VulkanDeviceRAII& device, vk::Extent2D resolution, vk::Format format,
+    VulkanColorImageMemory(const VulkanDevice& device, vk::Extent2D resolution, vk::Format format,
                            vk::SampleCountFlagBits msaa);
 };
 
 export class Vulkan2DTexture {
 public:
-    Vulkan2DTexture(const VulkanDeviceRAII& device, const TextureData& texture,
+    Vulkan2DTexture(const VulkanDevice& device, const TextureData& texture,
                     vk::Format format = vk::Format::eR8G8B8A8Unorm);
 
     [[nodiscard]] auto getImage() const noexcept -> vk::Image {
@@ -129,10 +129,10 @@ public:
         return { *m_sampler, getImageView(), image_layout };
     }
 
-    void setData(const VulkanDeviceRAII& device, const TextureData& texture);
+    void setData(const VulkanDevice& device, const TextureData& texture);
 
 private:
-    void generateMipmaps(const VulkanDeviceRAII& device) const;
+    void generateMipmaps(const VulkanDevice& device) const;
 
 private:
     VulkanImageMemory m_imageMemory;

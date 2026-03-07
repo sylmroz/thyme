@@ -24,19 +24,20 @@ static constexpr auto g_sDeviceExtensions = std::array{ vk::KHRSwapchainExtensio
         });
     }
 
-    const auto features = physical_device.getFeatures();
+    const auto features = physical_device.getFeatures2();
     constexpr auto vulkan13Features =
             vk::PhysicalDeviceVulkan13Features{ .synchronization2 = true, .dynamicRendering = true };
     constexpr auto vulkan12Features =
             vk::PhysicalDeviceVulkan12Features{ .descriptorIndexing = true, .bufferDeviceAddress = true };
+
+    const auto featureChain = vk::StructureChain{features, vulkan13Features, vulkan12Features};
+
     const auto deviceCreateInfo = vk::StructureChain(
             vk::DeviceCreateInfo{ .queueCreateInfoCount = static_cast<uint32_t>(deviceQueueCreateInfos.size()),
                                   .pQueueCreateInfos = deviceQueueCreateInfos.data(),
                                   .enabledExtensionCount = static_cast<uint32_t>(g_sDeviceExtensions.size()),
-                                  .ppEnabledExtensionNames = g_sDeviceExtensions.data(),
-                                  .pEnabledFeatures = &features },
-            vulkan13Features,
-            vulkan12Features);
+                                  .ppEnabledExtensionNames = g_sDeviceExtensions.data()},
+            featureChain.get<vk::PhysicalDeviceFeatures2>());
     return vk::raii::Device(physical_device, deviceCreateInfo.get<vk::DeviceCreateInfo>());
 }
 
@@ -73,7 +74,7 @@ static auto getMaxUsableSampleCount(const vk::PhysicalDevice& device) -> vk::Sam
     return vk::SampleCountFlagBits::e1;
 }
 
-auto VulkanPhysicalDevicesManager::enumeratePhysicalDevices(const vk::raii::Instance& instance,
+auto VulkanPhysicalDevicesManager::enumeratePhysicalDevices(std::span<const vk::raii::PhysicalDevice> physical_devices,
                                                             const std::optional<vk::SurfaceKHR>
                                                                     surface) const -> std::vector<PhysicalDevice> {
     static std::map<vk::PhysicalDeviceType, uint32_t> priorities = {
@@ -83,7 +84,7 @@ auto VulkanPhysicalDevicesManager::enumeratePhysicalDevices(const vk::raii::Inst
     };
 
     std::vector<PhysicalDevice> physicalDevices;
-    for (const auto& device : instance.enumeratePhysicalDevices()) {
+    for (const auto& device : physical_devices) {
         const auto queueFamilyIndex = QueueFamilyIndices(device, surface);
         const auto deviceSupportExtensions = deviceHasAllRequiredExtensions(device);
         const auto swapChainSupportDetailsValid =

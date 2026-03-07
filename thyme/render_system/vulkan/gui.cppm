@@ -15,7 +15,7 @@ import :utils;
 namespace th {
 export class Gui final {
 public:
-    explicit Gui(const VulkanDeviceRAII& device, const GlfwWindow& window, const VulkanGraphicContext& context,
+    explicit Gui(const VulkanDevice& device, const GlfwWindow& window, const VulkanGraphicContext& context,
                  vk::Instance instance, ui::IComponent& ui_component, Logger& logger);
 
     Gui(Gui&& other) noexcept = delete;
@@ -49,7 +49,7 @@ constexpr auto g_descriptorSets = { vk::DescriptorPoolSize(vk::DescriptorType::e
                                     vk::DescriptorPoolSize(vk::DescriptorType::eStorageBufferDynamic, 1000),
                                     vk::DescriptorPoolSize(vk::DescriptorType::eInputAttachment, 1000) };
 
-Gui::Gui(const VulkanDeviceRAII& device, const GlfwWindow& window, const VulkanGraphicContext& context,
+Gui::Gui(const VulkanDevice& device, const GlfwWindow& window, const VulkanGraphicContext& context,
          const vk::Instance instance, ui::IComponent& ui_component, Logger& logger)
     : m_pipelineCache{ device.logical_device.createPipelineCache(vk::PipelineCacheCreateInfo{}) },
       m_descriptorPool{ createDescriptorPool(device.logical_device, g_descriptorSets) }, m_context{ context },

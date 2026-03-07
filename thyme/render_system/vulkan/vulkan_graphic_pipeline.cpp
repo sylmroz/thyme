@@ -6,28 +6,27 @@ import th.scene.camera;
 
 namespace th {
 
-VulkanScenePipeline::VulkanScenePipeline(const VulkanDeviceRAII& device,
+VulkanScenePipeline::VulkanScenePipeline(const vk::raii::Device& device, vk::SampleCountFlagBits msaa_samples,
                                          const vk::PipelineRenderingCreateInfo& pipeline_rendering_create_info,
-                                         const vk::DescriptorPool descriptor_pool, std::vector<VulkanModel>& models,
+                                         std::vector<VulkanModel>& models,
                                          const vk::DescriptorBufferInfo& descriptor_buffer_info, Logger& logger) {
 
     DescriptorLayoutBuilder layout_builder;
     layout_builder.addBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex);
     layout_builder.addBinding(1, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex);
     layout_builder.addBinding(2, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment);
-    m_descriptor_set_layout = layout_builder.build(device.logical_device);
+    m_descriptor_set_layout = layout_builder.build(device);
 
-    m_pipeline_layout = device.logical_device.createPipelineLayout(vk::PipelineLayoutCreateInfo{
+    m_pipeline_layout = device.createPipelineLayout(vk::PipelineLayoutCreateInfo{
             .setLayoutCount = 1,
             .pSetLayouts = &(*m_descriptor_set_layout),
     });
 
     const auto descriptor_types_ratio = layout_builder.getDescriptorTypesRatio();
-    m_descriptor_pool =
-            createDescriptorPool(device.logical_device, descriptor_types_ratio, static_cast<uint32_t>(models.size()));
+    m_descriptor_pool = createDescriptorPool(device, descriptor_types_ratio, static_cast<uint32_t>(models.size()));
 
     const auto descriptorSetLayouts = std::vector{ models.size(), *m_descriptor_set_layout };
-    m_descriptor_sets = device.logical_device.allocateDescriptorSets(
+    m_descriptor_sets = device.allocateDescriptorSets(
             vk::DescriptorSetAllocateInfo{ .descriptorPool = m_descriptor_pool,
                                            .descriptorSetCount = static_cast<uint32_t>(descriptorSetLayouts.size()),
                                            .pSetLayouts = descriptorSetLayouts.data() });
@@ -61,11 +60,11 @@ VulkanScenePipeline::VulkanScenePipeline(const VulkanDeviceRAII& device,
                                     .descriptorType = vk::DescriptorType::eCombinedImageSampler,
                                     .pImageInfo = &descriptorImageInfo,
                             } };
-        device.logical_device.updateDescriptorSets(writeDescriptorSets, {});
+        device.updateDescriptorSets(writeDescriptorSets, {});
     }
 
     const auto slang_shader = compileSlangShader("triangle");
-    auto shader_module = createShaderModule(device.logical_device, std::span{ slang_shader }, logger);
+    auto shader_module = createShaderModule(device, std::span{ slang_shader }, logger);
     auto vertex_shader_stage_info = vk::PipelineShaderStageCreateInfo{ .stage = vk::ShaderStageFlagBits::eVertex,
                                                                        .module = shader_module,
                                                                        .pName = "main" };
@@ -89,7 +88,7 @@ VulkanScenePipeline::VulkanScenePipeline(const VulkanDeviceRAII& device,
 
     m_pipeline =
             VulkanGraphicsPipelineBuilder{}
-                    .setMultisampling(device.max_msaa_samples)
+                    .setMultisampling(msaa_samples)
                     .setColorAttachmentFormats(formats)
                     .setDepthAttachmentFormat(pipeline_rendering_create_info.depthAttachmentFormat)
                     .enableBlending(vk::PipelineColorBlendAttachmentState{
@@ -115,7 +114,7 @@ VulkanScenePipeline::VulkanScenePipeline(const VulkanDeviceRAII& device,
                     .setShaders(shader_stages)
                     .setInputTopology(vk::PrimitiveTopology::eTriangleList)
                     .setVertexInputState(vertex_input_state_create_info)
-                    .build(device.logical_device, *m_pipeline_layout);
+                    .build(device, *m_pipeline_layout);
 
     /*m_pipeline = createVulkanGraphicsPipeline(device.logical_device,
                                               *m_pipeline_layout,

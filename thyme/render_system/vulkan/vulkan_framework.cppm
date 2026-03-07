@@ -43,6 +43,10 @@ public:
         return m_instance;
     }
 
+    [[nodiscard]] auto getPhysicalDevices() const -> std::vector<vk::raii::PhysicalDevice> {
+        return m_instance.enumeratePhysicalDevices();
+    }
+
 private:
     [[nodiscard]] auto createInstance(const InitInfo& info, const std::vector<std::string>& window_extensions) const
             -> vk::raii::Instance;

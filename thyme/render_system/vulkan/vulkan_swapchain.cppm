@@ -51,7 +51,7 @@ private:
 
 export class SwapchainData {
 public:
-    explicit SwapchainData(const VulkanDeviceRAII& device, const SwapChainSettings& swapchain_settings,
+    explicit SwapchainData(const VulkanDevice& device, const SwapChainSettings& swapchain_settings,
                            const vk::Extent2D swapchain_extent, const vk::SurfaceKHR surface,
                            const vk::SwapchainKHR old_swapchain = {})
         : m_swapchain{ createSwapchain(device, swapchain_settings, swapchain_extent, surface, old_swapchain) },
@@ -82,14 +82,14 @@ private:
     SwapchainFrames m_swapchain_frames;
 
 private:
-    static [[nodiscard]] auto createSwapchain(const VulkanDeviceRAII& device, SwapChainSettings swapchain_settings,
+    static [[nodiscard]] auto createSwapchain(const VulkanDevice& device, SwapChainSettings swapchain_settings,
                                               vk::Extent2D swapchain_extent, vk::SurfaceKHR surface,
                                               vk::SwapchainKHR old_swapchain) -> vk::raii::SwapchainKHR;
 };
 
 export class VulkanSwapchain final {
 public:
-    VulkanSwapchain(const VulkanDeviceRAII& device, vk::SurfaceKHR surface, const VulkanGraphicContext& context,
+    VulkanSwapchain(const VulkanDevice& device, vk::SurfaceKHR surface, const VulkanGraphicContext& context,
                     vk::Extent2D swapchain_extent, VulkanCommandBuffersPool& command_pool, Logger& logger);
     void frameResized(vk::Extent2D resolution);
     auto prepareFrame() -> bool;
@@ -121,7 +121,7 @@ private:
     vk::Extent2D m_swapchain_extent;
     vk::Extent2D m_fallback_extent;
     VulkanGraphicContext m_context;
-    const VulkanDeviceRAII& m_device;
+    const VulkanDevice& m_device;
     SwapchainData m_swapchain_data;
     VulkanCommandBuffersPool& m_command_buffers_pool;
     Logger& m_logger;

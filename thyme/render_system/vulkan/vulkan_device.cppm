@@ -10,35 +10,6 @@ import :utils;
 
 namespace th {
 
-export struct VulkanDevice {
-    vk::PhysicalDevice physical_device;
-    vk::Device logical_device;
-    vk::CommandPool command_pool;
-    QueueFamilyIndices queue_family_indices;
-    vk::SampleCountFlagBits max_msaa_samples;
-
-    [[nodiscard]] auto getGraphicQueue() const noexcept -> vk::Queue {
-        return logical_device.getQueue(queue_family_indices.graphic_family.value(), 0);
-    }
-
-    [[nodiscard]] auto getPresentationQueue() const noexcept -> vk::Queue {
-        return logical_device.getQueue(queue_family_indices.present_family.value(), 0);
-    }
-
-    template <typename F, typename... Args>
-        requires(InvocableCommandWithCommandBuffer<F, Args...>)
-    void singleTimeCommand(F fun, Args... args) {
-        const auto commandBuffer = std::move(logical_device
-                                                     .allocateCommandBuffersUnique(vk::CommandBufferAllocateInfo{
-                                                             .commandPool = command_pool,
-                                                             .level = vk::CommandBufferLevel::ePrimary,
-                                                             .commandBufferCount = 1 })
-                                                     .front());
-        const auto graphicQueue = getGraphicQueue();
-        th::singleTimeCommand(commandBuffer.get(), graphicQueue, fun, args...);
-    }
-};
-
 class PhysicalDevice {
 public:
     explicit PhysicalDevice(const vk::raii::PhysicalDevice& physical_device,
@@ -54,8 +25,8 @@ public:
     [[nodiscard]] auto createLogicalDevice() const -> vk::raii::Device;
 };
 
-struct VulkanDeviceRAII {
-    explicit VulkanDeviceRAII(const PhysicalDevice& physical_device)
+struct VulkanDevice {
+    explicit VulkanDevice(const PhysicalDevice& physical_device)
         : physical_device(physical_device.physical_device), logical_device(physical_device.createLogicalDevice()),
           queue_family_indices(physical_device.queue_family_indices),
           max_msaa_samples{ physical_device.max_msaa_samples },
@@ -98,22 +69,12 @@ struct VulkanDeviceRAII {
 
 export class VulkanPhysicalDevicesManager {
 public:
-    explicit VulkanPhysicalDevicesManager(const vk::raii::Instance& instance,
+    explicit VulkanPhysicalDevicesManager(std::span<const vk::raii::PhysicalDevice> physical_devices,
                                           const std::optional<vk::SurfaceKHR> surface, Logger& logger)
-        : m_physical_devices{ enumeratePhysicalDevices(instance, surface) },
-          m_selected_device{ VulkanDeviceRAII{ m_physical_devices.front() } }, m_logger{ logger } {}
+        : m_physical_devices{ enumeratePhysicalDevices(physical_devices, surface) },
+          m_selected_device{ VulkanDevice{ m_physical_devices.front() } }, m_logger{ logger } {}
 
-    [[nodiscard]] auto getSelectedDevice() const noexcept -> VulkanDevice {
-        return VulkanDevice{
-            .physical_device = m_selected_device.physical_device,
-            .logical_device = *m_selected_device.logical_device,
-            .command_pool = *m_selected_device.command_pool,
-            .queue_family_indices = m_selected_device.queue_family_indices,
-            .max_msaa_samples = m_selected_device.max_msaa_samples,
-        };
-    }
-
-    [[nodiscard]] auto getCurrentDevice() const noexcept -> const VulkanDeviceRAII& {
+    [[nodiscard]] auto getCurrentDevice() const noexcept -> const VulkanDevice& {
         return m_selected_device;
     }
 
@@ -126,17 +87,17 @@ public:
             m_logger.error("{}", message);
             throw std::runtime_error(message);
         }
-        m_selected_device = VulkanDeviceRAII(*(m_physical_devices.begin() + index - 1));
+        m_selected_device = VulkanDevice(*(m_physical_devices.begin() + index - 1));
     }
 
 private:
-    [[nodiscard]] auto enumeratePhysicalDevices(const vk::raii::Instance& instance,
+    [[nodiscard]] auto enumeratePhysicalDevices(std::span<const vk::raii::PhysicalDevice> physical_devices,
                                                 std::optional<vk::SurfaceKHR> surface) const
             -> std::vector<PhysicalDevice>;
 
 private:
     std::vector<PhysicalDevice> m_physical_devices{};
-    VulkanDeviceRAII m_selected_device;
+    VulkanDevice m_selected_device;
 
     Logger& m_logger;
 };

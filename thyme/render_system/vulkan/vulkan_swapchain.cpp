@@ -21,7 +21,7 @@ SwapchainFrames::SwapchainFrames(const vk::raii::Device& device, const vk::raii:
     }
 }
 
-auto SwapchainData::createSwapchain(const VulkanDeviceRAII& device, const SwapChainSettings swapchain_settings,
+auto SwapchainData::createSwapchain(const VulkanDevice& device, const SwapChainSettings swapchain_settings,
                                     const vk::Extent2D swapchain_extent, const vk::SurfaceKHR surface,
                                     const vk::SwapchainKHR old_swapchain) -> vk::raii::SwapchainKHR {
     const auto& [surfaceFormat, presetMode, imageCount] = swapchain_settings;
@@ -53,7 +53,7 @@ auto SwapchainData::createSwapchain(const VulkanDeviceRAII& device, const SwapCh
     return device.logical_device.createSwapchainKHR(swapChainCreateInfo);
 }
 
-VulkanSwapchain::VulkanSwapchain(const VulkanDeviceRAII& device, const vk::SurfaceKHR surface,
+VulkanSwapchain::VulkanSwapchain(const VulkanDevice& device, const vk::SurfaceKHR surface,
                                  const VulkanGraphicContext& context, const vk::Extent2D swapchain_extent,
                                  VulkanCommandBuffersPool& command_pool, Logger& logger)
     : m_surface{ surface }, m_swapchain_extent{ swapchain_extent }, m_context{ context }, m_device{ device },

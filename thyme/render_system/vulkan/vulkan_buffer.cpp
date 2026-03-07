@@ -13,7 +13,7 @@ vk::raii::DeviceMemory initializeMemory(const vk::raii::Device& device, const vk
     });
 }
 
-VulkanBufferMemory::VulkanBufferMemory(const VulkanDeviceRAII& device, const size_t size,
+VulkanBufferMemory::VulkanBufferMemory(const VulkanDevice& device, const size_t size,
                                        const vk::BufferUsageFlags usage, const vk::MemoryPropertyFlags properties)
     : VulkanBufferMemory(device.logical_device, device.physical_device, size, usage, properties) {}
 

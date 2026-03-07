@@ -13,6 +13,7 @@ export struct VulkanGraphicContext {
     vk::Format color_format;
     vk::SurfaceFormatKHR surface_format;
     vk::PresentModeKHR present_mode;
+    vk::SampleCountFlagBits sample_count;
 };
 
 }// namespace th

@@ -22,6 +22,16 @@ private:
     bool m_requested_surface_support;
 };
 
+class QueueFamilyIndices2 {
+public:
+    explicit QueueFamilyIndices2(std::span<const vk::QueueFamilyProperties2> queue_family_properties,
+                                 std::span<const vk::QueueFlagBits> requested_queues);
+
+
+private:
+
+};
+
 struct SwapChainSettings {
     vk::SurfaceFormatKHR surfaceFormat;
     vk::PresentModeKHR presetMode;
@@ -63,11 +73,11 @@ public:
     }
 
     [[nodiscard]] inline auto getImageCount() const noexcept -> std::uint32_t {
-        const auto swapChainImageCount = capabilities.minImageCount + 1;
-        if (capabilities.maxImageCount > 0 && swapChainImageCount > capabilities.maxImageCount) {
+        const auto swap_chain_image_count = capabilities.minImageCount + 1;
+        if (capabilities.maxImageCount > 0 && swap_chain_image_count > capabilities.maxImageCount) {
             return capabilities.maxImageCount;
         }
-        return swapChainImageCount;
+        return swap_chain_image_count;
     }
 
     [[nodiscard]] inline auto getSwapExtent(const glm::uvec2& fallback_resolution) const noexcept -> vk::Extent2D {
@@ -95,7 +105,8 @@ public:
     const auto descriptor_pool_sizes =
             descriptor_sizes | std::views::transform([max_set](auto pair) {
                 return vk::DescriptorPoolSize{ .type = pair.first, .descriptorCount = max_set * pair.second };
-            }) | std::ranges::to<std::vector<vk::DescriptorPoolSize>>();
+            })
+            | std::ranges::to<std::vector<vk::DescriptorPoolSize>>();
     return device.createDescriptorPool(vk::DescriptorPoolCreateInfo{
             .flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
             .maxSets = max_set,
@@ -124,36 +135,36 @@ public:
 }
 
 template <typename F, typename... Args>
-concept InvocableCommandWithCommandBuffer = requires(F f, vk::CommandBuffer commandBuffer, Args... args) {
-    { f(commandBuffer, args...) } -> std::same_as<void>;
+concept InvocableCommandWithCommandBuffer = requires(F f, vk::CommandBuffer command_buffer, Args... args) {
+    { f(command_buffer, args...) } -> std::same_as<void>;
 };
 
 template <typename F, typename... Args>
     requires(InvocableCommandWithCommandBuffer<F, Args...>)
-void singleTimeCommand(const vk::CommandBuffer commandBuffer, const vk::Queue graphicQueue, F fun, Args... args) {
-    commandBuffer.begin(vk::CommandBufferBeginInfo{ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
-    fun(commandBuffer, args...);
-    commandBuffer.end();
-    graphicQueue.submit(
+void singleTimeCommand(const vk::CommandBuffer command_buffer, const vk::Queue graphic_queue, F fun, Args... args) {
+    command_buffer.begin(vk::CommandBufferBeginInfo{ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
+    fun(command_buffer, args...);
+    command_buffer.end();
+    graphic_queue.submit(
             vk::SubmitInfo{
                     .commandBufferCount = 1u,
-                    .pCommandBuffers = &commandBuffer,
+                    .pCommandBuffers = &command_buffer,
             },
             nullptr);
-    graphicQueue.waitIdle();
+    graphic_queue.waitIdle();
 }
 
 template <typename F, typename... Args>
     requires(InvocableCommandWithCommandBuffer<F, Args...>)
-void singleTimeCommand(const vk::Device device, const vk::CommandPool commandPool, const vk::Queue graphicQueue, F fun,
+void singleTimeCommand(const vk::Device device, const vk::CommandPool command_pool, const vk::Queue graphic_queue, F fun,
                        Args... args) {
-    const auto commandBuffer =
+    const auto command_buffer =
             std::move(device.allocateCommandBuffersUnique(
-                                    vk::CommandBufferAllocateInfo{ .commandPool = commandPool,
+                                    vk::CommandBufferAllocateInfo{ .commandPool = command_pool,
                                                                    .level = vk::CommandBufferLevel::ePrimary,
                                                                    .commandBufferCount = 1u })
                               .front());
-    singleTimeCommand(commandBuffer.get(), graphicQueue, fun, args...);
+    singleTimeCommand(command_buffer.get(), graphic_queue, fun, args...);
 }
 
 constexpr auto getBindingDescription() -> vk::VertexInputBindingDescription {
@@ -169,11 +180,11 @@ constexpr auto getAttributeDescriptions() -> std::array<vk::VertexInputAttribute
 }
 
 
-[[nodiscard]] inline auto findMemoryType(const vk::PhysicalDevice device, const uint32_t typeFilter,
+[[nodiscard]] inline auto findMemoryType(const vk::PhysicalDevice device, const uint32_t type_filter,
                                          const vk::MemoryPropertyFlags properties) -> uint32_t {
     const auto& mem_properties = device.getMemoryProperties();
     for (uint32_t i{ 0 }; i < mem_properties.memoryTypeCount; ++i) {
-        if ((typeFilter & (1 << i)) && (mem_properties.memoryTypes[i].propertyFlags & properties) == properties) {
+        if ((type_filter & (1 << i)) && (mem_properties.memoryTypes[i].propertyFlags & properties) == properties) {
             return i;
         }
     }

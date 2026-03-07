@@ -11,7 +11,7 @@ namespace th {
 
 export class VulkanBufferMemory {
 public:
-    VulkanBufferMemory(const VulkanDeviceRAII& device, size_t size, vk::BufferUsageFlags usage,
+    VulkanBufferMemory(const VulkanDevice& device, size_t size, vk::BufferUsageFlags usage,
                        vk::MemoryPropertyFlags memory_property_flags);
     VulkanBufferMemory(const vk::raii::Device& device, vk::PhysicalDevice physical_device, size_t size,
                        vk::BufferUsageFlags usage, vk::MemoryPropertyFlags memory_property_flags);
@@ -39,7 +39,7 @@ public:
     }
 
     template <typename Vec>
-    VulkanBufferMemory(const VulkanDeviceRAII& device, const Vec& data, const vk::BufferUsageFlags usage)
+    VulkanBufferMemory(const VulkanDevice& device, const Vec& data, const vk::BufferUsageFlags usage)
         : VulkanBufferMemory(device.logical_device, device.physical_device, device.getGraphicQueue(),
                              device.command_pool, data, usage) {}
 

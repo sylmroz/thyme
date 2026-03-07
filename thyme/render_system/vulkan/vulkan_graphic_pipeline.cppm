@@ -16,14 +16,15 @@ import :uniform_buffer_object;
 
 namespace th {
 
-class  VulkanGraphicsPipelineBuilder {
+class VulkanGraphicsPipelineBuilder {
 public:
     [[nodiscard]] auto build(const vk::raii::Device& device, const vk::PipelineLayout& pipeline_layout,
                              const vk::Optional<const vk::raii::PipelineCache>& pipeline_cache = nullptr) const
             -> vk::raii::Pipeline;
 
     auto setShader(vk::PipelineShaderStageCreateInfo shader_stage_create_info) -> VulkanGraphicsPipelineBuilder&;
-    auto setShaders(std::span<const vk::PipelineShaderStageCreateInfo> shader_stage_create_info_list) -> VulkanGraphicsPipelineBuilder&;
+    auto setShaders(std::span<const vk::PipelineShaderStageCreateInfo> shader_stage_create_info_list)
+            -> VulkanGraphicsPipelineBuilder&;
     auto setInputTopology(vk::PrimitiveTopology primitive_topology) -> VulkanGraphicsPipelineBuilder&;
     auto setCullMode(vk::CullModeFlags cull_mode_flags, vk::FrontFace front_face) -> VulkanGraphicsPipelineBuilder&;
     auto setMultisampling(vk::SampleCountFlagBits samples) -> VulkanGraphicsPipelineBuilder&;
@@ -73,9 +74,9 @@ public:
 
 export class VulkanScenePipeline final: public VulkanGraphicPipeline {
 public:
-    explicit VulkanScenePipeline(const VulkanDeviceRAII& device,
+    explicit VulkanScenePipeline(const vk::raii::Device& device, vk::SampleCountFlagBits msaa_samples,
                                  const vk::PipelineRenderingCreateInfo& pipeline_rendering_create_info,
-                                 vk::DescriptorPool descriptor_pool, std::vector<VulkanModel>& models,
+                                 std::vector<VulkanModel>& models,
                                  const vk::DescriptorBufferInfo& descriptor_buffer_info, Logger& logger);
 
     void draw(vk::CommandBuffer command_buffer, const std::vector<VulkanModel>& models) const override;

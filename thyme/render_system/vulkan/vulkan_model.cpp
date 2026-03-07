@@ -6,7 +6,7 @@ import th.scene.model;
 
 namespace th {
 
-VulkanModel::VulkanModel(const Model& model, const VulkanDeviceRAII& device)
+VulkanModel::VulkanModel(const Model& model, const VulkanDevice& device)
     : m_vertex_memory_buffer{ VulkanBufferMemory(device, model.mesh.vertices, vk::BufferUsageFlagBits::eVertexBuffer) },
       m_index_memory_buffer{ VulkanBufferMemory(device, model.mesh.indices, vk::BufferUsageFlagBits::eIndexBuffer) },
       m_uniform_buffer_object{ device }, m_texture{ device, model.texture },

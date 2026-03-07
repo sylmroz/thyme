@@ -12,7 +12,7 @@ export namespace th {
 template <typename T>
 class VulkanUniformBuffer final {
 public:
-    explicit VulkanUniformBuffer(const VulkanDeviceRAII& device)
+    explicit VulkanUniformBuffer(const VulkanDevice& device)
         : m_uniformMemoryBuffer{ VulkanBufferMemory(device,
                                                     sizeof(T),
                                                     vk::BufferUsageFlagBits::eUniformBuffer,

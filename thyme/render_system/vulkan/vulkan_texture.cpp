@@ -88,7 +88,7 @@ VulkanImageMemoryCreator::VulkanImageMemoryCreator(const vk::Format format, cons
     : m_format{ format }, m_image_usage_flags{ image_usage_flags }, m_memory_property_flags{ memory_property_flags },
       m_aspect_flags{ aspect_flags }, m_msaa{ msaa }, m_mip_levels{ mip_levels } {}
 
-auto VulkanImageMemoryCreator::create(const VulkanDeviceRAII& device, const vk::Extent3D resolution) const
+auto VulkanImageMemoryCreator::create(const vk::raii::PhysicalDevice& physical_device, const vk::raii::Device& device, const vk::Extent3D resolution) const
         -> ImageMemoryImageView {
     const auto createInfo = vk::ImageCreateInfo{
         .imageType = vk::ImageType::e2D,
@@ -101,14 +101,14 @@ auto VulkanImageMemoryCreator::create(const VulkanDeviceRAII& device, const vk::
         .usage = m_image_usage_flags,
         .sharingMode = vk::SharingMode::eExclusive,
     };
-    auto image = device.logical_device.createImage(createInfo);
+    auto image = device.createImage(createInfo);
     const vk::MemoryRequirements memory_requirements = image.getMemoryRequirements();
-    auto memory = device.logical_device.allocateMemory(vk::MemoryAllocateInfo{
+    auto memory = device.allocateMemory(vk::MemoryAllocateInfo{
             .allocationSize = memory_requirements.size,
             .memoryTypeIndex = findMemoryType(
-                    device.physical_device, memory_requirements.memoryTypeBits, m_memory_property_flags) });
+                    physical_device, memory_requirements.memoryTypeBits, m_memory_property_flags) });
     image.bindMemory(memory, 0);
-    auto image_view = device.logical_device.createImageView(
+    auto image_view = device.createImageView(
             vk::ImageViewCreateInfo{ .image = image,
                                      .viewType = vk::ImageViewType::e2D,
                                      .format = m_format,
@@ -122,9 +122,9 @@ auto VulkanImageMemoryCreator::create(const VulkanDeviceRAII& device, const vk::
                                  .image_view = std::move(image_view) };
 }
 
-VulkanImageMemory::VulkanImageMemory(const VulkanDeviceRAII& device, const vk::Extent3D resolution,
+VulkanImageMemory::VulkanImageMemory(const VulkanDevice& device, const vk::Extent3D resolution,
                                      VulkanImageMemoryCreator memory_creator, const ImageTransition& image_transition)
-    : m_image_memory_image_view(memory_creator.create(device, resolution)), m_extent(resolution),
+    : m_image_memory_image_view(memory_creator.create(device.physical_device, device.logical_device, resolution)), m_extent(resolution),
       m_image_memory_creator(std::move(memory_creator)),
       m_image_layout_transition(m_image_memory_image_view.image, m_image_memory_creator.getImageAspectFlags(),
                                 m_image_memory_creator.getMipLevels(), image_transition),
@@ -132,23 +132,23 @@ VulkanImageMemory::VulkanImageMemory(const VulkanDeviceRAII& device, const vk::E
     resize(device, resolution);
 }
 
-void VulkanImageMemory::resize(const VulkanDeviceRAII& device, const vk::Extent2D resolution) {
+void VulkanImageMemory::resize(const VulkanDevice& device, const vk::Extent2D resolution) {
     resize(device, vk::Extent3D{ .width = resolution.width, .height = resolution.height, .depth = 1 });
 }
 
-void VulkanImageMemory::resize(const VulkanDeviceRAII& device, const vk::Extent3D resolution) {
+void VulkanImageMemory::resize(const VulkanDevice& device, const vk::Extent3D resolution) {
     if (resolution == m_extent) {
         return;
     }
     m_extent = resolution;
-    m_image_memory_image_view = m_image_memory_creator.create(device, m_extent);
+    m_image_memory_image_view = m_image_memory_creator.create(device.physical_device, device.logical_device, m_extent);
     m_image_layout_transition = ImageLayoutTransitionState(m_image_memory_image_view.image,
                                                            m_image_memory_creator.getImageAspectFlags(),
                                                            m_image_memory_creator.getMipLevels(),
                                                            m_initial_state);
 }
 
-void VulkanImageMemory::transitImageLayout(const VulkanDeviceRAII& device,
+void VulkanImageMemory::transitImageLayout(const VulkanDevice& device,
                                            ImageLayoutTransition layout_transition) const {
     device.singleTimeCommand(
             [layout_transition,
@@ -167,7 +167,7 @@ void VulkanImageMemory::transitImageLayout(const vk::CommandBuffer command_buffe
                            m_image_memory_creator.getMipLevels(),
                            m_image_memory_creator.getImageAspectFlags());
 }
-void VulkanImageMemory::transitImageLayout(const VulkanDeviceRAII& device, const ImageTransition& transition) {
+void VulkanImageMemory::transitImageLayout(const VulkanDevice& device, const ImageTransition& transition) {
     device.singleTimeCommand([&](const vk::CommandBuffer command_buffer) {
         m_image_layout_transition.transitTo(command_buffer, transition);
     });
@@ -194,7 +194,7 @@ void VulkanImageMemory::blitTo(const vk::CommandBuffer command_buffer, const vk:
     blitImage(command_buffer, m_image_memory_image_view.image, m_extent, dst_image, dst_resolution);
 }
 
-VulkanDepthImageMemory::VulkanDepthImageMemory(const VulkanDeviceRAII& device, const vk::Extent2D resolution,
+VulkanDepthImageMemory::VulkanDepthImageMemory(const VulkanDevice& device, const vk::Extent2D resolution,
                                                const vk::Format format, const vk::SampleCountFlagBits msaa)
     : VulkanImageMemory(device, vk::Extent3D{ .width = resolution.width, .height = resolution.height, .depth = 1 },
                         VulkanImageMemoryCreator(format, vk::ImageUsageFlagBits::eDepthStencilAttachment,
@@ -203,7 +203,7 @@ VulkanDepthImageMemory::VulkanDepthImageMemory(const VulkanDeviceRAII& device, c
                         ImageTransition{ .pipeline_stage = vk::PipelineStageFlagBits2::eEarlyFragmentTests,
                                          .access_flag_bits = vk::AccessFlagBits2::eNone }) {}
 
-VulkanColorImageMemory::VulkanColorImageMemory(const VulkanDeviceRAII& device, const vk::Extent2D resolution,
+VulkanColorImageMemory::VulkanColorImageMemory(const VulkanDevice& device, const vk::Extent2D resolution,
                                                const vk::Format format, const vk::SampleCountFlagBits msaa)
     : VulkanImageMemory(device, vk::Extent3D{ .width = resolution.width, .height = resolution.height, .depth = 1 },
                         VulkanImageMemoryCreator(
@@ -213,7 +213,7 @@ VulkanColorImageMemory::VulkanColorImageMemory(const VulkanDeviceRAII& device, c
                                 vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eColor, msaa, 1),
                         ImageTransition{ .pipeline_stage = vk::PipelineStageFlagBits2::eAllCommands }) {}
 
-Vulkan2DTexture::Vulkan2DTexture(const VulkanDeviceRAII& device, const TextureData& texture, const vk::Format format)
+Vulkan2DTexture::Vulkan2DTexture(const VulkanDevice& device, const TextureData& texture, const vk::Format format)
     : m_imageMemory{ VulkanImageMemory(
               device,
               vk::Extent3D{ .width = texture.getResolution().x, .height = texture.getResolution().y, .depth = 1 },
@@ -232,7 +232,7 @@ Vulkan2DTexture::Vulkan2DTexture(const VulkanDeviceRAII& device, const TextureDa
     setData(device, texture);
 }
 
-void Vulkan2DTexture::setData(const VulkanDeviceRAII& device, const TextureData& texture) {
+void Vulkan2DTexture::setData(const VulkanDevice& device, const TextureData& texture) {
     m_extent = vk::Extent2D(texture.getResolution().x, texture.getResolution().y);
     m_imageMemory.resize(device, vk::Extent3D{ .width = m_extent.width, .height = m_extent.height, .depth = 1 });
     m_mipLevels = texture.getMipLevels();
@@ -269,7 +269,7 @@ void Vulkan2DTexture::setData(const VulkanDeviceRAII& device, const TextureData&
     generateMipmaps(device);
 }
 
-void Vulkan2DTexture::generateMipmaps(const VulkanDeviceRAII& device) const {
+void Vulkan2DTexture::generateMipmaps(const VulkanDevice& device) const {
     const auto& logical_device = device.logical_device;
     const auto physicalDevice = device.physical_device;
     const auto& commandPool = device.command_pool;
