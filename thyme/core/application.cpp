@@ -10,6 +10,7 @@ import th.platform.window;
 import th.platform.window_event_handler;
 import th.platform.window_settings;
 import th.platform.glfw.glfw_window;
+import th.render_system.vulkan;
 
 namespace th {
 
@@ -39,9 +40,23 @@ void Application::run(ui::IComponent& component, Camera& camera) {
                     window_settings.setMaximized(maximize.maximized);
                 });
 
+        const auto framework = VulkanFramework::create<GlfwWindow>(
+        VulkanFramework::InitInfo{
+                .app_name = "Thyme app",
+                .engine_name = "Vulkan backend"
+        },
+        m_logger);
+
+        const auto surface = window.createSurface(framework.getInstance());
+
+        const auto physical_devices_manager =
+                VulkanPhysicalDevicesManager(framework.getPhysicalDevices(), *surface, m_logger);
+
+        auto& device = physical_devices_manager.getCurrentDevice();
+
         auto engine =
                 Engine(EngineConfig{ .app_name = m_name }, window, m_model_storage, window_event_handlers, m_logger);
-        engine.run(camera, component);
+        engine.run(camera, component, surface, device, framework.getInstance());
     } catch (const std::exception& e) {
         m_logger.error("Error occurred during app runtime\n Error: {}"sv, e.what());
     } catch (...) {

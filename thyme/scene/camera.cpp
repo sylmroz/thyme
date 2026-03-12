@@ -16,9 +16,13 @@ void FpsCamera::updateViewProjectionMatrix() {
 void FpsCamera::updateViewMatrix() {
     constexpr auto world_front = glm::vec3(0.0f, 1.0f, 0.0f);
     constexpr auto world_up = glm::vec3(0.0f, 0.0f,1.0f);
-    auto direction = glm::rotate(world_front, glm::radians(camera_arguments.yaw_pitch_roll.yaw), world_up);
+    /*auto direction = glm::rotate(world_front, glm::radians(camera_arguments.yaw_pitch_roll.yaw), world_up);
     const auto right = glm::normalize(glm::cross(direction, world_up));
-    direction = glm::normalize(glm::rotate(direction, glm::radians(camera_arguments.yaw_pitch_roll.pitch), right));
+    direction = glm::normalize(glm::rotate(direction, glm::radians(camera_arguments.yaw_pitch_roll.pitch), right));*/
+    const auto [yaw, pitch, roll] = camera_arguments.yaw_pitch_roll;
+    const auto rotation = glm::quat(glm::vec3(glm::radians(pitch),glm::radians(yaw), glm::radians(roll)));
+    const auto direction = glm::normalize(rotation * world_front);
+
     m_view_matrix = glm::lookAt(camera_arguments.position, camera_arguments.position + direction, world_up);
     m_view_projection_matrix = m_projection_matrix * m_view_matrix;
 }

@@ -38,6 +38,24 @@ struct SwapChainSettings {
     std::uint32_t imageCount;
 };
 
+[[nodiscard]] auto isPhysicalDeviceSuitable(const vk::PhysicalDevice device, const vk::SurfaceKHR surface) -> bool {
+    return !(device.getSurfaceFormatsKHR(surface).empty() && device.getSurfacePresentModesKHR(surface).empty());
+}
+
+class VulkanSurface {
+public:
+    explicit VulkanSurface(vk::raii::SurfaceKHR surface): m_surface(std::move(surface)) {}
+
+    [[nodiscard]] auto isPhysicalDeviceSuitable(const vk::PhysicalDevice device) const -> bool {
+        return !(device.getSurfaceFormatsKHR(*m_surface).empty() && device.getSurfacePresentModesKHR(m_surface).empty());
+    }
+
+
+
+private:
+    vk::raii::SurfaceKHR m_surface;
+};
+
 class SwapChainSupportDetails {
 public:
     explicit SwapChainSupportDetails(const vk::PhysicalDevice& device, vk::SurfaceKHR surface);

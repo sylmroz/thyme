@@ -25,7 +25,7 @@ public:
     [[nodiscard]] auto createLogicalDevice() const -> vk::raii::Device;
 };
 
-struct VulkanDevice {
+export struct VulkanDevice {
     explicit VulkanDevice(const PhysicalDevice& physical_device)
         : physical_device(physical_device.physical_device), logical_device(physical_device.createLogicalDevice()),
           queue_family_indices(physical_device.queue_family_indices),

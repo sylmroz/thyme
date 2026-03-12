@@ -88,7 +88,7 @@ auto VulkanPhysicalDevicesManager::enumeratePhysicalDevices(std::span<const vk::
         const auto queueFamilyIndex = QueueFamilyIndices(device, surface);
         const auto deviceSupportExtensions = deviceHasAllRequiredExtensions(device);
         const auto swapChainSupportDetailsValid =
-                surface.has_value() ? SwapChainSupportDetails(device, surface.value()).isValid() : true;
+                surface.has_value() ? isPhysicalDeviceSuitable(device, surface.value()) : true;
         const auto maxMsaaSamples = getMaxUsableSampleCount(device);
         if (queueFamilyIndex.isCompleted() && deviceSupportExtensions && swapChainSupportDetailsValid
             && device.getFeatures().samplerAnisotropy) {

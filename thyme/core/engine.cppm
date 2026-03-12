@@ -28,9 +28,11 @@ struct EngineConfig {
 
 class Engine final {
 public:
-    explicit Engine(const EngineConfig& engine_config, GlfwWindow& window, ModelStorage& model_storage, WindowEventsHandlers& window_event_handler, Logger& logger);
+    explicit Engine(const EngineConfig& engine_config, GlfwWindow& window, ModelStorage& model_storage,
+                    WindowEventsHandlers& window_event_handler, Logger& logger);
 
-    void run(Camera& camera, ui::IComponent& ui_component);
+    void run(Camera& camera, ui::IComponent& ui_component, vk::SurfaceKHR surface, const VulkanDevice& device,
+             vk::Instance instance);
 
 private:
     EngineConfig m_engine_config;

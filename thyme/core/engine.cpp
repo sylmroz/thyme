@@ -16,23 +16,14 @@ Engine::Engine(const EngineConfig& engine_config,
     : m_engine_config{ engine_config }, m_window{ window }, m_window_event_handler{ window_event_handler },
       m_model_storage{ model_storage }, m_logger{ logger } {}
 
-void Engine::run(Camera& camera, ui::IComponent& ui_component) {
+void Engine::run(Camera& camera,
+                 ui::IComponent& ui_component,
+                 const vk::SurfaceKHR surface,
+                 const VulkanDevice& device,
+                 const vk::Instance instance) {
     m_logger.info("Start {} engine", m_engine_config.engine_name);
 
-    const auto framework = VulkanFramework::create<GlfwWindow>(
-            VulkanFramework::InitInfo{
-                    .app_name = m_engine_config.app_name,
-                    .engine_name = m_engine_config.engine_name,
-            },
-            m_logger);
-
-    const auto surface = m_window.createSurface(framework.getInstance());
-
-    const auto physical_devices_manager =
-            VulkanPhysicalDevicesManager(framework.getPhysicalDevices(), *surface, m_logger);
-
-    auto& device = physical_devices_manager.getCurrentDevice();
-    const auto swapchain_support_details = SwapChainSupportDetails(device.physical_device, *surface);
+    const auto swapchain_support_details = SwapChainSupportDetails(device.physical_device, surface);
     const auto graphic_context =
             VulkanGraphicContext{ .max_frames_in_flight = 3,
                                   .image_count = swapchain_support_details.getImageCount(),
@@ -42,7 +33,7 @@ void Engine::run(Camera& camera, ui::IComponent& ui_component) {
                                   .present_mode = swapchain_support_details.getBestPresetMode(),
                                   .sample_count = std::clamp(vk::SampleCountFlagBits::e4,  vk::SampleCountFlagBits::e1, device.max_msaa_samples)};
 
-    Gui gui(device, m_window, graphic_context, *framework.getInstance(), ui_component, m_logger);
+    Gui gui(device, m_window, graphic_context, instance, ui_component, m_logger);
     auto buffers_pool = VulkanCommandBuffersPool(device.logical_device,
                                                  device.command_pool,
                                                  device.getGraphicQueue(),
@@ -50,7 +41,7 @@ void Engine::run(Camera& camera, ui::IComponent& ui_component) {
                                                  m_logger);
     const auto frame_buffer_size = m_window.getFrameBufferSize();
     VulkanSwapchain swapchain(device,
-                              *surface,
+                              surface,
                               graphic_context,
                               swapchain_support_details.getSwapExtent(frame_buffer_size),
                               buffers_pool,

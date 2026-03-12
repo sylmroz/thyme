@@ -54,6 +54,14 @@ public:
         return current_buffer;
     }
 
+    [[nodiscard]] auto size() const noexcept -> std::size_t {
+        return m_command_buffers.size();
+    }
+
+    [[nodiscard]] auto currentIndex() const noexcept -> std::size_t {
+        return m_current;
+    }
+
     void waitFor(const vk::raii::Device& device, vk::raii::Semaphore depend_semaphore) {
         auto& current = get();
         current.waitFor(device, std::move(depend_semaphore));
