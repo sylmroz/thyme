@@ -10,6 +10,48 @@ import :utils;
 
 namespace th {
 
+export [[nodiscard]] auto getMaxUsableSampleCount(vk::PhysicalDevice device) noexcept -> vk::SampleCountFlagBits;
+export [[nodiscard]] auto filterDevices(std::span<const vk::raii::PhysicalDevice> physical_devices,
+                                        vk::SurfaceKHR surface) -> std::vector<vk::raii::PhysicalDevice>;
+
+export [[nodiscard]] auto createLogicalDevice(const vk::raii::PhysicalDevice& physical_device, uint32_t queue_index)
+        -> vk::raii::Device;
+
+export class PhysicalDevice2 {
+public:
+    explicit PhysicalDevice2(const vk::raii::PhysicalDevice& physical_device);
+
+    vk::raii::PhysicalDevice physical_device;
+    vk::SampleCountFlagBits max_msaa_samples;
+    std::string device_name;
+};
+
+export class PhysicalDevices2 {
+    using iter = std::vector<PhysicalDevice2>::iterator;
+
+public:
+    explicit PhysicalDevices2(std::span<const vk::raii::PhysicalDevice> physical_devices);
+
+    [[nodiscard]] auto begin() noexcept -> iter {
+        return physical_devices.begin();
+    }
+    [[nodiscard]] auto end() noexcept -> iter {
+        return physical_devices.end();
+    }
+
+    [[nodiscard]] auto front() noexcept -> PhysicalDevice2& { return physical_devices.front();}
+
+    [[nodiscard]] auto current() noexcept -> vk::raii::PhysicalDevice& {
+        return front().physical_device;
+    }
+
+    std::vector<PhysicalDevice2> physical_devices;
+
+private:
+    static [[nodiscard]] auto sortPhysicalDevices(std::span<const vk::raii::PhysicalDevice> physical_devices)
+            -> std::vector<PhysicalDevice2>;
+};
+
 class PhysicalDevice {
 public:
     explicit PhysicalDevice(const vk::raii::PhysicalDevice& physical_device,
@@ -32,8 +74,8 @@ export struct VulkanDevice {
           max_msaa_samples{ physical_device.max_msaa_samples },
           command_pool{ logical_device,
                         vk::CommandPoolCreateInfo{ .flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-                                                   .queueFamilyIndex =
-                                                           queue_family_indices.graphic_family.value() } } {}
+                                                   .queueFamilyIndex = queue_family_indices.graphic_family.value() } } {
+    }
 
     [[nodiscard]] auto getLogicalDevice() const noexcept -> const vk::raii::Device& {
         return logical_device;
@@ -54,7 +96,7 @@ export struct VulkanDevice {
     }
 
     template <typename F, typename... Args>
-    requires(InvocableCommandWithCommandBuffer<F, Args...>)
+        requires(InvocableCommandWithCommandBuffer<F, Args...>)
     void singleTimeCommand(F fun, Args... args) const {
         const auto commandBuffer = std::move(logical_device
                                                      .allocateCommandBuffers(vk::CommandBufferAllocateInfo{
@@ -69,9 +111,9 @@ export struct VulkanDevice {
 
 export class VulkanPhysicalDevicesManager {
 public:
-    explicit VulkanPhysicalDevicesManager(std::span<const vk::raii::PhysicalDevice> physical_devices,
+    explicit VulkanPhysicalDevicesManager(const std::span<const vk::raii::PhysicalDevice> physical_devices,
                                           const std::optional<vk::SurfaceKHR> surface, Logger& logger)
-        : m_physical_devices{ enumeratePhysicalDevices(physical_devices, surface) },
+        : m_physical_devices{ enumeratePhysicalDevices(physical_devices, surface.value()) },
           m_selected_device{ VulkanDevice{ m_physical_devices.front() } }, m_logger{ logger } {}
 
     [[nodiscard]] auto getCurrentDevice() const noexcept -> const VulkanDevice& {
@@ -92,8 +134,7 @@ public:
 
 private:
     [[nodiscard]] auto enumeratePhysicalDevices(std::span<const vk::raii::PhysicalDevice> physical_devices,
-                                                std::optional<vk::SurfaceKHR> surface) const
-            -> std::vector<PhysicalDevice>;
+                                                vk::SurfaceKHR surface) const -> std::vector<PhysicalDevice>;
 
 private:
     std::vector<PhysicalDevice> m_physical_devices{};

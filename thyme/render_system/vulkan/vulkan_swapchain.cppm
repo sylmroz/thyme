@@ -21,6 +21,7 @@ export struct SwapchainFrame {
 
 export class SwapchainFrames {
 public:
+    SwapchainFrames() = default;
     explicit SwapchainFrames(const vk::raii::Device& device, const vk::raii::SwapchainKHR& swapchain,
                              vk::Format format);
 
@@ -35,6 +36,10 @@ public:
         return getSwapchainFrameInternal(index);
     }
 
+    [[nodiscard]] auto getImageMemoryBarrier(uint32_t i, const ImageTransition& transition) -> vk::ImageMemoryBarrier2;
+
+    void transitImageLayout(uint32_t i, vk::CommandBuffer command_buffer, const ImageTransition& transition);
+
 private:
     [[nodiscard]] auto getSwapchainFrameInternal(const std::uint32_t index) const -> SwapchainFrame {
         if (index >= m_images.size()) {
@@ -47,6 +52,7 @@ private:
 private:
     std::vector<vk::Image> m_images;
     std::vector<vk::raii::ImageView> m_image_views;
+    std::vector<ImageLayoutTransitionState> m_transition_states;
 };
 
 export class SwapchainData {
@@ -76,6 +82,10 @@ public:
     [[nodiscard]] auto getSwapchainFrame(const uint32_t index) const noexcept -> SwapchainFrame {
         return m_swapchain_frames.getSwapchainFrame(index);
     }
+
+    [[nodiscard]] auto getImageMemoryBarrier(uint32_t i, const ImageTransition& transition) -> vk::ImageMemoryBarrier2;
+
+    void transitImageLayout(uint32_t i, vk::CommandBuffer command_buffer, const ImageTransition& transition);
 
 private:
     vk::raii::SwapchainKHR m_swapchain;
@@ -127,7 +137,72 @@ private:
     Logger& m_logger;
 
     std::vector<vk::raii::Semaphore> m_image_rendering_semaphore;
-    std::vector<ImageLayoutTransitionState> m_transition_states;
 };
+
+export enum struct SwapChainCreationState {
+    success,
+    invalid_swapchain,
+    invalid_size
+};
+
+export class VulkanSwapchain2: public RenderTarget {
+public:
+    VulkanSwapchain2(const vk::raii::PhysicalDevice& physical_device, const vk::raii::Device& device,
+                     uint32_t queue_family_index, vk::SurfaceKHR surface,
+                     std::function<vk::Extent2D()> get_frame_buffer_size, Logger& logger);
+
+    auto prepareFrame(const vk::raii::PhysicalDevice& physical_device, const vk::raii::Device& device,
+                      VulkanCommandBuffersPool2& command_buffers_pool) -> bool;
+    void submitFrame(VulkanCommandBuffersPool2& command_buffers_pool, const vk::raii::Device& device);
+
+    [[nodiscard]] auto recreateSwapchain(const vk::raii::PhysicalDevice& physical_device,
+                                         const vk::raii::Device& device) -> SwapChainCreationState;
+
+    void transitImageLayout(vk::CommandBuffer command_buffer, const ImageTransition& transition);
+
+    [[nodiscard]] auto getImage() const noexcept -> vk::Image override;
+    [[nodiscard]] auto getImageView() const noexcept -> vk::ImageView override;
+    [[nodiscard]] auto getResolution() const noexcept -> vk::Extent2D override;
+    [[nodiscard]] auto getImageMemoryBarrier(const ImageTransition& transition) noexcept
+            -> vk::ImageMemoryBarrier2 override;
+
+private:
+    void createSwapchain(const vk::raii::PhysicalDevice& physical_device, const vk::raii::Device& device);
+    [[nodiscard]] auto getExtent() const noexcept -> vk::Extent2D;
+
+    uint32_t m_current_image_index{ 0 };
+    vk::SurfaceKHR m_surface;
+    vk::Extent2D m_swapchain_extent;
+    std::function<vk::Extent2D()> m_get_frame_buffer_size;
+    SwapChainSupportDetails m_swapchain_details;
+    vk::Extent2D m_swapchain_frame_extent{};
+    vk::raii::Queue m_presentation_queue;
+    vk::raii::SwapchainKHR m_swapchain{ nullptr };
+    SwapchainFrames m_swapchain_frames;
+    std::vector<vk::raii::Semaphore> m_image_available_semaphore;
+    std::vector<vk::raii::Semaphore> m_image_render_semaphore;
+    uint32_t m_image_available_semaphore_index{ 0 };
+
+    bool m_should_recreate_swapchain{ false };
+
+    Logger& m_logger;
+};
+
+auto VulkanSwapchain2::getImage() const noexcept -> vk::Image {
+    return m_swapchain_frames.getSwapchainFrame(m_current_image_index).image;
+}
+
+auto VulkanSwapchain2::getImageView() const noexcept -> vk::ImageView {
+    return m_swapchain_frames.getSwapchainFrame(m_current_image_index).image_view;
+}
+
+auto VulkanSwapchain2::getResolution() const noexcept -> vk::Extent2D {
+    return m_swapchain_extent;
+}
+
+auto VulkanSwapchain2::getImageMemoryBarrier(const ImageTransition& transition) noexcept
+        -> vk::ImageMemoryBarrier2 {
+    return m_swapchain_frames.getImageMemoryBarrier(m_current_image_index, transition);
+}
 
 }// namespace th

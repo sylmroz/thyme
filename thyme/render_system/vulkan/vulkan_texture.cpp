@@ -88,8 +88,8 @@ VulkanImageMemoryCreator::VulkanImageMemoryCreator(const vk::Format format, cons
     : m_format{ format }, m_image_usage_flags{ image_usage_flags }, m_memory_property_flags{ memory_property_flags },
       m_aspect_flags{ aspect_flags }, m_msaa{ msaa }, m_mip_levels{ mip_levels } {}
 
-auto VulkanImageMemoryCreator::create(const vk::raii::PhysicalDevice& physical_device, const vk::raii::Device& device, const vk::Extent3D resolution) const
-        -> ImageMemoryImageView {
+auto VulkanImageMemoryCreator::create(const vk::raii::PhysicalDevice& physical_device, const vk::raii::Device& device,
+                                      const vk::Extent3D resolution) const -> ImageMemoryImageView {
     const auto createInfo = vk::ImageCreateInfo{
         .imageType = vk::ImageType::e2D,
         .format = m_format,
@@ -105,8 +105,8 @@ auto VulkanImageMemoryCreator::create(const vk::raii::PhysicalDevice& physical_d
     const vk::MemoryRequirements memory_requirements = image.getMemoryRequirements();
     auto memory = device.allocateMemory(vk::MemoryAllocateInfo{
             .allocationSize = memory_requirements.size,
-            .memoryTypeIndex = findMemoryType(
-                    physical_device, memory_requirements.memoryTypeBits, m_memory_property_flags) });
+            .memoryTypeIndex =
+                    findMemoryType(physical_device, memory_requirements.memoryTypeBits, m_memory_property_flags) });
     image.bindMemory(memory, 0);
     auto image_view = device.createImageView(
             vk::ImageViewCreateInfo{ .image = image,
@@ -124,12 +124,16 @@ auto VulkanImageMemoryCreator::create(const vk::raii::PhysicalDevice& physical_d
 
 VulkanImageMemory::VulkanImageMemory(const VulkanDevice& device, const vk::Extent3D resolution,
                                      VulkanImageMemoryCreator memory_creator, const ImageTransition& image_transition)
-    : m_image_memory_image_view(memory_creator.create(device.physical_device, device.logical_device, resolution)), m_extent(resolution),
+    : VulkanImageMemory(device.physical_device, device.logical_device, resolution, memory_creator, image_transition) {}
+VulkanImageMemory::VulkanImageMemory(const vk::raii::PhysicalDevice& physical_device, const vk::raii::Device& device,
+                                     vk::Extent3D resolution, VulkanImageMemoryCreator memory_creator,
+                                     const ImageTransition& image_transition)
+    : m_image_memory_image_view(memory_creator.create(physical_device, device, resolution)), m_extent(resolution),
       m_image_memory_creator(std::move(memory_creator)),
       m_image_layout_transition(m_image_memory_image_view.image, m_image_memory_creator.getImageAspectFlags(),
                                 m_image_memory_creator.getMipLevels(), image_transition),
       m_initial_state{ image_transition } {
-    resize(device, resolution);
+    resize(physical_device, device, resolution);
 }
 
 void VulkanImageMemory::resize(const VulkanDevice& device, const vk::Extent2D resolution) {
@@ -137,19 +141,23 @@ void VulkanImageMemory::resize(const VulkanDevice& device, const vk::Extent2D re
 }
 
 void VulkanImageMemory::resize(const VulkanDevice& device, const vk::Extent3D resolution) {
+    resize(device.physical_device, device.logical_device, resolution);
+}
+
+void VulkanImageMemory::resize(const vk::raii::PhysicalDevice& physical_device, const vk::raii::Device& device,
+                               const vk::Extent3D resolution) {
     if (resolution == m_extent) {
         return;
     }
     m_extent = resolution;
-    m_image_memory_image_view = m_image_memory_creator.create(device.physical_device, device.logical_device, m_extent);
+    m_image_memory_image_view = m_image_memory_creator.create(physical_device, device, m_extent);
     m_image_layout_transition = ImageLayoutTransitionState(m_image_memory_image_view.image,
                                                            m_image_memory_creator.getImageAspectFlags(),
                                                            m_image_memory_creator.getMipLevels(),
                                                            m_initial_state);
 }
 
-void VulkanImageMemory::transitImageLayout(const VulkanDevice& device,
-                                           ImageLayoutTransition layout_transition) const {
+void VulkanImageMemory::transitImageLayout(const VulkanDevice& device, ImageLayoutTransition layout_transition) const {
     device.singleTimeCommand(
             [layout_transition,
              image = *m_image_memory_image_view.image,

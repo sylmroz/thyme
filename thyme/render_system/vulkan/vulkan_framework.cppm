@@ -38,7 +38,7 @@ public:
 
     explicit VulkanFramework(const InitInfo& info, Logger& logger);
     explicit VulkanFramework(const InitInfo& info, const std::vector<std::string>& window_extensions, Logger& logger);
-
+    
     [[nodiscard]] auto getInstance() const -> const vk::raii::Instance& {
         return m_instance;
     }

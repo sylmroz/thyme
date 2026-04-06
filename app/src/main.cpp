@@ -52,15 +52,16 @@ public:
 
 class CameraSettings: public th::ui::IComponent {
 public:
-    explicit CameraSettings(th::FpsCamera& camera) : m_camera(camera) {
-    }
+    explicit CameraSettings(th::FpsCamera& camera) : m_camera(camera) {}
     void draw() override {
         constexpr ImGuiWindowFlags window_flags{};
         ImGui::Begin("viewport settings", nullptr, window_flags);
 
 
-        if (ImGui::InputFloat("FOV", &m_camera.camera_arguments.perspective_camera_arguments.fov, 0.01f, 0.1f, "%.2f")) {
-            m_camera.camera_arguments.perspective_camera_arguments.fov = std::clamp(m_camera.camera_arguments.perspective_camera_arguments.fov, 5.0f, 120.0f);
+        if (ImGui::InputFloat(
+                    "FOV", &m_camera.camera_arguments.perspective_camera_arguments.fov, 0.01f, 0.1f, "%.2f")) {
+            m_camera.camera_arguments.perspective_camera_arguments.fov =
+                    std::clamp(m_camera.camera_arguments.perspective_camera_arguments.fov, 5.0f, 120.0f);
             m_camera.updateProjectionMatrix();
         }
 
@@ -88,9 +89,13 @@ private:
 };
 
 auto main() -> int {
-    auto thyme_api_logger = th::Logger(th::LogLevel::info, "ThymeApi");
-    ExampleApp app(thyme_api_logger);
-
+    auto thyme_api_logger = th::Logger(th::LogLevel::debug, "ThymeApi");
+    auto windowed_app = th::WindowedApplication(
+            th::WindowedApplicationInitInfo{
+                    .window_config = th::WindowConfig{ .width = 1280, .height = 720, .name = "Thyme app" } },
+            thyme_api_logger);
+    windowed_app.run();
+    /*ExampleApp app(thyme_api_logger);
     auto camera = th::FpsCamera(th::FpsCameraArguments{
             .perspective_camera_arguments =
                     th::PerspectiveCameraArguments{
@@ -100,6 +105,6 @@ auto main() -> int {
             .up = { 0.0f, 0.0f, 1.0f },
             .yaw_pitch_roll = th::YawPitchRoll{ .yaw = 135.0f, .pitch = -45.0f, .roll = 0.0f } });
     auto camera_settings = CameraSettings(camera);
-    app.run(camera_settings, camera);
+    app.run(camera_settings, camera);*/
     return 0;
 }

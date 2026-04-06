@@ -8,6 +8,12 @@ import vulkan;
 import th.scene.model;
 
 export namespace th {
+
+[[nodiscard]] auto selectQueueFamilyIndex(vk::PhysicalDevice device, vk::QueueFlags flag_bits,
+                                          std::optional<vk::SurfaceKHR> surface) -> uint32_t;
+
+[[nodiscard]] auto selectQueueFamilyIndex(vk::PhysicalDevice device, vk::QueueFlags flag_bits) -> uint32_t;
+
 struct QueueFamilyIndices {
     explicit QueueFamilyIndices(vk::PhysicalDevice device, std::optional<vk::SurfaceKHR> surface);
 
@@ -25,11 +31,11 @@ private:
 class QueueFamilyIndices2 {
 public:
     explicit QueueFamilyIndices2(std::span<const vk::QueueFamilyProperties2> queue_family_properties,
-                                 std::span<const vk::QueueFlagBits> requested_queues);
+                                 std::span<const vk::QueueFlagBits>
+                                         requested_queues);
 
 
 private:
-
 };
 
 struct SwapChainSettings {
@@ -38,18 +44,18 @@ struct SwapChainSettings {
     std::uint32_t imageCount;
 };
 
-[[nodiscard]] auto isPhysicalDeviceSuitable(const vk::PhysicalDevice device, const vk::SurfaceKHR surface) -> bool {
+[[nodiscard]] auto isPhysicalDeviceSuitable(const vk::PhysicalDevice& device, const vk::SurfaceKHR surface) -> bool {
     return !(device.getSurfaceFormatsKHR(surface).empty() && device.getSurfacePresentModesKHR(surface).empty());
 }
 
 class VulkanSurface {
 public:
-    explicit VulkanSurface(vk::raii::SurfaceKHR surface): m_surface(std::move(surface)) {}
+    explicit VulkanSurface(vk::raii::SurfaceKHR surface) : m_surface(std::move(surface)) {}
 
     [[nodiscard]] auto isPhysicalDeviceSuitable(const vk::PhysicalDevice device) const -> bool {
-        return !(device.getSurfaceFormatsKHR(*m_surface).empty() && device.getSurfacePresentModesKHR(m_surface).empty());
+        return !(device.getSurfaceFormatsKHR(*m_surface).empty()
+                 && device.getSurfacePresentModesKHR(m_surface).empty());
     }
-
 
 
 private:
@@ -174,8 +180,8 @@ void singleTimeCommand(const vk::CommandBuffer command_buffer, const vk::Queue g
 
 template <typename F, typename... Args>
     requires(InvocableCommandWithCommandBuffer<F, Args...>)
-void singleTimeCommand(const vk::Device device, const vk::CommandPool command_pool, const vk::Queue graphic_queue, F fun,
-                       Args... args) {
+void singleTimeCommand(const vk::Device device, const vk::CommandPool command_pool, const vk::Queue graphic_queue,
+                       F fun, Args... args) {
     const auto command_buffer =
             std::move(device.allocateCommandBuffersUnique(
                                     vk::CommandBufferAllocateInfo{ .commandPool = command_pool,
@@ -298,6 +304,28 @@ inline void copyBufferToImage(vk::Device device, const vk::CommandPool command_p
 }
 
 void setCommandBufferFrameSize(vk::CommandBuffer command_buffer, vk::Extent2D frame_size);
+
+auto selectQueueFamilyIndex(const vk::PhysicalDevice device, const vk::QueueFlags flag_bits,
+                            const std::optional<vk::SurfaceKHR> surface) -> uint32_t {
+    const auto queue_family_properties = device.getQueueFamilyProperties();
+    for (uint32_t index{ 0 }; const auto properties : queue_family_properties) {
+        if (properties.queueCount <= 0) {
+            continue;
+        }
+        if (surface.has_value() && !device.getSurfaceSupportKHR(index, *surface)) {
+            continue;
+        }
+        if (properties.queueFlags & flag_bits) {
+            return index;
+        }
+        ++index;
+    }
+    throw std::runtime_error{ "No suitable queue family found!" };
+}
+
+auto selectQueueFamilyIndex(const vk::PhysicalDevice device, const vk::QueueFlags flag_bits) -> uint32_t {
+    return selectQueueFamilyIndex(device, flag_bits, {});
+}
 
 QueueFamilyIndices::QueueFamilyIndices(const vk::PhysicalDevice device, const std::optional<vk::SurfaceKHR> surface)
     : m_requested_surface_support{ surface.has_value() } {
@@ -510,6 +538,16 @@ private:
     std::vector<vk::MemoryBarrier2> m_memory_barriers;
     std::vector<vk::BufferMemoryBarrier2> m_buffer_memory_barriers;
     std::vector<vk::ImageMemoryBarrier2> m_image_memory_barriers;
+};
+
+class RenderTarget {
+public:
+    virtual ~RenderTarget() = default;
+    [[nodiscard]] virtual auto getImage() const noexcept -> vk::Image = 0;
+    [[nodiscard]] virtual auto getImageView() const noexcept -> vk::ImageView = 0;
+    [[nodiscard]] virtual auto getImageMemoryBarrier(const ImageTransition& transition) noexcept
+            -> vk::ImageMemoryBarrier2 = 0;
+    [[nodiscard]] virtual auto getResolution() const noexcept -> vk::Extent2D = 0;
 };
 
 }// namespace th

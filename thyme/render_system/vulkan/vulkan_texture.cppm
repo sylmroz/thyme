@@ -29,7 +29,8 @@ public:
                              vk::MemoryPropertyFlags memory_property_flags, vk::ImageAspectFlags aspect_flags,
                              vk::SampleCountFlagBits msaa, uint32_t mip_levels);
 
-    [[nodiscard]] auto create(const vk::raii::PhysicalDevice& physical_device, const vk::raii::Device& device, vk::Extent3D resolution) const -> ImageMemoryImageView;
+    [[nodiscard]] auto create(const vk::raii::PhysicalDevice& physical_device, const vk::raii::Device& device,
+                              vk::Extent3D resolution) const -> ImageMemoryImageView;
 
     [[nodiscard]] auto getMipLevels() const -> uint32_t {
         return m_mip_levels;
@@ -48,12 +49,20 @@ private:
     uint32_t m_mip_levels{ 1 };
 };
 
-export class VulkanImageMemory {
+export class VulkanImageMemory: public RenderTarget {
 public:
     VulkanImageMemory(const VulkanDevice& device, vk::Extent3D resolution, VulkanImageMemoryCreator memory_creator,
                       const ImageTransition& image_transition);
 
-    [[nodiscard]] auto getImage() const noexcept -> vk::Image {
+    VulkanImageMemory(const vk::raii::PhysicalDevice& physical_device, const vk::raii::Device& device,
+                      vk::Extent3D resolution, VulkanImageMemoryCreator memory_creator,
+                      const ImageTransition& image_transition);
+
+    [[nodiscard]] auto getResolution() const noexcept -> vk::Extent2D override {
+        return vk::Extent2D{ .width = m_extent.width, .height = m_extent.height };
+    }
+
+    [[nodiscard]] auto getImage() const noexcept -> vk::Image override {
         return *m_image_memory_image_view.image;
     }
 
@@ -61,7 +70,7 @@ public:
         return *m_image_memory_image_view.memory;
     }
 
-    [[nodiscard]] auto getImageView() const noexcept -> vk::ImageView {
+    [[nodiscard]] auto getImageView() const noexcept -> vk::ImageView override {
         return *m_image_memory_image_view.image_view;
     }
 
@@ -72,12 +81,15 @@ public:
     void resize(const VulkanDevice& device, vk::Extent2D resolution);
     void resize(const VulkanDevice& device, vk::Extent3D resolution);
 
+    void resize(const vk::raii::PhysicalDevice& physical_device, const vk::raii::Device& device,
+                vk::Extent3D resolution);
+
     void transitImageLayout(const VulkanDevice& device, ImageLayoutTransition layout_transition) const;
     void transitImageLayout(vk::CommandBuffer command_buffer, ImageLayoutTransition layout_transition) const;
     void transitImageLayout(const VulkanDevice& device, const ImageTransition& transition);
     void transitImageLayout(vk::CommandBuffer command_buffer, const ImageTransition& transition);
 
-    [[nodiscard]] auto getImageMemoryBarrier(const ImageTransition& transition) -> vk::ImageMemoryBarrier2 {
+    [[nodiscard]] auto getImageMemoryBarrier(const ImageTransition& transition) noexcept -> vk::ImageMemoryBarrier2 {
         return m_image_layout_transition.getImageMemoryBarrier(transition);
     }
 
