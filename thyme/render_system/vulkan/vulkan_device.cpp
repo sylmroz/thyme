@@ -94,16 +94,22 @@ auto createLogicalDevice(const vk::raii::PhysicalDevice& physical_device, uint32
             .fillModeNonSolid = physical_device_features.fillModeNonSolid,
             .wideLines = physical_device_features.wideLines,
             .largePoints = physical_device_features.largePoints,
-            .samplerAnisotropy = physical_device_features.samplerAnisotropy,
+            .samplerAnisotropy = physical_device_features.samplerAnisotropy
         }
     };
 
-    constexpr auto vulkan13_features =
-            vk::PhysicalDeviceVulkan13Features{ .synchronization2 = true, .dynamicRendering = true };
+    constexpr auto vulkan11_features = vk::PhysicalDeviceVulkan11Features{
+        .shaderDrawParameters = true
+    };
+
     constexpr auto vulkan12_features =
             vk::PhysicalDeviceVulkan12Features{ .descriptorIndexing = true, .bufferDeviceAddress = true };
 
-    const auto feature_chain = vk::StructureChain{ features, vulkan13_features, vulkan12_features };
+    constexpr auto vulkan13_features =
+            vk::PhysicalDeviceVulkan13Features{ .synchronization2 = true, .dynamicRendering = true };
+
+
+    const auto feature_chain = vk::StructureChain{ features, vulkan11_features, vulkan12_features, vulkan13_features };
 
     const auto device_create_info = vk::StructureChain(
             vk::DeviceCreateInfo{ .queueCreateInfoCount = static_cast<uint32_t>(device_queue_create_infos.size()),

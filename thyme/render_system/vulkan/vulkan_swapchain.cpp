@@ -258,7 +258,7 @@ VulkanSwapchain2::VulkanSwapchain2(const vk::raii::PhysicalDevice& physical_devi
 
 auto VulkanSwapchain2::recreateSwapchain(const vk::raii::PhysicalDevice& physical_device,
                                          const vk::raii::Device& device) -> SwapChainCreationState {
-    device.waitIdle(); // how to avoid this??
+    device.waitIdle();// how to avoid this??
     m_swapchain_details = SwapChainSupportDetails(physical_device, m_surface);
     if (!m_swapchain_details.isValid()) {
         return SwapChainCreationState::invalid_swapchain;
@@ -280,16 +280,17 @@ void VulkanSwapchain2::transitImageLayout(const vk::CommandBuffer command_buffer
 void VulkanSwapchain2::createSwapchain(const vk::raii::PhysicalDevice& physical_device,
                                        const vk::raii::Device& device) {
     const auto best_formats = m_swapchain_details.getBestSwapChainSettings();
+    m_swapchain_format = best_formats.surfaceFormat.format;
     m_swapchain =
             createSwapChain(physical_device, device, m_surface, best_formats, m_swapchain_frame_extent, m_swapchain);
     m_swapchain_frames = SwapchainFrames(device, m_swapchain, best_formats.surfaceFormat.format);
-    m_image_available_semaphore.clear();
-    m_image_render_semaphore.clear();
+    m_image_available_semaphores.clear();
+    m_image_render_semaphores.clear();
     m_image_available_semaphore_index = 0;
     for (size_t frame_index{ 0 }; frame_index < m_swapchain_frames.getSwapchainFramesCount(); ++frame_index) {
-        m_image_available_semaphore.emplace_back(
+        m_image_available_semaphores.emplace_back(
                 vk::raii::Semaphore{ device, vk::SemaphoreCreateInfo{ .flags = vk::SemaphoreCreateFlagBits{} } });
-        m_image_render_semaphore.emplace_back(
+        m_image_render_semaphores.emplace_back(
                 vk::raii::Semaphore{ device, vk::SemaphoreCreateInfo{ .flags = vk::SemaphoreCreateFlagBits{} } });
     }
     m_should_recreate_swapchain = false;
@@ -300,8 +301,8 @@ auto VulkanSwapchain2::getExtent() const noexcept -> vk::Extent2D {
     return m_swapchain_details.getSwapExtent(glm::uvec2{ width, height });
 }
 
-auto VulkanSwapchain2::prepareFrame(const vk::raii::PhysicalDevice& physical_device, const vk::raii::Device& device,
-                                    VulkanCommandBuffersPool2& command_buffers_pool) -> bool {
+auto VulkanSwapchain2::prepareFrame(const vk::raii::PhysicalDevice& physical_device, const vk::raii::Device& device)
+        -> std::optional<SwapChainFrameSemaphores> {
     if (m_should_recreate_swapchain) {
         const auto result = recreateSwapchain(physical_device, device);
         if (result == SwapChainCreationState::invalid_swapchain) {
@@ -309,35 +310,29 @@ auto VulkanSwapchain2::prepareFrame(const vk::raii::PhysicalDevice& physical_dev
             throw std::runtime_error("Invalid swapchain creation state");
         }
         if (result == SwapChainCreationState::invalid_size) {
-            return false;
+            return std::nullopt;
         }
     }
     try {
         const auto current_semaphore_index = m_image_available_semaphore_index;
         m_image_available_semaphore_index =
-                (m_image_available_semaphore_index + 1) % m_image_available_semaphore.size();
-        const auto image_available_semaphore = *m_image_available_semaphore[current_semaphore_index];
-        [[maybe_unused]] const auto result =
-                m_swapchain.acquireNextImage(std::numeric_limits<uint64_t>::max(), image_available_semaphore);
+                (m_image_available_semaphore_index + 1) % m_image_available_semaphores.size();
+
+        [[maybe_unused]] const auto result = m_swapchain.acquireNextImage(
+                std::numeric_limits<uint64_t>::max(), *m_image_available_semaphores[current_semaphore_index]);
         m_current_image_index = result.value;
-        command_buffers_pool.waitFor(device, image_available_semaphore);
-        /*m_logger.debug("Image available semaphores acquired, currentImageIndex {}, currentImageSemaphore {}",
-                       m_current_image_index,
-                       current_semaphore_index);*/
+        return SwapChainFrameSemaphores{
+            .image_available_semaphore = m_image_available_semaphores[current_semaphore_index],
+            .image_rendering_semaphore = m_image_render_semaphores[m_current_image_index],
+        };
     } catch (const vk::OutOfDateKHRError&) {
         m_should_recreate_swapchain = true;
-        return false;
     }
-    return true;
+    return std::nullopt;
 }
 
-void VulkanSwapchain2::submitFrame(VulkanCommandBuffersPool2& command_buffers_pool, const vk::raii::Device& device) {
-    /*transitImageLayout(command_buffers_pool.get().getBuffer(device),
-                       ImageTransition{ .layout = vk::ImageLayout::ePresentSrcKHR,
-                                        .pipeline_stage = vk::PipelineStageFlagBits2::eBottomOfPipe });*/
-
-    const auto render_semaphore = *m_image_render_semaphore[m_current_image_index];
-    command_buffers_pool.submit(render_semaphore);
+void VulkanSwapchain2::submitFrame() {
+    const auto render_semaphore = *m_image_render_semaphores[m_current_image_index];
 
     const auto queuePresentResult = m_presentation_queue.presentKHR(vk::PresentInfoKHR{
             .waitSemaphoreCount = 1,

@@ -206,6 +206,7 @@ auto VulkanGraphicsPipelineBuilder::build(const vk::raii::Device& device, const 
         .pDynamicStates = dynamic_states.data(),
     };
 
+
     return device.createGraphicsPipeline(pipeline_cache,
                                          vk::GraphicsPipelineCreateInfo{
                                                  .pNext = &m_rendering_create_info,
@@ -271,7 +272,7 @@ auto VulkanGraphicsPipelineBuilder::setMultisampling(const vk::SampleCountFlagBi
     };
     return *this;
 }
-auto VulkanGraphicsPipelineBuilder::enableBlending(vk::PipelineColorBlendAttachmentState state)
+auto VulkanGraphicsPipelineBuilder::enableBlending(const vk::PipelineColorBlendAttachmentState& state)
         -> VulkanGraphicsPipelineBuilder& {
     m_blend_attachment_state = state;
     return *this;

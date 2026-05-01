@@ -12,6 +12,8 @@ import th.platform.window_event_handler;
 import th.platform.window_settings;
 import th.platform.glfw.glfw_window;
 import th.render_system.vulkan;
+import th.render_system.render_graph;
+import th.render_system.passes;
 
 namespace th {
 
@@ -75,13 +77,10 @@ WindowedApplication::WindowedApplication(const WindowedApplicationInitInfo& wind
                                                   vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eTransfer
                                                           | vk::QueueFlagBits::eCompute,
                                                   *m_surface)),
-      m_command_pool(m_logical_device.createCommandPool(
-              vk::CommandPoolCreateInfo{ .flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-                                         .queueFamilyIndex = m_queue_family_index })),
       m_logical_device(
               createLogicalDevice(m_physical_devices.physical_devices.front().physical_device, m_queue_family_index)),
       m_queue(m_logical_device.getQueue(m_queue_family_index, 0)),
-      m_command_buffers_pool(m_logical_device, m_command_pool, m_queue, getMaxFramesInFlight(), logger),
+      m_renderer(m_physical_devices.current(), m_logical_device, m_queue_family_index, getMaxFramesInFlight(), logger),
       m_swapchain(
               m_physical_devices.physical_devices.front().physical_device,
               m_logical_device,
@@ -107,19 +106,7 @@ void WindowedApplication::run() {
         return dt.count();
     };
 
-    RenderGraph renderGraph;
-
-
-    renderGraph.addTextureResource("swapchain", &m_swapchain);
-
-    renderGraph.addPass("present", [&](RenderGraphBuilder& builder) {
-        builder.write("swapchain",
-                      ImageTransition{ .layout = vk::ImageLayout::ePresentSrcKHR,
-                                       .pipeline_stage = vk::PipelineStageFlagBits2::eBottomOfPipe });
-        return [=](RenderGraphContext&, vk::CommandBuffer) {
-
-        };
-    });
+    const auto my_pass = MyPass(m_physical_devices.current(), m_logical_device, m_swapchain.getFormat(), m_logger);
 
     while (!m_window.shouldClose()) {
         m_window.poolEvents();
@@ -127,15 +114,31 @@ void WindowedApplication::run() {
             continue;
         }
 
-        if (!m_swapchain.prepareFrame(m_physical_devices.current(), m_logical_device, m_command_buffers_pool)) {
-            m_command_buffers_pool.flush(m_logical_device);
+        const auto wait_for_frame_semaphore = m_swapchain.prepareFrame(m_physical_devices.current(), m_logical_device);
+        if (!wait_for_frame_semaphore.has_value()) {
             continue;
         }
 
         update(getDT());
-        renderGraph.compile();
-        renderGraph.execute(m_command_buffers_pool.get().getBuffer(m_logical_device));
-        m_swapchain.submitFrame(m_command_buffers_pool, m_logical_device);
+
+        RenderGraph renderGraph;
+        const auto resource = renderGraph.addTextureResource("swapchain", m_swapchain);
+        my_pass.setup(renderGraph, resource);
+        renderGraph.addPass("present", [&](RenderGraphBuilder& builder) {
+            builder.write(resource,
+                          ImageTransition{ .layout = vk::ImageLayout::ePresentSrcKHR,
+                                           .pipeline_stage = vk::PipelineStageFlagBits2::eBottomOfPipe });
+
+            return [=](RenderGraphContext&, vk::CommandBuffer) {
+
+            };
+        });
+
+        m_renderer.beginFrame(m_logical_device, wait_for_frame_semaphore.value().image_available_semaphore);
+        m_renderer.draw(m_logical_device, renderGraph);
+        m_renderer.endFrame(wait_for_frame_semaphore.value().image_rendering_semaphore);
+
+        m_swapchain.submitFrame();
     }
 
     m_logical_device.waitIdle();

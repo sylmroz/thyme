@@ -13,6 +13,7 @@ import th.platform.window_event_handler;
 import th.platform.window;
 import th.platform.glfw.glfw_window;
 import th.render_system.vulkan;
+import th.render_system.renderer;
 import th.gui;
 
 namespace th {
@@ -58,12 +59,15 @@ private:
     GlfwWindow m_window;
     VulkanFramework m_vulkan_framework;
     vk::raii::SurfaceKHR m_surface;
+
     PhysicalDevices2 m_physical_devices;
     uint32_t m_queue_family_index;
     vk::raii::Device m_logical_device;
-    vk::raii::CommandPool m_command_pool;
+
     vk::raii::Queue m_queue;
-    VulkanCommandBuffersPool2 m_command_buffers_pool;
+
+    Renderer m_renderer;
+
     VulkanSwapchain2 m_swapchain;
     std::vector<vk::raii::Semaphore> m_image_available_semaphores;
 

@@ -16,7 +16,7 @@ import :uniform_buffer_object;
 
 namespace th {
 
-class VulkanGraphicsPipelineBuilder {
+export class VulkanGraphicsPipelineBuilder {
 public:
     [[nodiscard]] auto build(const vk::raii::Device& device, const vk::PipelineLayout& pipeline_layout,
                              const vk::Optional<const vk::raii::PipelineCache>& pipeline_cache = nullptr) const
@@ -28,7 +28,7 @@ public:
     auto setInputTopology(vk::PrimitiveTopology primitive_topology) -> VulkanGraphicsPipelineBuilder&;
     auto setCullMode(vk::CullModeFlags cull_mode_flags, vk::FrontFace front_face) -> VulkanGraphicsPipelineBuilder&;
     auto setMultisampling(vk::SampleCountFlagBits samples) -> VulkanGraphicsPipelineBuilder&;
-    auto enableBlending(vk::PipelineColorBlendAttachmentState state) -> VulkanGraphicsPipelineBuilder&;
+    auto enableBlending(const vk::PipelineColorBlendAttachmentState& state) -> VulkanGraphicsPipelineBuilder&;
     auto setColorAttachmentFormats(std::span<const vk::Format> formats) -> VulkanGraphicsPipelineBuilder&;
     auto setDepthAttachmentFormat(vk::Format format) -> VulkanGraphicsPipelineBuilder&;
     auto disableDepthTest() -> VulkanGraphicsPipelineBuilder&;
