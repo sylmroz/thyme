@@ -1,6 +1,7 @@
 import std;
 import glm;
 import imgui;
+import vulkan;
 
 import th.core.logger;
 import th.core.application;
@@ -11,6 +12,9 @@ import th.scene.texture_data;
 
 import th.platform.window;
 import th.platform.glfw.glfw_window;
+
+import th.render_system.render_graph;
+import th.render_system.passes;
 
 import th.gui;
 
@@ -88,13 +92,29 @@ private:
     th::FpsCamera& m_camera;
 };
 
+class ThymeApp: public th::WindowedApplication {
+public:
+    ThymeApp(const th::WindowedApplicationInitInfo& windowed_application_init_info, th::Logger& logger)
+        : th::WindowedApplication(windowed_application_init_info, logger),
+          m_my_pass(m_physical_devices.current(), m_logical_device, m_swapchain.getFormat(), logger) {};
+
+    void update(float dt, th::RenderGraph& render_graph) override {
+        const auto resource = render_graph.addTextureResource("swapchain", m_swapchain);
+        m_my_pass.setup(render_graph, resource);
+    }
+    virtual ~ThymeApp() = default;
+
+private:
+    th::MyPass m_my_pass;
+};
+
 auto main() -> int {
     auto thyme_api_logger = th::Logger(th::LogLevel::debug, "ThymeApi");
-    auto windowed_app = th::WindowedApplication(
+    auto app = ThymeApp(
             th::WindowedApplicationInitInfo{
                     .window_config = th::WindowConfig{ .width = 1280, .height = 720, .name = "Thyme app" } },
             thyme_api_logger);
-    windowed_app.run();
+    app.run();
     /*ExampleApp app(thyme_api_logger);
     auto camera = th::FpsCamera(th::FpsCameraArguments{
             .perspective_camera_arguments =

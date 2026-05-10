@@ -70,8 +70,7 @@ public:
     }
 
     void setup(RenderGraph& render_graph, const RenderGraphResource resource) const {
-
-        render_graph.addPass("triangle2", [&, resource](RenderGraphBuilder& builder) {
+        render_graph.addPass("triangle2", [&, resource](RenderGraphBuilder& builder) -> execute_function {
             builder.write(resource,
                           ImageTransition{
                                   .layout = vk::ImageLayout::eColorAttachmentOptimal,

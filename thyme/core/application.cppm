@@ -14,6 +14,7 @@ import th.platform.window;
 import th.platform.glfw.glfw_window;
 import th.render_system.vulkan;
 import th.render_system.renderer;
+import th.render_system.render_graph;
 import th.gui;
 
 namespace th {
@@ -44,16 +45,17 @@ export struct WindowedApplicationInitInfo {
 
 export class WindowedApplication {
 public:
+    virtual ~WindowedApplication() = default;
     WindowedApplication(const WindowedApplicationInitInfo& windowed_application_init_info, Logger& logger);
     void run();
 
-    void update(float delta_time);
+    virtual void update(float dt, RenderGraph& render_graph) = 0;
 
     [[nodiscard]] constexpr auto getMaxFramesInFlight() const noexcept -> uint32_t {
         return 2;
     }
 
-private:
+protected:
     WindowedApplicationInitInfo m_application_init_info;
     WindowEventsHandlers m_window_events_handlers;
     GlfwWindow m_window;
@@ -63,8 +65,6 @@ private:
     PhysicalDevices2 m_physical_devices;
     uint32_t m_queue_family_index;
     vk::raii::Device m_logical_device;
-
-    vk::raii::Queue m_queue;
 
     Renderer m_renderer;
 

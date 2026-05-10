@@ -85,10 +85,10 @@ export class Logger {
 public:
     Logger(const LogLevel level, const std::string_view logger_name) {
 #ifndef LOGGER_USE_STD_PRINT
-        logger = spdlog::stdout_color_mt(std::string(logger_name));
-        logger->set_pattern("%^[%T:%e][%n][%l][%@]: %v%$");
+        m_logger = spdlog::stdout_color_mt(std::string(logger_name));
+        m_logger->set_pattern("%^[%T:%e][%n][%l][%@]: %v%$");
         const auto l = toSpdLogLevel(level);
-        logger->set_level(l);
+        m_logger->set_level(l);
 #else
         m_current_log_level = level;
         m_logger_name = logger_name;
@@ -99,7 +99,7 @@ public:
     void trace(format_with_source_location<Args...> msg, Args&&... args) const noexcept {
         const auto full_message = std::format(msg.get_format(), std::forward<Args>(args)...);
 #ifndef LOGGER_USE_STD_PRINT
-        logger->log(msg.get_location(), spdlog::level::trace, full_message);
+        m_logger->log(msg.get_location(), spdlog::level::trace, full_message);
 #else
         printMessage(msg.get_location(), LogLevel::trace, full_message);
 #endif
@@ -109,7 +109,7 @@ public:
     void debug(format_with_source_location<Args...> msg, Args&&... args) const noexcept {
         const auto full_message = std::format(msg.get_format(), std::forward<Args>(args)...);
 #ifndef LOGGER_USE_STD_PRINT
-        logger->log(msg.get_location(), spdlog::level::debug, full_message);
+        m_logger->log(msg.get_location(), spdlog::level::debug, full_message);
 #else
         printMessage(msg.get_location(), LogLevel::debug, full_message);
 #endif
@@ -119,7 +119,7 @@ public:
     void info(format_with_source_location<Args...> msg, Args&&... args) const noexcept {
         const auto full_message = std::format(msg.get_format(), std::forward<Args>(args)...);
 #ifndef LOGGER_USE_STD_PRINT
-        logger->log(msg.get_location(), spdlog::level::info, full_message);
+        m_logger->log(msg.get_location(), spdlog::level::info, full_message);
 #else
         printMessage(msg.get_location(), LogLevel::info, full_message);
 #endif
@@ -129,7 +129,7 @@ public:
     void warn(format_with_source_location<Args...> msg, Args&&... args) const noexcept {
         const auto full_message = std::format(msg.get_format(), std::forward<Args>(args)...);
 #ifndef LOGGER_USE_STD_PRINT
-        logger->log(msg.get_location(), spdlog::level::warn, full_message);
+        m_logger->log(msg.get_location(), spdlog::level::warn, full_message);
 #else
         printMessage(msg.get_location(), LogLevel::warn, full_message);
 #endif
@@ -139,7 +139,7 @@ public:
     void error(format_with_source_location<Args...> msg, Args&&... args) const noexcept {
         const auto full_message = std::format(msg.get_format(), std::forward<Args>(args)...);
 #ifndef LOGGER_USE_STD_PRINT
-        logger->log(msg.get_location(), spdlog::level::err, full_message);
+        m_logger->log(msg.get_location(), spdlog::level::err, full_message);
 #else
         printMessage(msg.get_location(), LogLevel::err, full_message);
 #endif
@@ -149,7 +149,7 @@ public:
     void critical(format_with_source_location<Args...> msg, Args&&... args) const noexcept {
         const auto full_message = std::format(msg.get_format(), std::forward<Args>(args)...);
 #ifndef LOGGER_USE_STD_PRINT
-        logger->log(msg.get_location(), spdlog::level::critical, full_message);
+        m_logger->log(msg.get_location(), spdlog::level::critical, full_message);
 #else
         printMessage(msg.get_location(), LogLevel::critical, full_message);
 #endif
@@ -157,7 +157,7 @@ public:
 
 private:
 #ifndef LOGGER_USE_STD_PRINT
-    std::shared_ptr<spdlog::logger> logger;
+    std::shared_ptr<spdlog::logger> m_logger;
 #else
     LogLevel m_current_log_level;
     std::string m_logger_name;

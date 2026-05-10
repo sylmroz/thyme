@@ -20,6 +20,7 @@ void Renderer::draw(const vk::raii::Device& device, RenderGraph& render_graph) {
     render_graph.compile();
     render_graph.execute(m_command_buffers_pool.get().getBuffer(device));
 }
+
 void Renderer::endFrame(const vk::Semaphore frame_render_semaphore) {
     m_command_buffers_pool.submit(frame_render_semaphore);
 }

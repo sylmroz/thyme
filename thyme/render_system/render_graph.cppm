@@ -31,7 +31,7 @@ public:
         m_write_textures.emplace_back(transition, std::string(name));
     }
 
-    RenderGraphResource write(RenderGraphResource resource, const ImageTransition& transition) {
+    auto write(RenderGraphResource resource, const ImageTransition& transition) -> RenderGraphResource {
         m_write_textures_2.emplace_back(resource, transition);
         return resource;
     }
@@ -83,10 +83,10 @@ struct RenderGraphContext {
     std::span<const RenderGraphTarget> targets;
 };
 
-class RenderGraph {
+using execute_function = std::function<void(const RenderGraphContext&, vk::CommandBuffer)>;
+using setup_function = std::function<execute_function(RenderGraphBuilder&)>;
 
-    using execute_function = std::function<void(RenderGraphContext&, vk::CommandBuffer)>;
-    using setup_function = std::function<execute_function(RenderGraphBuilder&)>;
+class RenderGraph {
 
     struct Pass {
         setup_function setup;
@@ -103,7 +103,17 @@ public:
         m_passes.emplace_back(std::move(setup), std::string(pass_name));
     }
 
-    auto addTextureResource(const std::string_view texture_name, RenderTarget& resource) -> RenderGraphResource {
+    [[nodiscard]] auto addTextureResource(const std::string_view texture_name, RenderTarget& resource) -> RenderGraphResource {
+        const auto res = std::ranges::find_if(m_textures, [texture_name](auto&& value) {
+            using T = std::decay_t<decltype(value)>;
+            if constexpr (std::is_same_v<T, RenderGraphPersistentTarget>) {
+                return value.name == texture_name;
+            }
+            return false;
+        });
+        if (res != m_textures.end()) {
+            return RenderGraphResource{ .id = static_cast<uint32_t>(std::distance(m_textures.begin(), res)) };
+        }
         m_resources.emplace_back(RenderGraphPersistentTarget{ .target = resource, .name = std::string(texture_name) });
         return RenderGraphResource{ .id = static_cast<uint32_t>(m_resources.size() - 1) };
     }
