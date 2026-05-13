@@ -73,15 +73,18 @@ WindowedApplication::WindowedApplication(const WindowedApplicationInitInfo& wind
               logger)),
       m_surface(m_window.createSurface(m_vulkan_framework.getInstance())),
       m_physical_devices(filterDevices(m_vulkan_framework.getPhysicalDevices(), m_surface)),
-      m_queue_family_index(selectQueueFamilyIndex(*m_physical_devices.physical_devices.front().physical_device,
+      m_queue_family_index(selectQueueFamilyIndex(*m_physical_devices.current(),
                                                   vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eTransfer
                                                           | vk::QueueFlagBits::eCompute,
                                                   *m_surface)),
       m_logical_device(
-              createLogicalDevice(m_physical_devices.physical_devices.front().physical_device, m_queue_family_index)),
+              createLogicalDevice(m_physical_devices.current(), m_queue_family_index)),
+      m_allocator(m_vulkan_framework.getInstance(), m_logical_device, vma::AllocatorCreateInfo{
+          .physicalDevice = m_physical_devices.current(),
+      }),
       m_renderer(m_physical_devices.current(), m_logical_device, m_queue_family_index, getMaxFramesInFlight(), logger),
       m_swapchain(
-              m_physical_devices.physical_devices.front().physical_device,
+              m_physical_devices.current(),
               m_logical_device,
               m_queue_family_index,
               m_surface,
@@ -111,16 +114,15 @@ void WindowedApplication::run() {
         RenderGraph render_graph;
         update(getDT(), render_graph);
         const auto swapchain_rg_resource = render_graph.addTextureResource("swapchain", m_swapchain);
-        render_graph.addPass(
-                "present", [swapchain_rg_resource](RenderGraphBuilder& builder) {
-                    builder.write(swapchain_rg_resource,
-                                  ImageTransition{ .layout = vk::ImageLayout::ePresentSrcKHR,
-                                                   .pipeline_stage = vk::PipelineStageFlagBits2::eBottomOfPipe });
+        render_graph.addPass("present", [swapchain_rg_resource](RenderGraphBuilder& builder) {
+            builder.write(swapchain_rg_resource,
+                          ImageTransition{ .layout = vk::ImageLayout::ePresentSrcKHR,
+                                           .pipeline_stage = vk::PipelineStageFlagBits2::eBottomOfPipe });
 
-                    return [=](const RenderGraphContext&, vk::CommandBuffer) -> void {
+            return [=](const RenderGraphContext&, vk::CommandBuffer) -> void {
 
-                    };
-                });
+            };
+        });
 
         if (m_window.isMinimalized()) {
             continue;

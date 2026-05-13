@@ -15,6 +15,7 @@ import th.platform.glfw.glfw_window;
 
 import th.render_system.render_graph;
 import th.render_system.passes;
+import th.render_system.vulkan;
 
 import th.gui;
 
@@ -96,16 +97,29 @@ class ThymeApp: public th::WindowedApplication {
 public:
     ThymeApp(const th::WindowedApplicationInitInfo& windowed_application_init_info, th::Logger& logger)
         : th::WindowedApplication(windowed_application_init_info, logger),
-          m_my_pass(m_physical_devices.current(), m_logical_device, m_swapchain.getFormat(), logger) {};
+          m_my_pass(m_physical_devices.current(), m_logical_device, m_swapchain.getFormat(), logger),
+          m_uniform_buffer_array(m_allocator, getMaxFramesInFlight()),
+          m_camera(th::FpsCamera(th::FpsCameraArguments{
+                  .perspective_camera_arguments = th::PerspectiveCameraArguments{ .fov = 45.0f,
+                                                                                  .znear = 0.1f,
+                                                                                  .zfar = 100.0f,
+                                                                                  .resolution = { 1280, 720 } },
+                  .position = { 2.0f, 2.0f, 2.0f },
+                  .direction = glm::normalize(glm::vec3{ -1.0f, -1.0f, -1.0f }),
+                  .up = { 0.0f, 0.0f, 1.0f },
+                  .yaw_pitch_roll = th::YawPitchRoll{ .yaw = 135.0f, .pitch = -45.0f, .roll = 0.0f } })) {};
 
     void update(float dt, th::RenderGraph& render_graph) override {
+        m_uniform_buffer_array.update(m_camera.getProjectionMatrix(), m_renderer.getCurrentFrameIndex());
         const auto resource = render_graph.addTextureResource("swapchain", m_swapchain);
         m_my_pass.setup(render_graph, resource);
     }
-    virtual ~ThymeApp() = default;
+    ~ThymeApp() override = default;
 
 private:
     th::MyPass m_my_pass;
+    th::UniformBufferArray<glm::mat4> m_uniform_buffer_array;
+    th::FpsCamera m_camera;
 };
 
 auto main() -> int {

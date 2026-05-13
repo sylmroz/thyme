@@ -19,6 +19,9 @@ public:
     template <typename T>
     void createUiformBufferForType(T& type) noexcept {}
 
+    [[nodiscard]] auto getCurrentFrameIndex() const noexcept -> uint32_t {
+        return m_command_buffers_pool.currentIndex();
+    }
     void beginFrame(const vk::raii::Device& device, vk::Semaphore frame_semaphore);
     void draw(const vk::raii::Device& device, RenderGraph& render_graph);
     void endFrame(vk::Semaphore frame_render_semaphore);

@@ -82,8 +82,15 @@ public:
     }
 
     void update(const T& obj, uint32_t index) const noexcept {
-        assert(index < m_uniform_buffer_objects.size());
+        // assert(index < m_uniform_buffer_objects.size());
         m_uniform_buffer_objects[index].update(obj);
+    }
+
+    [[nodiscard]] auto getDescriptorBufferInfos() const noexcept -> vk::DescriptorBufferInfo {
+        return m_uniform_buffer_objects | std::transform([](const auto& obj) -> vk::DescriptorBufferInfo {
+                   return obj.getDescriptorBufferInfos();
+               })
+               | std::ranges::to<std::vector<vk::DescriptorBufferInfo>>();
     }
 
 

@@ -1,6 +1,7 @@
 export module th.core.application;
 
 import std;
+import vk_mem_alloc;
 import vulkan;
 
 import th.core.engine;
@@ -65,6 +66,8 @@ protected:
     PhysicalDevices2 m_physical_devices;
     uint32_t m_queue_family_index;
     vk::raii::Device m_logical_device;
+
+    vma::raii::Allocator m_allocator;
 
     Renderer m_renderer;
 
