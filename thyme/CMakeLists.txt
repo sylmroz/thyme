@@ -66,13 +66,14 @@ find_package(glfw3 CONFIG REQUIRED)
 find_package(Vulkan 1.4.335 REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(Stb REQUIRED)
-find_package(VulkanMemoryAllocator CONFIG REQUIRED)
+find_package(unofficial-vulkan-memory-allocator-hpp CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(glslang CONFIG REQUIRED)
 find_package(slang)
 
 include(vulkanCppModuleLib.cmake)
+include(vmaHppModuleLib.cmake)
 include(glmCppModuleLib.cmake)
 
 target_link_libraries(${PROJECT_NAME} 
@@ -81,13 +82,13 @@ target_link_libraries(${PROJECT_NAME}
         glfw
 		Vulkan::cppm
 		imgui::imgui
-		GPUOpen::VulkanMemoryAllocator
 		nlohmann_json::nlohmann_json
 		glm::cppm
 		glslang::glslang
 		glslang::glslang-default-resource-limits
 		glslang::SPIRV
 		slang::slang
+		VulkanMemoryAllocator-Hpp::VulkanMemoryAllocator-HppModule
 )
 
 # copy dlls to the app

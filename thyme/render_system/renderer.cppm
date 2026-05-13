@@ -1,18 +1,23 @@
 export module th.render_system.renderer;
 
 import std;
+import vk_mem_alloc;
 import vulkan;
 
 import th.render_system.vulkan;
 import th.core.logger;
 import th.render_system.render_graph;
+import th.render_system.vulkan;
 
 namespace th {
 
 export class Renderer {
 public:
-    Renderer(vk::raii::PhysicalDevice& physical_device, const vk::raii::Device& device, std::uint32_t graphic_queue_index,
-             std::uint32_t max_frames_in_flight, Logger& logger);
+    Renderer(vk::raii::PhysicalDevice& physical_device, const vk::raii::Device& device,
+             std::uint32_t graphic_queue_index, std::uint32_t max_frames_in_flight, Logger& logger);
+
+    template <typename T>
+    void createUiformBufferForType(T& type) noexcept {}
 
     void beginFrame(const vk::raii::Device& device, vk::Semaphore frame_semaphore);
     void draw(const vk::raii::Device& device, RenderGraph& render_graph);

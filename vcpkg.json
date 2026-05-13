@@ -13,7 +13,7 @@
     "glm",
     "stb",
     "vulkan-sdk-components",
-    "vulkan-memory-allocator",
+    "vulkan-memory-allocator-hpp",
     "nlohmann-json",
     "shader-slang"
   ],
