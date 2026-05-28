@@ -91,7 +91,7 @@ private:
     std::vector<vk::raii::DescriptorSet> m_descriptor_sets;
 };
 
-class DescriptorLayoutBuilder {
+export class DescriptorLayoutBuilder {
 public:
     void addBinding(const uint32_t binding, const vk::DescriptorType type, const vk::ShaderStageFlagBits stage) {
         addBinding(vk::DescriptorSetLayoutBinding{

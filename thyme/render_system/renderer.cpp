@@ -4,7 +4,7 @@ module th.render_system.renderer;
 
 namespace th {
 
-Renderer::Renderer(vk::raii::PhysicalDevice& physical_device, const vk::raii::Device& device,
+Renderer::Renderer(const vk::raii::Device& device,
                    const std::uint32_t graphic_queue_index, const std::uint32_t max_frames_in_flight, Logger& logger)
     : m_command_pool(device.createCommandPool(
               vk::CommandPoolCreateInfo{ .flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
@@ -18,7 +18,7 @@ void Renderer::beginFrame(const vk::raii::Device& device, const vk::Semaphore fr
 
 void Renderer::draw(const vk::raii::Device& device, RenderGraph& render_graph) {
     render_graph.compile();
-    render_graph.execute(m_command_buffers_pool.get().getBuffer(device));
+    render_graph.execute(m_command_buffers_pool.get().getBuffer(device), getCurrentFrameIndex());
 }
 
 void Renderer::endFrame(const vk::Semaphore frame_render_semaphore) {

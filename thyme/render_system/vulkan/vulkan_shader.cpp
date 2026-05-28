@@ -86,6 +86,7 @@ auto compileSlangShader(const std::string_view shader_name) -> std::vector<uint3
     Slang::ComPtr<slang::IBlob> spirv_code;
     slang_module->getTargetCode(0, spirv_code.writeRef());
     const auto spriv_code_begin_ptr = static_cast<const uint32_t*>(spirv_code->getBufferPointer());
+
     return std::vector(spriv_code_begin_ptr, spriv_code_begin_ptr + (spirv_code->getBufferSize() / 4));
 }
 

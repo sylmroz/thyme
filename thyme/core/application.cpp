@@ -82,7 +82,7 @@ WindowedApplication::WindowedApplication(const WindowedApplicationInitInfo& wind
       m_allocator(m_vulkan_framework.getInstance(), m_logical_device, vma::AllocatorCreateInfo{
           .physicalDevice = m_physical_devices.current(),
       }),
-      m_renderer(m_physical_devices.current(), m_logical_device, m_queue_family_index, getMaxFramesInFlight(), logger),
+      m_renderer(m_logical_device, m_queue_family_index, getMaxFramesInFlight(), logger),
       m_swapchain(
               m_physical_devices.current(),
               m_logical_device,

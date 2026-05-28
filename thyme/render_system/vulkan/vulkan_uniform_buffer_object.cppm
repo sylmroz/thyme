@@ -86,8 +86,8 @@ public:
         m_uniform_buffer_objects[index].update(obj);
     }
 
-    [[nodiscard]] auto getDescriptorBufferInfos() const noexcept -> vk::DescriptorBufferInfo {
-        return m_uniform_buffer_objects | std::transform([](const auto& obj) -> vk::DescriptorBufferInfo {
+    [[nodiscard]] auto getDescriptorBufferInfos() const noexcept -> std::vector<vk::DescriptorBufferInfo> {
+        return m_uniform_buffer_objects | std::views::transform([](const auto& obj) -> vk::DescriptorBufferInfo {
                    return obj.getDescriptorBufferInfos();
                })
                | std::ranges::to<std::vector<vk::DescriptorBufferInfo>>();

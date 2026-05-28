@@ -80,6 +80,7 @@ struct RenderGraphPersistentTarget {
 using RenderGraphTarget = std::variant<RenderGraphPersistentTarget, RenderGraphTransientTarget>;
 
 struct RenderGraphContext {
+    uint32_t frame_index;
     std::span<const RenderGraphTarget> targets;
 };
 
@@ -138,8 +139,9 @@ public:
         }
     };
 
-    void execute(const vk::CommandBuffer command_buffer) {
-        RenderGraphContext render_graph_context{
+    void execute(const vk::CommandBuffer command_buffer, const uint32_t frame_index) {
+        const RenderGraphContext render_graph_context{
+            .frame_index = frame_index,
             .targets = m_resources,
         };
         for (auto& [exec, dependencies] : m_execute_passes) {

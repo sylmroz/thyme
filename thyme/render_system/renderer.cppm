@@ -13,15 +13,17 @@ namespace th {
 
 export class Renderer {
 public:
-    Renderer(vk::raii::PhysicalDevice& physical_device, const vk::raii::Device& device,
-             std::uint32_t graphic_queue_index, std::uint32_t max_frames_in_flight, Logger& logger);
-
-    template <typename T>
-    void createUiformBufferForType(T& type) noexcept {}
+    Renderer(const vk::raii::Device& device, std::uint32_t graphic_queue_index, std::uint32_t max_frames_in_flight,
+             Logger& logger);
 
     [[nodiscard]] auto getCurrentFrameIndex() const noexcept -> uint32_t {
         return m_command_buffers_pool.currentIndex();
     }
+
+    [[nodiscard]] auto getFramesInFlightCount() const noexcept -> uint32_t {
+        return static_cast<uint32_t>(m_command_buffers_pool.size());
+    }
+
     void beginFrame(const vk::raii::Device& device, vk::Semaphore frame_semaphore);
     void draw(const vk::raii::Device& device, RenderGraph& render_graph);
     void endFrame(vk::Semaphore frame_render_semaphore);
@@ -32,5 +34,24 @@ private:
     VulkanCommandBuffersPool2 m_command_buffers_pool;
 };
 
+
+export template <typename T>
+class UniformBuffer {
+public:
+    UniformBuffer(Renderer& renderer, const vma::raii::Allocator& allocator)
+        : m_renderer(renderer), m_uniform_buffer_array(allocator, renderer.getFramesInFlightCount()) {}
+
+    void update(const T& value) {
+        m_uniform_buffer_array.update(value, m_renderer.getCurrentFrameIndex());
+    }
+
+    [[nodiscard]] auto getDescriptorBufferInfos() const noexcept -> std::vector<vk::DescriptorBufferInfo> {
+        return m_uniform_buffer_array.getDescriptorBufferInfos();
+    }
+
+private:
+    Renderer& m_renderer;
+    UniformBufferArray<T> m_uniform_buffer_array;
+};
 
 }// namespace th
