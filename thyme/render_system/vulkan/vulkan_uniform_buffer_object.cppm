@@ -6,6 +6,7 @@ import vulkan;
 
 import :buffer;
 import :device;
+#include <cassert>
 
 export namespace th {
 
@@ -46,40 +47,49 @@ private:
 
 template <typename T>
 class VulkanUniformBuffer2 final {
+    template <typename T>
+    class UniformBuffer final {
+    public:
+        explicit UniformBuffer(const vma::raii::Allocator& allocator)
+            : m_buffer(allocator.createBuffer(
+                      vk::BufferCreateInfo{
+                              .size = sizeof(T),
+                              .usage = vk::BufferUsageFlagBits::eUniformBuffer,
+                              .sharingMode = vk::SharingMode::eExclusive,
+                      },
+                      vma::AllocationCreateInfo{ .usage = vma::MemoryUsage::eCpuToGpu })),
+              m_mapped_memory_buffer(m_buffer.getAllocation().map()) {}
+
+        void update(const T& obj) const noexcept {
+            std::memcpy(m_mapped_memory_buffer, &obj, sizeof(obj));
+        }
+
+        [[nodiscard]] auto getDescriptorBufferInfos() const noexcept -> vk::DescriptorBufferInfo {
+            const vk::raii::Buffer& vk_buf = m_buffer;
+            return vk::DescriptorBufferInfo(*vk_buf, 0, sizeof(T));
+        }
+
+        void unmap() const {
+            m_buffer.getAllocation().unmap();
+        }
+
+    private:
+        vma::raii::Buffer m_buffer;
+        void* m_mapped_memory_buffer{ nullptr };
+    };
+
 public:
-    explicit VulkanUniformBuffer2(const vma::raii::Allocator& allocator)
-        : m_buffer(allocator.createBuffer(
-                  vk::BufferCreateInfo{
-                          .size = sizeof(T),
-                          .usage = vk::BufferUsageFlagBits::eUniformBuffer,
-                          .sharingMode = vk::SharingMode::eExclusive,
-                  },
-                  vma::AllocationCreateInfo{ .usage = vma::MemoryUsage::eCpuToGpu })) {}
-
-    void update(const T& obj) const noexcept {
-        const auto mapped_memory_buffer = m_buffer.getAllocation().map();
-        std::memcpy(mapped_memory_buffer, &obj, sizeof(obj));
-        m_buffer.getAllocation().unmap();
-    }
-
-    [[nodiscard]] auto getDescriptorBufferInfos() const noexcept -> vk::DescriptorBufferInfo {
-        const vk::raii::Buffer& vk_buf = m_buffer;
-        return vk::DescriptorBufferInfo(*vk_buf, 0, sizeof(T));
-    }
-
-private:
-    vma::raii::Buffer m_buffer;
-};
-
-template <typename T>
-class UniformBufferArray final {
-public:
-    UniformBufferArray(const vma::raii::Allocator& allocator, std::size_t num_buffers_in_flight) {
+    VulkanUniformBuffer2(const vma::raii::Allocator& allocator, std::size_t num_buffers_in_flight) {
         m_uniform_buffer_objects.reserve(num_buffers_in_flight);
         std::generate_n(std::back_inserter(m_uniform_buffer_objects), num_buffers_in_flight, [&allocator]() mutable {
-            return VulkanUniformBuffer2<T>(allocator);
+            return UniformBuffer<T>(allocator);
         });
     }
+
+    explicit VulkanUniformBuffer2(const VulkanUniformBuffer2&) = delete;
+    explicit VulkanUniformBuffer2(VulkanUniformBuffer2&&) = default;
+    auto operator=(const VulkanUniformBuffer2&) -> VulkanUniformBuffer2& = delete;
+    auto operator=(VulkanUniformBuffer2&&) -> VulkanUniformBuffer2& = default;
 
     void update(const T& obj, uint32_t index) const noexcept {
         // assert(index < m_uniform_buffer_objects.size());
@@ -93,9 +103,13 @@ public:
                | std::ranges::to<std::vector<vk::DescriptorBufferInfo>>();
     }
 
-
+    ~VulkanUniformBuffer2() {
+        for (const auto& obj : m_uniform_buffer_objects) {
+            obj.unmap();
+        }
+    }
 private:
-    std::vector<VulkanUniformBuffer2<T>> m_uniform_buffer_objects;
+    std::vector<UniformBuffer<T>> m_uniform_buffer_objects;
 };
 
 

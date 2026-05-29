@@ -51,7 +51,7 @@ public:
 
 private:
     Renderer& m_renderer;
-    UniformBufferArray<T> m_uniform_buffer_array;
+    VulkanUniformBuffer2<T> m_uniform_buffer_array;
 };
 
 }// namespace th

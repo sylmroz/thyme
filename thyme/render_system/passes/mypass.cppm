@@ -16,7 +16,7 @@ export struct PassDrawContext {
 
 export class MyPass {
 public:
-    MyPass(vk::raii::PhysicalDevice& physical_device, const vk::raii::Device& device, const vk::Format format,
+    MyPass([[maybe_unused]] vk::raii::PhysicalDevice& physical_device, const vk::raii::Device& device, const vk::Format format,
            std::span<const vk::DescriptorBufferInfo> camera_descriptor_buffer_info, const Logger& logger) {
         const auto slang_shader = compileSlangShader("triangle2");
         const auto shader_module = createShaderModule(device, std::span{ slang_shader }, logger);
