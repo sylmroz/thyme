@@ -1,10 +1,18 @@
+module;
+
+#ifndef LOGGER_USE_STD_PRINT
+#define SPDLOG_HEADER_ONLY
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/spdlog.h>
+#endif
+
 export module th.core.logger;
 
 import std;
 
-#ifndef LOGGER_USE_STD_PRINT
-import spdlog;
-#endif
+// #ifndef LOGGER_USE_STD_PRINT
+// import spdlog;
+// #endif
 
 namespace th {
 

@@ -1,5 +1,6 @@
 module;
 
+#define SPDLOG_HEADER_ONLY
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
