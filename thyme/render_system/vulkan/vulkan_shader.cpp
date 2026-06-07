@@ -35,7 +35,7 @@ auto ShaderCompiler::compile() const -> std::vector<uint32_t> {
     return spir_v;
 }
 
-void SlangShaderCompiler::compile(const std::string_view target) {
+void SlangShaderCompiler::compile(const std::string_view target, Logger& logger) {
     Slang::ComPtr<slang::IGlobalSession> global_session;
     slang::createGlobalSession(global_session.writeRef());
 
@@ -56,8 +56,12 @@ void SlangShaderCompiler::compile(const std::string_view target) {
     global_session->createSession(session_desc, session.writeRef());
     const auto module_path = getBasePath(ShaderLanguage::slang) / target;
     const auto module_path_str = std::format("{}.slang", module_path.string());
-    const auto slang_module =
-            Slang::ComPtr{ session->loadModuleFromSource(target.data(), module_path_str.c_str(), nullptr, nullptr) };
+    Slang::ComPtr<slang::IBlob> out_diagnostics;
+    const auto slang_module = Slang::ComPtr{ session->loadModuleFromSource(
+            target.data(), module_path_str.c_str(), nullptr, out_diagnostics.writeRef()) };
+    if (out_diagnostics->getBufferPointer()) {
+        logger.warn("Could not compile {}. Error: {}", target, out_diagnostics->getBufferPointer());
+    }
     slang_module->getTargetCode(0, m_spir_vv_code.writeRef());
 }
 auto compileSlangShader(const std::string_view shader_name) -> std::vector<uint32_t> {
@@ -81,8 +85,14 @@ auto compileSlangShader(const std::string_view shader_name) -> std::vector<uint3
     global_session->createSession(session_desc, session.writeRef());
     const auto module_path = getBasePath(ShaderLanguage::slang) / shader_name;
     const auto module_path_str = std::format("{}.slang", module_path.string());
+    Slang::ComPtr<slang::IBlob> out_diagnostics;
     const auto slang_module = Slang::ComPtr{ session->loadModuleFromSource(
-            shader_name.data(), module_path_str.c_str(), nullptr, nullptr) };
+            shader_name.data(), module_path_str.c_str(), nullptr, out_diagnostics.writeRef()) };
+    if (out_diagnostics && out_diagnostics->getBufferPointer()) {
+        throw std::runtime_error(std::format("Could not compile {}. Error: {}",
+                                             shader_name,
+                                             static_cast<const char*>(out_diagnostics->getBufferPointer())));
+    }
     Slang::ComPtr<slang::IBlob> spirv_code;
     slang_module->getTargetCode(0, spirv_code.writeRef());
     const auto spriv_code_begin_ptr = static_cast<const uint32_t*>(spirv_code->getBufferPointer());

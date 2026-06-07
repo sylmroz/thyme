@@ -77,11 +77,13 @@ WindowedApplication::WindowedApplication(const WindowedApplicationInitInfo& wind
                                                   vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eTransfer
                                                           | vk::QueueFlagBits::eCompute,
                                                   *m_surface)),
-      m_logical_device(
-              createLogicalDevice(m_physical_devices.current(), m_queue_family_index)),
-      m_allocator(m_vulkan_framework.getInstance(), m_logical_device, vma::AllocatorCreateInfo{
-          .physicalDevice = m_physical_devices.current(),
-      }),
+      m_logical_device(createLogicalDevice(m_physical_devices.current(), m_queue_family_index)),
+      m_allocator(m_vulkan_framework.getInstance(),
+                  m_logical_device,
+                  vma::AllocatorCreateInfo{
+                          .flags = vma::AllocatorCreateFlagBits::eBufferDeviceAddress,
+                          .physicalDevice = m_physical_devices.current(),
+                  }),
       m_renderer(m_logical_device, m_queue_family_index, getMaxFramesInFlight(), logger),
       m_swapchain(
               m_physical_devices.current(),
@@ -107,6 +109,35 @@ void WindowedApplication::run() {
         old_time = current_time;
         return dt.count();
     };
+
+    std::array<Vertex, 4> rect_vertices;
+
+    rect_vertices[0].pos = { 0.5, -0.5, 0 };
+    rect_vertices[1].pos = { 0.5, 0.5, 0 };
+    rect_vertices[2].pos = { -0.5, -0.5, 0 };
+    rect_vertices[3].pos = { -0.5, 0.5, 0 };
+
+    rect_vertices[0].color = { 0, 0, 0 };
+    rect_vertices[1].color = { 0.5, 0.5, 0.5 };
+    rect_vertices[2].color = { 1, 0, 0 };
+    rect_vertices[3].color = { 0, 1, 0 };
+
+    std::array<uint32_t, 6> rect_indices;
+
+    rect_indices[0] = 0;
+    rect_indices[1] = 1;
+    rect_indices[2] = 2;
+
+    rect_indices[3] = 2;
+    rect_indices[4] = 1;
+    rect_indices[5] = 3;
+
+    m_renderer.addMesh(GpuStaticMesh::create(m_allocator,
+                                             m_logical_device,
+                                             m_renderer.m_command_pool,
+                                             m_logical_device.getQueue(m_queue_family_index, 0),
+                                             rect_indices,
+                                             rect_vertices));
 
     while (!m_window.shouldClose()) {
         m_window.poolEvents();

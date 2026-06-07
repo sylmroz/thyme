@@ -126,7 +126,7 @@ private:
 
 export class SlangShaderCompiler {
 public:
-    void compile(const std::string_view target);
+    void compile(std::string_view target, Logger& logger);
 
 //private:
     Slang::ComPtr<slang::IBlob> m_spir_vv_code;

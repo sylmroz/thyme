@@ -97,7 +97,7 @@ private:
 class ThymeApp: public th::WindowedApplication {
 public:
     ThymeApp(const th::WindowedApplicationInitInfo& windowed_application_init_info, th::Logger& logger)
-        : th::WindowedApplication(windowed_application_init_info, logger), m_uniform_buffer(m_renderer, m_allocator),
+        : th::WindowedApplication(windowed_application_init_info, logger), m_uniform_buffer(m_renderer.createUniformBuffer<glm::mat4>(m_allocator)),
           m_my_pass(m_physical_devices.current(),
                     m_logical_device,
                     m_swapchain.getFormat(),

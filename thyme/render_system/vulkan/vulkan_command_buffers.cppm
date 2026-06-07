@@ -133,7 +133,7 @@ public:
         return m_command_buffers.size();
     }
 
-    [[nodiscard]] auto currentIndex() const noexcept -> std::size_t {
+    [[nodiscard]] auto currentIndex() const noexcept -> std::uint32_t {
         return m_current;
     }
 
@@ -144,7 +144,7 @@ public:
 
      void submit(const vk::Semaphore semaphore) {
         get().submit(vk::PipelineStageFlagBits::eColorAttachmentOutput, semaphore);
-        m_current = (m_current + 1) % m_command_buffers.size();
+        m_current = (m_current + 1) % static_cast<std::uint32_t>(m_command_buffers.size());
     }
 
     void flush(const vk::raii::Device& device) {
@@ -154,7 +154,7 @@ public:
     }
 
 private:
-    std::size_t m_current{ 0 };
+    std::uint32_t m_current{ 0 };
     std::vector<VulkanCommandBuffer2> m_command_buffers;
 };
 
