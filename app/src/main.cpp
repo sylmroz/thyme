@@ -20,7 +20,7 @@ import th.render_system.renderer;
 
 import th.gui;
 
-class ExampleApp: public th::Application {
+/*class ExampleApp: public th::Application {
 public:
     explicit ExampleApp(th::Logger& logger) : th::Application{ logger } {
         m_model_storage.addModel(th::Model{
@@ -92,7 +92,7 @@ public:
 
 private:
     th::FpsCamera& m_camera;
-};
+};*/
 
 class ThymeApp: public th::WindowedApplication {
 public:

@@ -11,8 +11,8 @@ import th.scene.transformation;
 export namespace th {
 
 struct Vertex {
-    glm::vec3 pos;
-    glm::vec3 color;
+    glm::vec4 pos;
+    glm::vec4 color;
     glm::vec2 tex_coord;
 };
 

@@ -8,11 +8,12 @@ ConstantBuffer<float4x4> viewProj;
 
 struct VertexOutput {
     float4 position : SV_Position;
+    float4 color;
 };
 
 struct Vertex {
-    float3 position;
-    float3 color;
+    float4 position;
+    float4 color;
     float2 texcoord;
 }
 
@@ -24,11 +25,12 @@ struct PushConstant {
 VertexOutput main(uint vid : SV_VertexID, uniform PushConstant push_contant) {
     VertexOutput output;
     output.position = 
-        mul(viewProj, float4(push_contant.vertex_buffer[vid].position, 1.0));
+        mul(viewProj, float4(push_contant.vertex_buffer[vid].position));
+    output.color = push_contant.vertex_buffer[vid].color;
     return output;
 }
 
 [shader("fragment")]
-float4 main() : SV_Target {
-    return float4(1.0, 0.0, 0.0, 1.0);
+float4 main(VertexOutput vertexInfo) : SV_Target {
+    return float4(vertexInfo.color);
 }
