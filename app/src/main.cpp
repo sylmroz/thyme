@@ -97,7 +97,8 @@ private:
 class ThymeApp: public th::WindowedApplication {
 public:
     ThymeApp(const th::WindowedApplicationInitInfo& windowed_application_init_info, th::Logger& logger)
-        : th::WindowedApplication(windowed_application_init_info, logger), m_uniform_buffer(m_renderer.createUniformBuffer<glm::mat4>(m_allocator)),
+        : th::WindowedApplication(windowed_application_init_info, logger),
+          m_uniform_buffer(m_renderer.createUniformBuffer<glm::mat4>(m_allocator)),
           m_my_pass(m_physical_devices.current(),
                     m_logical_device,
                     m_swapchain.getFormat(),
@@ -111,9 +112,13 @@ public:
                   .position = { 2.0f, 2.0f, 2.0f },
                   .direction = glm::normalize(glm::vec3{ -1.0f, -1.0f, -1.0f }),
                   .up = { 0.0f, 0.0f, 1.0f },
-                  .yaw_pitch_roll = th::YawPitchRoll{ .yaw = 135.0f, .pitch = -45.0f, .roll = 0.0f } })) {};
+                  .yaw_pitch_roll = th::YawPitchRoll{ .yaw = 135.0f, .pitch = -45.0f, .roll = 0.0f } })),
+          m_camera_controller(std::ref(m_camera), m_window_events_handlers) {
+    };
 
     void update(float dt, th::RenderGraph& render_graph) override {
+        m_camera_controller.update(dt);
+        m_camera.setResolution(m_window.getFrameBufferSize());
         m_uniform_buffer.update(m_camera.getViewProjectionMatrix());
         const auto resource = render_graph.addTextureResource("swapchain", m_swapchain);
         m_my_pass.setup(render_graph, resource);
@@ -124,6 +129,7 @@ private:
     th::UniformBuffer<glm::mat4> m_uniform_buffer;
     th::MyPass m_my_pass;
     th::FpsCamera m_camera;
+    th::CameraController m_camera_controller;
 };
 
 auto main() -> int {

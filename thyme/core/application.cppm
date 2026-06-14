@@ -72,7 +72,6 @@ protected:
     Renderer m_renderer;
 
     VulkanSwapchain2 m_swapchain;
-    std::vector<vk::raii::Semaphore> m_image_available_semaphores;
 
     Logger& m_logger;
 };

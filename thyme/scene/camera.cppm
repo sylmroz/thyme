@@ -1,6 +1,10 @@
 export module th.scene.camera;
 
+import std;
 import glm;
+
+import th.core.events;
+import th.platform.window_event_handler;
 
 export namespace th {
 
@@ -46,7 +50,7 @@ struct FpsCameraArguments {
     YawPitchRoll yaw_pitch_roll;
 };
 
-class Camera {
+/*class Camera {
 public:
     virtual ~Camera() = default;
 
@@ -60,40 +64,77 @@ public:
     [[nodiscard]] virtual auto getViewMatrix() const noexcept -> const glm::mat4& = 0;
 
     [[nodiscard]] virtual auto getViewProjectionMatrix() const noexcept -> const glm::mat4& = 0;
-};
 
-class FpsCamera: public Camera {
+    [[nodiscard]] virtual auto getPosition() const noexcept -> const glm::vec3 = 0;
+    [[nodiscard]] virtual auto getDirection() const noexcept -> const glm::vec3 = 0;
+
+    virtual auto moveForward(float offset) noexcept -> void = 0;
+    virtual auto moveLeft(float offset) noexcept -> void = 0;
+
+    virtual auto move(glm::vec2 offset) noexcept -> void = 0;
+};*/
+
+class FpsCamera {
 public:
     explicit FpsCamera(const FpsCameraArguments& camera_arguments);
 
     FpsCameraArguments camera_arguments;
 
-    void updateViewProjectionMatrix() final;
-    void updateViewMatrix() final;
-    void updateProjectionMatrix() final;
+    void updateViewProjectionMatrix();
+    void updateViewMatrix();
+    void updateProjectionMatrix();
 
-    void setResolution(const glm::vec2& resolution) noexcept final {
+    void setResolution(const glm::vec2& resolution) noexcept {
         camera_arguments.perspective_camera_arguments.resolution = resolution;
+        updateViewProjectionMatrix();
     }
 
     void setPosition(const glm::vec3& position) noexcept {
         camera_arguments.position = position;
+        updateViewProjectionMatrix();
     }
 
     void setUp(const glm::vec3& up) noexcept {
         camera_arguments.up = up;
+        updateViewProjectionMatrix();
     }
 
-    [[nodiscard]] auto getProjectionMatrix() const noexcept -> const glm::mat4& final {
+    [[nodiscard]] auto getProjectionMatrix() const noexcept -> const glm::mat4& {
         return m_projection_matrix;
     }
 
-    [[nodiscard]] auto getViewMatrix() const noexcept -> const glm::mat4& final {
+    [[nodiscard]] auto getViewMatrix() const noexcept -> const glm::mat4& {
         return m_view_matrix;
     }
 
-    [[nodiscard]] auto getViewProjectionMatrix() const noexcept -> const glm::mat4& final {
+    [[nodiscard]] auto getViewProjectionMatrix() const noexcept -> const glm::mat4& {
         return m_view_projection_matrix;
+    }
+
+    [[nodiscard]] auto getPosition() const noexcept -> const glm::vec3 {
+        return camera_arguments.direction;
+    }
+    [[nodiscard]] auto getDirection() const noexcept -> const glm::vec3 {
+        return camera_arguments.direction;
+    }
+
+    auto moveForward(const float offset) noexcept -> void {
+        camera_arguments.position = camera_arguments.position + camera_arguments.direction * glm::vec3(offset);
+    };
+
+    auto moveLeft(const float offset) noexcept -> void {
+        constexpr auto world_up = glm::vec3(0.0f, 0.0f, 1.0f);
+        const auto direction = glm::normalize(glm::cross(camera_arguments.direction, world_up));
+        camera_arguments.position = camera_arguments.position + direction * glm::vec3(offset);
+    };
+
+    auto move(const glm::vec2 offset) noexcept -> void {
+        moveForward(offset.x);
+        moveLeft(offset.y);
+    }
+
+    auto rotate(glm::vec2 offset) noexcept -> void {
+
     }
 
 private:
@@ -187,13 +228,29 @@ private:
     glm::mat4 m_view_projection_matrix = glm::mat4(1.0f);
 };
 
+using Camera = std::variant<std::reference_wrapper<FpsCamera>>;
+
 class CameraController {
 public:
-    explicit CameraController(const CameraArguments& camera_arguments);
+    explicit CameraController(Camera camera, WindowEventsHandlers& window_events_handler);
 
-    void move(const glm::vec3& direction);
+    void dispatchEvent(const MousePositionEvent& mouse_position_event);
+    void dispatchEvent(const MouseButtonPressedEvent& mouse_button_pressed_event);
+    void dispatchEvent(const MouseButtonReleasedEvent& mouse_button_released_event);
+    void dispatchEvent(const KeyPressedEvent& key_pressed_event);
+    void dispatchEvent(const KeyReleasedEvent& key_released_event);
+    void dispatchEvent(const KeyRepeatedEvent& key_repeated_event) const;
+    void dispatchEvent(const MouseWheelEvent& mouse_wheel_event);
+
+    void update(float dt);
 
 private:
+    Camera m_camera;
+    glm::vec2 m_pos{ 0.0f, 0.0f };
+    bool m_mouse_left_button_pressed{ false };
+    float m_speed{ 1.0f };
+
+    glm::vec2 m_move_offset{ 0.0f, 0.0f };
 };
 
 }// namespace th

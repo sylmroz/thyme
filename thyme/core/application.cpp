@@ -28,14 +28,14 @@ void Application::run(ui::IComponent& component, Camera& camera) {
                 WindowSettings(WindowConfig{ .width = 1280, .height = 720, .name = "Thyme", .maximized = false });
         auto window_event_handlers = WindowEventsHandlers();
         auto window = GlfwWindow(window_settings.getConfig(), window_event_handlers, m_logger);
-        camera.setResolution(window.getFrameBufferSize());
+        //camera.setResolution(window.getFrameBufferSize());
 
 
         window_event_handlers.addEventListener<WindowResizedEvent>(
                 [&window_settings, &camera](const WindowResizedEvent& window_resize) {
                     const auto [width, height] = window_resize;
                     window_settings.setResolution(glm::uvec2(width, height));
-                    camera.setResolution(glm::vec2{ static_cast<float>(width), static_cast<float>(height) });
+                    //camera.setResolution(glm::vec2{ static_cast<float>(width), static_cast<float>(height) });
                 });
 
         window_event_handlers.addEventListener<WindowMaximizedEvent>(
@@ -95,11 +95,7 @@ WindowedApplication::WindowedApplication(const WindowedApplicationInitInfo& wind
                   return vk::Extent2D{ .width = fbs.x, .height = fbs.y };
               },
               logger),
-      m_logger(logger) {
-    for (size_t i{ 0 }; i < getMaxFramesInFlight(); ++i) {
-        m_image_available_semaphores.emplace_back(m_logical_device.createSemaphore(vk::SemaphoreCreateInfo{}));
-    }
-}
+      m_logger(logger) {}
 
 void WindowedApplication::run() {
     m_logger.info("Start application {}"sv, m_application_init_info.window_config.name);

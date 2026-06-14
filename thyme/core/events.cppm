@@ -32,9 +32,9 @@ struct WindowMaximizedEvent {
 };
 
 struct MousePositionEvent {
-    glm::vec2 pos;
+    glm::vec2 position;
     [[nodiscard]] auto toString() const -> std::string {
-        return std::format("MousePosition {{ x: {}, y: {}}}", pos.x, pos.y);
+        return std::format("MousePosition {{ x: {}, y: {}}}", position.x, position.y);
     }
 };
 
@@ -158,6 +158,6 @@ template <>
 struct std::formatter<th::MousePositionEvent>: std::formatter<std::string> {
     auto format(th::MousePositionEvent mouse_position, std::format_context& ctx) const {
         return formatter<std::string>::format(
-                std::format("{{ x: {}, y: {} }}", mouse_position.pos.x, mouse_position.pos.y), ctx);
+                std::format("{{ x: {}, y: {} }}", mouse_position.position.x, mouse_position.position.y), ctx);
     }
 };

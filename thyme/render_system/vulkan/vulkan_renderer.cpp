@@ -4,7 +4,7 @@ module th.render_system.vulkan;
 
 namespace th {
 
-void updateUBO(const Camera& camera, const VulkanUniformBuffer<CameraMatrices>& camera_matrices,
+/*void updateUBO(const Camera& camera, const VulkanUniformBuffer<CameraMatrices>& camera_matrices,
                std::vector<VulkanModel>& models, ModelStorage& model_storage) {
     camera_matrices.update(
             CameraMatrices{ .view = camera.getViewMatrix(), .projection = camera.getProjectionMatrix() });
@@ -12,7 +12,7 @@ void updateUBO(const Camera& camera, const VulkanUniformBuffer<CameraMatrices>& 
         model.animate();
         vlkModel.getUniformBufferObject().update(model.transformation.getTransformMatrix());
     }
-}
+}*/
 
 VulkanRenderer::VulkanRenderer(const VulkanDevice& device, VulkanSwapchain& swapchain, ModelStorage& model_storage,
                                Camera& camera, Gui& gui, const VulkanGraphicContext& context,
@@ -45,7 +45,7 @@ void VulkanRenderer::draw(const VulkanDevice& device) {
     if (!m_swapchain.prepareFrame()) {
         return;
     }
-    updateUBO(m_camera, m_camera_matrices, m_models, m_model_storage);
+    // updateUBO(m_camera, m_camera_matrices, m_models, m_model_storage);
     m_color_image_memory.resize(device, m_swapchain.getSwapchainExtent());
     m_resolve_color_image_memory.resize(device, m_swapchain.getSwapchainExtent());
     m_depth_image_memory.resize(device, m_swapchain.getSwapchainExtent());
