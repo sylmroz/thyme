@@ -75,8 +75,15 @@ public:
 };*/
 
 class FpsCamera {
+    constexpr static glm::vec3 world_up = glm::vec3(0.0f, 1.0f, 0.0f);
+
 public:
     explicit FpsCamera(const FpsCameraArguments& camera_arguments);
+
+    FpsCamera() {
+        updateVectors();
+        updateProjectionMatrix();
+    };
 
     FpsCameraArguments camera_arguments;
 
@@ -118,26 +125,35 @@ public:
         return camera_arguments.direction;
     }
 
-    auto moveForward(const float offset) noexcept -> void {
-        camera_arguments.position = camera_arguments.position + camera_arguments.direction * glm::vec3(offset);
-    };
-
-    auto moveLeft(const float offset) noexcept -> void {
-        constexpr auto world_up = glm::vec3(0.0f, 0.0f, 1.0f);
-        const auto direction = glm::normalize(glm::cross(camera_arguments.direction, world_up));
-        camera_arguments.position = camera_arguments.position + direction * glm::vec3(offset);
-    };
-
     auto move(const glm::vec2 offset) noexcept -> void {
-        moveForward(offset.x);
-        moveLeft(offset.y);
+        m_position += m_front * glm::vec3(offset.x);
+        m_position += m_right * glm::vec3(offset.y);
+        updateViewMatrix();
     }
 
-    auto rotate(glm::vec2 offset) noexcept -> void {
-
+    auto rotate(const glm::vec2 offset) noexcept -> void {
+        m_yaw += offset.x;
+        m_pitch += offset.y;
+        m_pitch = std::clamp(m_pitch, -89.0f, 89.0f);
+        updateVectors();
     }
 
 private:
+    void updateVectors() noexcept;
+
+private:
+    glm::vec3 m_position = glm::vec3(0.0f, 0.0f, 0.0f);
+    glm::vec3 m_front;
+    glm::vec3 m_up = glm::vec3(world_up);
+    glm::vec3 m_right;
+
+    float m_yaw{ -90.0f };
+    float m_pitch{ 0.0f };
+
+    float m_movement_speed{ 1.0f };
+    float m_mouse_sensitivity{ 1.0f };
+    float m_zoom{ 0.0f };
+
     glm::mat4 m_projection_matrix = glm::mat4(1.0f);
     glm::mat4 m_view_matrix = glm::mat4(1.0f);
     glm::mat4 m_view_projection_matrix = glm::mat4(1.0f);
@@ -248,9 +264,11 @@ private:
     Camera m_camera;
     glm::vec2 m_pos{ 0.0f, 0.0f };
     bool m_mouse_left_button_pressed{ false };
-    float m_speed{ 1.0f };
+    float m_move_speed{ 1.0f };
+    float m_rotate_speed{ 5.0f };
 
     glm::vec2 m_move_offset{ 0.0f, 0.0f };
+    glm::vec2 m_rotate_offset{ 0.0f, 0.0f };
 };
 
 }// namespace th

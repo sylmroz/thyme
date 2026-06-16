@@ -16,29 +16,28 @@ void FpsCamera::updateViewProjectionMatrix() {
 }
 
 void FpsCamera::updateViewMatrix() {
-    constexpr auto world_front = glm::vec3(0.0f, 1.0f, 0.0f);
-    constexpr auto world_up = glm::vec3(0.0f, 0.0f, 1.0f);
-    /*auto direction = glm::rotate(world_front, glm::radians(camera_arguments.yaw_pitch_roll.yaw), world_up);
-    const auto right = glm::normalize(glm::cross(direction, world_up));
-    direction = glm::normalize(glm::rotate(direction, glm::radians(camera_arguments.yaw_pitch_roll.pitch), right));*/
-    //    const auto [yaw, pitch, roll] = camera_arguments.yaw_pitch_roll;
-    /*const auto rotation = glm::quat(glm::vec3(glm::radians(pitch),glm::radians(yaw), glm::radians(roll)));
-    const auto direction = glm::normalize(rotation * world_front);*/
-
-    m_view_matrix =
-            glm::lookAt(camera_arguments.position, camera_arguments.position + camera_arguments.direction, world_up);
-
-    /*const auto pitch_rotation = glm::angleAxis(pitch, glm::vec3 { 1.f, 0.f, 0.f });
-    const auto yaw_rotation = glm::angleAxis(yaw, glm::vec3 { 0.f, -1.f, 0.f });
-    const auto rotation_matrix = glm::toMat4(yaw_rotation) * glm::toMat4(pitch_rotation);
-    const auto translation_matrix = glm::translate(glm::identity<glm::mat4>(), -camera_arguments.position);
-    m_view_matrix = glm::inverse(translation_matrix * rotation_matrix);*/
+    m_view_matrix = glm::lookAt(m_position, m_position + m_front, m_up);
 }
 
 void FpsCamera::updateProjectionMatrix() {
     const auto [fov, znear, zfar, resolution] = camera_arguments.perspective_camera_arguments;
     m_projection_matrix = glm::perspective(glm::radians(fov), resolution.x / resolution.y, znear, zfar);
     m_projection_matrix[1][1] *= -1.0f;
+}
+
+void FpsCamera::updateVectors() noexcept {
+    const auto yaw = glm::radians(m_yaw);
+    const auto pitch = glm::radians(m_pitch);
+    const auto cos_pitch = std::cos(pitch);
+    const auto sin_pitch = std::sin(pitch);
+    const auto cos_yaw = std::cos(yaw);
+    const auto sin_yaw = std::sin(yaw);
+    const auto new_front = glm::vec3(cos_yaw * cos_pitch, sin_pitch, sin_yaw * cos_pitch);
+    m_front = glm::normalize(new_front);
+
+    m_right = glm::normalize(glm::cross(m_front, world_up));
+    m_up = glm::normalize(glm::cross(m_right, m_front));
+    updateViewMatrix();
 }
 
 auto calculateYawPithRollAngles(const glm::vec3 dir, glm::mat3 world_axis) noexcept -> YawPitchRoll {
@@ -99,8 +98,15 @@ CameraController::CameraController(Camera camera, WindowEventsHandlers& window_e
 }
 
 void CameraController::dispatchEvent(const MousePositionEvent& mouse_position_event) {
-    const auto distance = m_pos - mouse_position_event.position;
-    if (m_mouse_left_button_pressed) {}
+    static auto is_first_mouse_position{ true };
+    if (is_first_mouse_position) {
+        m_pos = mouse_position_event.position;
+        is_first_mouse_position = false;
+    }
+    if (m_mouse_left_button_pressed) {
+        m_rotate_offset.x = mouse_position_event.position.x - m_pos.x;
+        m_rotate_offset.y = m_pos.y - mouse_position_event.position.y;
+    }
     m_pos = mouse_position_event.position;
 }
 
@@ -118,23 +124,22 @@ void CameraController::dispatchEvent(const MouseButtonReleasedEvent& mouse_butto
 
 void CameraController::dispatchEvent(const KeyPressedEvent& key_pressed_event) {
     switch (key_pressed_event.code) {
-        case KeyCode::w: m_move_offset.x += m_speed; break;
-        case KeyCode::s: m_move_offset.x -= m_speed; break;
-        case KeyCode::a: m_move_offset.y += m_speed; break;
-        case KeyCode::d: m_move_offset.y -= m_speed; break;
+        case KeyCode::w: m_move_offset.x += m_move_speed; break;
+        case KeyCode::s: m_move_offset.x -= m_move_speed; break;
+        case KeyCode::a: m_move_offset.y += m_move_speed; break;
+        case KeyCode::d: m_move_offset.y -= m_move_speed; break;
         default:;
     }
 }
 
-void CameraController::dispatchEvent(const KeyRepeatedEvent& key_repeated_event) const {
-}
+void CameraController::dispatchEvent(const KeyRepeatedEvent& key_repeated_event) const {}
 
 void CameraController::dispatchEvent(const KeyReleasedEvent& key_released_event) {
     switch (key_released_event.code) {
-        case KeyCode::w: m_move_offset.x -= m_speed; break;
-        case KeyCode::s: m_move_offset.x += m_speed; break;
-        case KeyCode::a: m_move_offset.y -= m_speed; break;
-        case KeyCode::d: m_move_offset.y += m_speed; break;
+        case KeyCode::w: m_move_offset.x -= m_move_speed; break;
+        case KeyCode::s: m_move_offset.x += m_move_speed; break;
+        case KeyCode::a: m_move_offset.y -= m_move_speed; break;
+        case KeyCode::d: m_move_offset.y += m_move_speed; break;
         default:;
     }
 }
@@ -142,9 +147,13 @@ void CameraController::dispatchEvent(const KeyReleasedEvent& key_released_event)
 void CameraController::dispatchEvent(const MouseWheelEvent& mouse_wheel_event) {}
 
 void CameraController::update(float dt) {
-    std::visit([this, dt](auto camera) {
-        camera.get().move(m_move_offset * dt);
-    }, m_camera);
+    std::visit(
+            [this, dt](auto camera) {
+                camera.get().move(m_move_offset * dt);
+                camera.get().rotate(m_rotate_offset * dt * m_rotate_speed);
+                m_rotate_offset = glm::vec2(0.0f, 0.0f);
+            },
+            m_camera);
 }
 
 }// namespace th
