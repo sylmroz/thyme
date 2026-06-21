@@ -36,75 +36,58 @@ struct CameraArguments {
 };
 
 struct PerspectiveCameraArguments {
-    float fov;
-    float znear;
-    float zfar;
-    glm::vec2 resolution;
+    float fov{ 45.0f };
+    float znear{ 0.001f };
+    float zfar{ 1000.0f };
+    float aspect_ratio{ 1920.0f / 1080.0f };
+};
+
+struct OrthographicCameraArguments {
+    float left;
+    float right;
+    float bottom;
+    float top;
+    float near_plane;
+    float far_plane;
+};
+
+struct FpsCameraViewArguments {
+    glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);
+    float yaw{ -90.0f };
+    float pitch{ 0.0f };
 };
 
 struct FpsCameraArguments {
     PerspectiveCameraArguments perspective_camera_arguments;
-    glm::vec3 position;
-    glm::vec3 direction = glm::vec3(0.0f, 0.0f, 1.0f);
-    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-    YawPitchRoll yaw_pitch_roll;
+    FpsCameraViewArguments camera_view_arguments;
 };
-
-/*class Camera {
-public:
-    virtual ~Camera() = default;
-
-    virtual void setResolution(const glm::vec2& resolution) noexcept = 0;
-    virtual void updateViewProjectionMatrix() = 0;
-    virtual void updateViewMatrix() = 0;
-    virtual void updateProjectionMatrix() = 0;
-
-    [[nodiscard]] virtual auto getProjectionMatrix() const noexcept -> const glm::mat4& = 0;
-
-    [[nodiscard]] virtual auto getViewMatrix() const noexcept -> const glm::mat4& = 0;
-
-    [[nodiscard]] virtual auto getViewProjectionMatrix() const noexcept -> const glm::mat4& = 0;
-
-    [[nodiscard]] virtual auto getPosition() const noexcept -> const glm::vec3 = 0;
-    [[nodiscard]] virtual auto getDirection() const noexcept -> const glm::vec3 = 0;
-
-    virtual auto moveForward(float offset) noexcept -> void = 0;
-    virtual auto moveLeft(float offset) noexcept -> void = 0;
-
-    virtual auto move(glm::vec2 offset) noexcept -> void = 0;
-};*/
 
 class FpsCamera {
     constexpr static glm::vec3 world_up = glm::vec3(0.0f, 1.0f, 0.0f);
 
 public:
-    explicit FpsCamera(const FpsCameraArguments& camera_arguments);
+    FpsCamera(FpsCameraViewArguments camera_view_arguments, PerspectiveCameraArguments perspective_camera_arguments)
+        : m_yaw{ camera_view_arguments.yaw }, m_pitch{ camera_view_arguments.pitch },
+          m_position{ camera_view_arguments.position }, m_projection_camera_arguments{ perspective_camera_arguments } {
+        updateVectors();
+    }
+
+    FpsCamera(FpsCameraViewArguments camera_view_arguments, OrthographicCameraArguments orthographic_camera_arguments)
+        : m_yaw{ camera_view_arguments.yaw }, m_pitch{ camera_view_arguments.pitch },
+          m_position{ camera_view_arguments.position }, m_projection_camera_arguments{ orthographic_camera_arguments } {
+        updateVectors();
+    }
 
     FpsCamera() {
         updateVectors();
         updateProjectionMatrix();
     };
 
-    FpsCameraArguments camera_arguments;
-
     void updateViewProjectionMatrix();
     void updateViewMatrix();
     void updateProjectionMatrix();
 
-    void setResolution(const glm::vec2& resolution) noexcept {
-        camera_arguments.perspective_camera_arguments.resolution = resolution;
-        updateViewProjectionMatrix();
-    }
-
-    void setPosition(const glm::vec3& position) noexcept {
-        camera_arguments.position = position;
-        updateViewProjectionMatrix();
-    }
-
-    void setUp(const glm::vec3& up) noexcept {
-        camera_arguments.up = up;
-        updateViewProjectionMatrix();
-    }
+    void setResolution(const glm::vec2& resolution) noexcept;
 
     [[nodiscard]] auto getProjectionMatrix() const noexcept -> const glm::mat4& {
         return m_projection_matrix;
@@ -116,13 +99,6 @@ public:
 
     [[nodiscard]] auto getViewProjectionMatrix() const noexcept -> const glm::mat4& {
         return m_view_projection_matrix;
-    }
-
-    [[nodiscard]] auto getPosition() const noexcept -> const glm::vec3 {
-        return camera_arguments.direction;
-    }
-    [[nodiscard]] auto getDirection() const noexcept -> const glm::vec3 {
-        return camera_arguments.direction;
     }
 
     auto move(const glm::vec2 offset) noexcept -> void {
@@ -142,17 +118,16 @@ private:
     void updateVectors() noexcept;
 
 private:
+    float m_yaw{ -90.0f };
+    float m_pitch{ 0.0f };
+
     glm::vec3 m_position = glm::vec3(0.0f, 0.0f, 0.0f);
+
     glm::vec3 m_front;
     glm::vec3 m_up = glm::vec3(world_up);
     glm::vec3 m_right;
 
-    float m_yaw{ -90.0f };
-    float m_pitch{ 0.0f };
-
-    float m_movement_speed{ 1.0f };
-    float m_mouse_sensitivity{ 1.0f };
-    float m_zoom{ 0.0f };
+    std::variant<PerspectiveCameraArguments, OrthographicCameraArguments> m_projection_camera_arguments;
 
     glm::mat4 m_projection_matrix = glm::mat4(1.0f);
     glm::mat4 m_view_matrix = glm::mat4(1.0f);

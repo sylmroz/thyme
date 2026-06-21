@@ -104,17 +104,12 @@ public:
                     m_swapchain.getFormat(),
                     m_uniform_buffer.getDescriptorBufferInfos(),
                     logger),
-          m_camera(th::FpsCamera(th::FpsCameraArguments{
-                  .perspective_camera_arguments = th::PerspectiveCameraArguments{ .fov = 45.0f,
-                                                                                  .znear = 0.1f,
-                                                                                  .zfar = 100.0f,
-                                                                                  .resolution = { 1280, 720 } },
-                  .position = { 2.0f, 2.0f, 2.0f },
-                  .direction = glm::normalize(glm::vec3{ -1.0f, -1.0f, -1.0f }),
-                  .up = { 0.0f, 0.0f, 1.0f },
-                  .yaw_pitch_roll = th::YawPitchRoll{ .yaw = 135.0f, .pitch = -45.0f, .roll = 0.0f } })),
-          m_camera_controller(std::ref(m_camera), m_window_events_handlers) {
-    };
+          m_camera(th::FpsCameraViewArguments{ .position = glm::vec3(0.0f, 0.0f, 2.0f) },
+                   th::PerspectiveCameraArguments{ .fov = 45.0f,
+                                                   .znear = 0.1f,
+                                                   .zfar = 100.0f,
+                                                   .aspect_ratio = 1280.0f / 720.0f }),
+          m_camera_controller(std::ref(m_camera), m_window_events_handlers) {};
 
     void update(float dt, th::RenderGraph& render_graph) override {
         m_camera_controller.update(dt);

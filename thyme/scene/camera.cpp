@@ -6,9 +6,7 @@ import th.core.key_codes;
 
 namespace th {
 
-FpsCamera::FpsCamera(const FpsCameraArguments& camera_arguments) : camera_arguments(camera_arguments) {
-    updateViewProjectionMatrix();
-}
+
 void FpsCamera::updateViewProjectionMatrix() {
     updateViewMatrix();
     updateProjectionMatrix();
@@ -20,9 +18,32 @@ void FpsCamera::updateViewMatrix() {
 }
 
 void FpsCamera::updateProjectionMatrix() {
-    const auto [fov, znear, zfar, resolution] = camera_arguments.perspective_camera_arguments;
-    m_projection_matrix = glm::perspective(glm::radians(fov), resolution.x / resolution.y, znear, zfar);
-    m_projection_matrix[1][1] *= -1.0f;
+    std::visit(Overload{ [this](const PerspectiveCameraArguments& perspective_camera_arguments) {
+                            const auto [fov, znear, zfar, aspect_ratio] = perspective_camera_arguments;
+                            m_projection_matrix = glm::perspective(glm::radians(fov), aspect_ratio, znear, zfar);
+                            m_projection_matrix[1][1] *= -1.0f;
+                        },
+                         [this](const OrthographicCameraArguments& orthographic_camera_arguments) {
+                             const auto [left, right, bottom, top, near, far] = orthographic_camera_arguments;
+                             m_projection_matrix = glm::ortho(left, right, bottom, top, near, far);
+                         } },
+               m_projection_camera_arguments);
+}
+
+void FpsCamera::setResolution(const glm::vec2& resolution) noexcept {
+    std::visit(Overload{ [this, resolution](PerspectiveCameraArguments& perspective_camera_arguments) {
+                            perspective_camera_arguments.aspect_ratio = resolution.x / resolution.y;
+                        },
+                         [this, resolution](OrthographicCameraArguments& orthographic_camera_arguments) {
+                             const auto diff =
+                                     std::abs(orthographic_camera_arguments.top - orthographic_camera_arguments.bottom);
+                             const auto aspect_ratio = resolution.x / resolution.y;
+                             const auto distance = diff * aspect_ratio / 2.0f;
+                             orthographic_camera_arguments.left = -distance;
+                             orthographic_camera_arguments.right = distance;
+                         } },
+               m_projection_camera_arguments);
+    updateViewProjectionMatrix();
 }
 
 void FpsCamera::updateVectors() noexcept {
@@ -37,7 +58,7 @@ void FpsCamera::updateVectors() noexcept {
 
     m_right = glm::normalize(glm::cross(m_front, world_up));
     m_up = glm::normalize(glm::cross(m_right, m_front));
-    updateViewMatrix();
+    updateViewProjectionMatrix();
 }
 
 auto calculateYawPithRollAngles(const glm::vec3 dir, glm::mat3 world_axis) noexcept -> YawPitchRoll {
