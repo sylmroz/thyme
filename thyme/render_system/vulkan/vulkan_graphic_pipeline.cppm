@@ -50,7 +50,7 @@ private:
     // vk::PipelineDynamicStateCreateInfo m_dynamic_state_create_info;
 };
 
-export [[nodiscard]] auto
+/*export [[nodiscard]] auto
         createVulkanGraphicsPipeline(const vk::raii::Device& logical_device,
                                      vk::PipelineLayout pipeline_layout,
                                      vk::SampleCountFlagBits samples,
@@ -89,7 +89,7 @@ private:
 
     vk::raii::DescriptorPool m_descriptor_pool = nullptr;
     std::vector<vk::raii::DescriptorSet> m_descriptor_sets;
-};
+};*/
 
 export class DescriptorLayoutBuilder {
 public:

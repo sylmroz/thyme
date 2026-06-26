@@ -6,7 +6,7 @@ import th.scene.camera;
 
 namespace th {
 
-VulkanScenePipeline::VulkanScenePipeline(const vk::raii::Device& device, vk::SampleCountFlagBits msaa_samples,
+/*VulkanScenePipeline::VulkanScenePipeline(const vk::raii::Device& device, vk::SampleCountFlagBits msaa_samples,
                                          const vk::PipelineRenderingCreateInfo& pipeline_rendering_create_info,
                                          std::vector<VulkanModel>& models,
                                          const vk::DescriptorBufferInfo& descriptor_buffer_info, Logger& logger) {
@@ -115,12 +115,6 @@ VulkanScenePipeline::VulkanScenePipeline(const vk::raii::Device& device, vk::Sam
                     .setInputTopology(vk::PrimitiveTopology::eTriangleList)
                     .setVertexInputState(vertex_input_state_create_info)
                     .build(device, *m_pipeline_layout);
-
-    /*m_pipeline = createVulkanGraphicsPipeline(device.logical_device,
-                                              *m_pipeline_layout,
-                                              device.max_msaa_samples,
-                                              pipeline_rendering_create_info,
-                                              shader_stages);*/
 }
 
 void VulkanScenePipeline::draw(const vk::CommandBuffer command_buffer, const std::vector<VulkanModel>& models) const {
@@ -129,7 +123,7 @@ void VulkanScenePipeline::draw(const vk::CommandBuffer command_buffer, const std
         command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *m_pipeline_layout, 0, { descriptor }, {});
         model.draw(command_buffer);
     }
-}
+}*/
 
 [[nodiscard]] auto DescriptorLayoutBuilder::getDescriptorTypesRatio() const
         -> std::vector<std::pair<vk::DescriptorType, uint32_t>> {

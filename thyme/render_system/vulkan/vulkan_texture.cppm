@@ -49,7 +49,7 @@ private:
     uint32_t m_mip_levels{ 1 };
 };
 
-export class VulkanImageMemory: public RenderTarget {
+/*export class VulkanImageMemory: public RenderTarget {
 public:
     VulkanImageMemory(const VulkanDevice& device, vk::Extent3D resolution, VulkanImageMemoryCreator memory_creator,
                       const ImageTransition& image_transition);
@@ -153,6 +153,6 @@ private:
 
     vk::Extent2D m_extent{};
     uint32_t m_mipLevels{};
-};
+};*/
 
 }// namespace th

@@ -122,7 +122,7 @@ auto VulkanImageMemoryCreator::create(const vk::raii::PhysicalDevice& physical_d
                                  .image_view = std::move(image_view) };
 }
 
-VulkanImageMemory::VulkanImageMemory(const VulkanDevice& device, const vk::Extent3D resolution,
+/*VulkanImageMemory::VulkanImageMemory(const VulkanDevice& device, const vk::Extent3D resolution,
                                      VulkanImageMemoryCreator memory_creator, const ImageTransition& image_transition)
     : VulkanImageMemory(device.physical_device, device.logical_device, resolution, memory_creator, image_transition) {}
 VulkanImageMemory::VulkanImageMemory(const vk::raii::PhysicalDevice& physical_device, const vk::raii::Device& device,
@@ -262,11 +262,6 @@ void Vulkan2DTexture::setData(const VulkanDevice& device, const TextureData& tex
                                              .newLayout = vk::ImageLayout::eTransferDstOptimal,
                                      });
 
-    /*m_imageMemory.transitImageLayout(device,
-                                     ImageTransition{ .layout = vk::ImageLayout::eTransferDstOptimal,
-                                                      .pipeline_stage = vk::PipelineStageFlagBits2::eTransfer,
-                                                      .access_flag_bits = vk::AccessFlagBits2::eTransferWrite });*/
-
     const auto graphicsQueue = device.getGraphicQueue();
     copyBufferToImage(device.logical_device,
                       device.command_pool,
@@ -350,6 +345,6 @@ void Vulkan2DTexture::generateMipmaps(const VulkanDevice& device) const {
                                       {},
                                       { barrier });
     });
-}
+}*/
 
 }// namespace th

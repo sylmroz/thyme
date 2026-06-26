@@ -1,6 +1,5 @@
 set(MODULE_FILES
         application.cppm
-        engine.cppm
         events.cppm
         key_codes.cppm
         logger.cppm
@@ -10,7 +9,6 @@ set(MODULE_FILES
 
 set(SRC_FILES
         application.cpp
-        engine.cpp
 )
 
 target_sources(${PROJECT_NAME}

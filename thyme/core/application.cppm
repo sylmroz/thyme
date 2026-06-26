@@ -4,7 +4,6 @@ import std;
 import vk_mem_alloc;
 import vulkan;
 
-import th.core.engine;
 import th.core.events;
 import th.core.logger;
 import th.scene.model;
@@ -19,26 +18,6 @@ import th.render_system.render_graph;
 import th.gui;
 
 namespace th {
-
-export class Application {
-public:
-    explicit Application(Logger& logger);
-
-    Application(const Application&) = delete;
-    Application(Application&&) = delete;
-    auto operator=(const Application&) -> Application& = delete;
-    auto operator=(Application&&) -> Application& = delete;
-    virtual ~Application() = default;
-
-    void run(ui::IComponent& component, Camera& camera);
-
-protected:
-    ModelStorage m_model_storage;
-
-private:
-    std::string m_name{ "Thyme" };
-    Logger& m_logger;
-};
 
 export struct WindowedApplicationInitInfo {
     WindowConfig window_config;

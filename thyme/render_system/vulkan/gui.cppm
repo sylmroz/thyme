@@ -13,7 +13,7 @@ import :graphic_context;
 import :utils;
 
 namespace th {
-export class Gui final {
+/*export class Gui final {
 public:
     explicit Gui(const VulkanDevice& device, const GlfwWindow& window, const VulkanGraphicContext& context,
                  vk::Instance instance, ui::IComponent& ui_component, Logger& logger);
@@ -112,6 +112,6 @@ Gui::~Gui() noexcept {
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
 }
-
+*/
 
 }// namespace th
