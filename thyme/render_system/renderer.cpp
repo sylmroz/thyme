@@ -17,9 +17,11 @@ void Renderer::beginFrame(const vk::raii::Device& device, const vk::Semaphore fr
     m_command_buffers_pool.waitFor(device, frame_semaphore);
 }
 
-void Renderer::draw(const vk::raii::Device& device, RenderGraph& render_graph) {
+void Renderer::draw(const vk::raii::Device& device, RenderGraph& render_graph, vk::Extent2D resolution) {
     render_graph.compile();
-    render_graph.execute(m_command_buffers_pool.get().getBuffer(device), getCurrentFrameIndex(), m_meshes);
+    const auto command_buffer = m_command_buffers_pool.get().getBuffer(device);
+    setCommandBufferFrameSize(command_buffer, resolution);
+    render_graph.execute(command_buffer, getCurrentFrameIndex(), m_meshes);
 }
 
 void Renderer::endFrame(const vk::Semaphore frame_render_semaphore) {

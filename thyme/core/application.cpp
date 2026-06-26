@@ -159,7 +159,7 @@ void WindowedApplication::run() {
         }
 
         m_renderer.beginFrame(m_logical_device, wait_for_frame_semaphore.value().image_available_semaphore);
-        m_renderer.draw(m_logical_device, render_graph);
+        m_renderer.draw(m_logical_device, render_graph, m_swapchain.getResolution());
         m_renderer.endFrame(wait_for_frame_semaphore.value().image_rendering_semaphore);
 
         m_swapchain.submitFrame();

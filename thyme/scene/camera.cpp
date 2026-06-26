@@ -147,8 +147,8 @@ void CameraController::dispatchEvent(const KeyPressedEvent& key_pressed_event) {
     switch (key_pressed_event.code) {
         case KeyCode::w: m_move_offset.x += m_move_speed; break;
         case KeyCode::s: m_move_offset.x -= m_move_speed; break;
-        case KeyCode::a: m_move_offset.y += m_move_speed; break;
-        case KeyCode::d: m_move_offset.y -= m_move_speed; break;
+        case KeyCode::a: m_move_offset.y -= m_move_speed; break;
+        case KeyCode::d: m_move_offset.y += m_move_speed; break;
         default:;
     }
 }
@@ -159,8 +159,8 @@ void CameraController::dispatchEvent(const KeyReleasedEvent& key_released_event)
     switch (key_released_event.code) {
         case KeyCode::w: m_move_offset.x -= m_move_speed; break;
         case KeyCode::s: m_move_offset.x += m_move_speed; break;
-        case KeyCode::a: m_move_offset.y -= m_move_speed; break;
-        case KeyCode::d: m_move_offset.y += m_move_speed; break;
+        case KeyCode::a: m_move_offset.y += m_move_speed; break;
+        case KeyCode::d: m_move_offset.y -= m_move_speed; break;
         default:;
     }
 }

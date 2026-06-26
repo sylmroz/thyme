@@ -150,7 +150,7 @@ public:
     }
 
     void setup(RenderGraph& render_graph, const RenderGraphResource resource) const {
-        render_graph.addPass("triangle2", [&, resource](RenderGraphBuilder& builder) -> execute_function {
+        render_graph.addPass("triangle2", [resource, this](RenderGraphBuilder& builder) -> execute_function {
             builder.write(resource,
                           ImageTransition{
                                   .layout = vk::ImageLayout::eColorAttachmentOptimal,
@@ -160,7 +160,6 @@ public:
 
             return [=](const RenderGraphContext& context, const vk::CommandBuffer command_buffer) -> void {
                 const auto texture = std::get<RenderGraphPersistentTarget>(context.targets[resource.id]);
-                setCommandBufferFrameSize(command_buffer, texture.target.getResolution());
                 constexpr auto clear_color_values = vk::ClearValue(vk::ClearColorValue(1.0f, 0.0f, 1.0f, 1.0f));
                 const auto color_attachment = vk::RenderingAttachmentInfo{
                     .imageView = texture.target.getImageView(),

@@ -4,6 +4,7 @@ SET(MODULE_FILES
 )
 
 set(SRC_FILES
+        render_graph.cpp
         renderer.cpp
 )
 

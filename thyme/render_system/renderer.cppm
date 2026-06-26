@@ -31,7 +31,7 @@ public:
     [[nodiscard]] auto createUniformBuffer(const vma::raii::Allocator& allocator) -> UniformBuffer<T>;
 
     void beginFrame(const vk::raii::Device& device, vk::Semaphore frame_semaphore);
-    void draw(const vk::raii::Device& device, RenderGraph& render_graph);
+    void draw(const vk::raii::Device& device, RenderGraph& render_graph, vk::Extent2D resolution);
     void endFrame(vk::Semaphore frame_render_semaphore);
 
     void addMesh(GpuStaticMesh&& mesh) {
