@@ -115,6 +115,8 @@ public:
                  const std::span<const GpuStaticMesh> meshes);
 
 private:
+    [[nodiscard]] auto getResourceIfExist(std::string_view texture_name) -> std::expected<RenderGraphResource, std::monostate>;
+private:
     std::vector<Pass> m_passes;
 
     std::vector<ExecutePass> m_execute_passes;

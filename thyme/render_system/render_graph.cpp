@@ -4,33 +4,22 @@ module th.render_system.render_graph;
 
 auto th::RenderGraph::addTextureResource(const std::string_view texture_name, RenderTarget& resource)
         -> RenderGraphResource {
-    const auto res = std::ranges::find_if(m_textures, [texture_name](auto&& value) {
-        using T = std::decay_t<decltype(value)>;
-        if constexpr (std::is_same_v<T, RenderGraphPersistentTarget>) {
-            return value.name == texture_name;
-        }
-        return false;
-    });
-    if (res != m_textures.end()) {
-        return RenderGraphResource{ .id = static_cast<uint32_t>(std::distance(m_textures.begin(), res)) };
-    }
-    m_resources.emplace_back(RenderGraphPersistentTarget{ .target = resource, .name = std::string(texture_name) });
-    return RenderGraphResource{ .id = static_cast<uint32_t>(m_resources.size() - 1) };
+    return getResourceIfExist(texture_name)
+            .or_else([&](auto) -> std::expected<RenderGraphResource, std::monostate> {
+                m_resources.emplace_back(
+                        RenderGraphPersistentTarget{ .target = resource, .name = std::string(texture_name) });
+                return RenderGraphResource{ .id = static_cast<uint32_t>(m_resources.size() - 1) };
+            })
+            .value();
 }
 
-auto th::RenderGraph::addTextureResource(std::string_view texture_name) -> RenderGraphResource {
-    const auto res = std::ranges::find_if(m_textures, [texture_name](auto&& value) {
-        using T = std::decay_t<decltype(value)>;
-        if constexpr (std::is_same_v<T, RenderGraphTransientTarget>) {
-            return value.name == texture_name;
-        }
-        return false;
-    });
-    if (res != m_textures.end()) {
-        return RenderGraphResource{ .id = static_cast<uint32_t>(std::distance(m_textures.begin(), res)) };
-    }
-    m_resources.emplace_back(RenderGraphTransientTarget{ .name = std::string(texture_name) });
-    return RenderGraphResource{ .id = static_cast<uint32_t>(m_resources.size() - 1) };
+auto th::RenderGraph::addTextureResource(const std::string_view texture_name) -> RenderGraphResource {
+    return getResourceIfExist(texture_name)
+            .or_else([&](auto) -> std::expected<RenderGraphResource, std::monostate> {
+                m_resources.emplace_back(RenderGraphTransientTarget{ .name = std::string(texture_name) });
+                return RenderGraphResource{ .id = static_cast<uint32_t>(m_resources.size() - 1) };
+            })
+            .value();
 }
 
 void th::RenderGraph::compile() {
@@ -65,4 +54,20 @@ void th::RenderGraph::execute(const vk::CommandBuffer command_buffer,
         dependencies.flush(command_buffer);
         exec(render_graph_context, command_buffer);
     }
+}
+
+auto th::RenderGraph::getResourceIfExist(std::string_view texture_name)
+        -> std::expected<RenderGraphResource, std::monostate> {
+    const auto res = std::ranges::find_if(m_resources, [texture_name](auto&& value) {
+        return std::visit(
+                       [](auto&& texture) {
+                           return texture.name;
+                       },
+                       value)
+               == texture_name;
+    });
+    if (res != m_resources.end()) {
+        return RenderGraphResource{ .id = static_cast<uint32_t>(std::distance(m_resources.begin(), res)) };
+    }
+    return std::unexpected(std::monostate{});
 }
