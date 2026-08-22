@@ -4,7 +4,7 @@ module th.render_system.vulkan;
 
 #if !defined(NDEBUG)
 constexpr auto g_defaultEnabledExtensions =
-        std::array{ vk::KHRPortabilityEnumerationExtensionName, vk::EXTDebugUtilsExtensionName };
+        std::array{ vk::KHRPortabilityEnumerationExtensionName, vk::EXTDebugUtilsExtensionName, vk::KHRGetPhysicalDeviceProperties2ExtensionName };
 constexpr auto g_validationLayers = std::array{ "VK_LAYER_KHRONOS_validation" };
 #else
 constexpr auto g_defaultEnabledExtensions = std::array{ vk::KHRPortabilityEnumerationExtensionName };
