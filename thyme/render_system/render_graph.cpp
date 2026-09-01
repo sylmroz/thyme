@@ -23,7 +23,12 @@ auto th::RenderGraph::addTextureResource(const std::string_view texture_name) ->
 }
 
 void th::RenderGraph::compile() {
-    for (auto& [setup, pass_name] : m_passes) {
+
+    // first lets make setup functions and build
+    setupPasses();
+    const auto adjacency_list = buildAdjacencyList();
+
+    for ([[maybe_unused]] auto& [setup, pass_name] : m_passes) {
         RenderGraphBuilder render_graph_builder;
         const auto execute_pass = setup(render_graph_builder);
         auto& [exec, dependency_tracker] = m_execute_passes.emplace_back(execute_pass, DependencyTracker{});
@@ -56,18 +61,60 @@ void th::RenderGraph::execute(const vk::CommandBuffer command_buffer,
     }
 }
 
+auto extractName(auto& value) {
+    return std::visit(
+            [](auto&& texture) {
+                return texture.name;
+            },
+            value);
+}
+
 auto th::RenderGraph::getResourceIfExist(std::string_view texture_name)
         -> std::expected<RenderGraphResource, std::monostate> {
     const auto res = std::ranges::find_if(m_resources, [texture_name](auto&& value) {
-        return std::visit(
-                       [](auto&& texture) {
-                           return texture.name;
-                       },
-                       value)
-               == texture_name;
+        return extractName(value) == texture_name;
     });
     if (res != m_resources.end()) {
         return RenderGraphResource{ .id = static_cast<uint32_t>(std::distance(m_resources.begin(), res)) };
     }
     return std::unexpected(std::monostate{});
+}
+
+void th::RenderGraph::setupPasses() {
+    for ([[maybe_unused]] auto& [setup, pass_name] : m_passes) {
+        RenderGraphBuilder render_graph_builder;
+        const auto execute_pass = setup(render_graph_builder);
+        m_setup_passes.emplace_back(std::move(execute_pass), render_graph_builder);
+    }
+}
+
+auto th::RenderGraph::buildAdjacencyList() -> std::vector<std::vector<int>> {
+    const auto pick_rgb = [](auto&& arg) -> RenderGraphBuilder& {
+        return arg.render_graph_builder;
+    };
+    std::vector<std::vector<int>> adjacency_list;
+    adjacency_list.reserve(m_passes.size());
+    for (int node_id{ 0 }; auto& node : m_setup_passes | std::views::transform(pick_rgb)) {
+        auto& adjacency_node_dependencies = adjacency_list.emplace_back();
+        const auto written_resources = node.getWriteDependency2();
+        for (int other_node_id{ 0 }; auto& other_node : m_setup_passes | std::views::transform(pick_rgb)) {
+            if (node_id == other_node_id) {
+                ++other_node_id;
+                continue;
+            }
+            for (const auto& read_dependency : other_node.getReadDependency2()) {
+                const auto read_id = read_dependency.resource.id;
+                if (auto it = std::ranges::find_if(written_resources,
+                                                   [read_id](const auto& resource) {
+                                                       return resource.resource.id == read_id;
+                                                   });
+                    it != written_resources.end()) {
+                    adjacency_node_dependencies.push_back(other_node_id);
+                }
+            }
+            ++other_node_id;
+        }
+        ++node_id;
+    }
+    return adjacency_list;
 }

@@ -27,6 +27,10 @@ public:
         m_read_textures.emplace_back(name);
     }
 
+    void read(const RenderGraphResource resource, const ImageTransition& transition) {
+        m_read_textures_2.emplace_back(resource, transition);
+    }
+
     void write(const std::string_view name, const ImageTransition& transition) {
         m_write_textures.emplace_back(transition, std::string(name));
     }
@@ -43,6 +47,11 @@ public:
     auto getWriteDependency() -> std::span<const RenderGraphImageResource> {
         return m_write_textures;
     }
+
+    auto getReadDependency2() -> std::span<const RenderGraphImageResource2> {
+        return m_read_textures_2;
+    }
+
     auto getWriteDependency2() -> std::span<const RenderGraphImageResource2> {
         return m_write_textures_2;
     }
@@ -51,6 +60,7 @@ private:
     std::vector<std::string> m_read_textures;
     std::vector<RenderGraphImageResource> m_write_textures;
 
+    std::vector<RenderGraphImageResource2> m_read_textures_2;
     std::vector<RenderGraphImageResource2> m_write_textures_2;
 };
 
@@ -85,8 +95,8 @@ struct RenderGraphContext {
     std::span<const GpuStaticMesh> meshes;
 };
 
-using execute_function = std::function<void(const RenderGraphContext&, vk::CommandBuffer)>;
-using setup_function = std::function<execute_function(RenderGraphBuilder&)>;
+using ExecuteFunction = std::function<void(const RenderGraphContext&, vk::CommandBuffer)>;
+using setup_function = std::function<ExecuteFunction(RenderGraphBuilder&)>;
 
 class RenderGraph {
 
@@ -96,8 +106,13 @@ class RenderGraph {
     };
 
     struct ExecutePass {
-        execute_function exec;
+        ExecuteFunction exec;
         DependencyTracker dependency_tracker;
+    };
+
+    struct SetupPass {
+        ExecuteFunction execute_function;
+        RenderGraphBuilder render_graph_builder;
     };
 
 public:
@@ -116,8 +131,12 @@ public:
 
 private:
     [[nodiscard]] auto getResourceIfExist(std::string_view texture_name) -> std::expected<RenderGraphResource, std::monostate>;
+    void setupPasses();
+
+    [[nodiscard]] auto buildAdjacencyList() -> std::vector<std::vector<int>>;
 private:
     std::vector<Pass> m_passes;
+    std::vector<SetupPass> m_setup_passes;
 
     std::vector<ExecutePass> m_execute_passes;
 

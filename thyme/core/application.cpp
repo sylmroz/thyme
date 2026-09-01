@@ -97,7 +97,7 @@ void WindowedApplication::run() {
         update(getDT(), render_graph);
         const auto swapchain_rg_resource = render_graph.addTextureResource("swapchain", m_swapchain);
         render_graph.addPass("present", [swapchain_rg_resource](RenderGraphBuilder& builder) {
-            builder.write(swapchain_rg_resource,
+            builder.read(swapchain_rg_resource,
                           ImageTransition{ .layout = vk::ImageLayout::ePresentSrcKHR,
                                            .pipeline_stage = vk::PipelineStageFlagBits2::eBottomOfPipe });
 
