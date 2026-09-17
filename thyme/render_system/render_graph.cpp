@@ -27,6 +27,7 @@ void th::RenderGraph::compile() {
     // first lets make setup functions and build
     setupPasses();
     const auto adjacency_list = buildAdjacencyList();
+    const auto sorted = topologicalSort(adjacency_list);
 
     for ([[maybe_unused]] auto& [setup, pass_name] : m_passes) {
         RenderGraphBuilder render_graph_builder;
@@ -44,6 +45,18 @@ void th::RenderGraph::compile() {
                     },
                     texture);
         }
+        for (const auto resources = render_graph_builder.getReadDependency2();
+             auto& [handle, transition] : resources) {
+            auto& texture = m_resources[handle.id];
+            std::visit(
+                    [&dependency_tracker, transition](auto&& arg) {
+                        using T = std::decay_t<decltype(arg)>;
+                        if constexpr (std::is_same_v<T, RenderGraphPersistentTarget>) {
+                            dependency_tracker.addImageBarrier(arg.target.getImageMemoryBarrier(transition));
+                        }
+                    },
+                    texture);
+             }
     }
 }
 void th::RenderGraph::execute(const vk::CommandBuffer command_buffer,
@@ -117,4 +130,34 @@ auto th::RenderGraph::buildAdjacencyList() -> std::vector<std::vector<int>> {
         ++node_id;
     }
     return adjacency_list;
+}
+
+auto th::RenderGraph::topologicalSort(const std::vector<std::vector<int>>& adjacency_list) -> std::vector<int> {
+    std::vector<int> indegree(adjacency_list.size(), 0);
+    for (const auto adj : adjacency_list) {
+        for (const auto next : adj) {
+            ++indegree[next];
+        }
+    }
+
+    std::queue<int> q;
+    for (int i{ 0 }; i < indegree.size(); i++) {
+        if (indegree[i] == 0) {
+            q.push(i);
+        }
+    }
+
+    std::vector<int> list;
+    while (!q.empty()) {
+        const auto top = q.front();
+        q.pop();
+        list.push_back(top);
+        for (const auto next : adjacency_list[top]) {
+            --indegree[next];
+            if (indegree[next] == 0) {
+                q.push(next);
+            }
+        }
+    }
+    return list;
 }

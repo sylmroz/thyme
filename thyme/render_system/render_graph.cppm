@@ -130,10 +130,13 @@ public:
                  const std::span<const GpuStaticMesh> meshes);
 
 private:
-    [[nodiscard]] auto getResourceIfExist(std::string_view texture_name) -> std::expected<RenderGraphResource, std::monostate>;
+    [[nodiscard]] auto getResourceIfExist(std::string_view texture_name)
+            -> std::expected<RenderGraphResource, std::monostate>;
     void setupPasses();
 
     [[nodiscard]] auto buildAdjacencyList() -> std::vector<std::vector<int>>;
+    [[nodiscard]] auto topologicalSort(const std::vector<std::vector<int>>& adjacency_list) -> std::vector<int>;
+
 private:
     std::vector<Pass> m_passes;
     std::vector<SetupPass> m_setup_passes;
