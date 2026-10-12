@@ -23,45 +23,26 @@ struct RenderGraphImageResource2 {
 
 class RenderGraphBuilder {
 public:
-    void read(std::string_view name) {
-        m_read_textures.emplace_back(name);
-    }
-
     void read(const RenderGraphResource resource, const ImageTransition& transition) {
-        m_read_textures_2.emplace_back(resource, transition);
-    }
-
-    void write(const std::string_view name, const ImageTransition& transition) {
-        m_write_textures.emplace_back(transition, std::string(name));
+        m_read_textures.emplace_back(resource, transition);
     }
 
     auto write(RenderGraphResource resource, const ImageTransition& transition) -> RenderGraphResource {
-        m_write_textures_2.emplace_back(resource, transition);
+        m_write_textures.emplace_back(resource, transition);
         return resource;
     }
 
-    auto getReadDependency() -> std::span<const std::string> {
+    [[nodiscard]] auto getReadDependency() const -> std::span<const RenderGraphImageResource2> {
         return m_read_textures;
     }
 
-    auto getWriteDependency() -> std::span<const RenderGraphImageResource> {
+    [[nodiscard]] auto getWriteDependency() const -> std::span<const RenderGraphImageResource2> {
         return m_write_textures;
     }
 
-    auto getReadDependency2() -> std::span<const RenderGraphImageResource2> {
-        return m_read_textures_2;
-    }
-
-    auto getWriteDependency2() -> std::span<const RenderGraphImageResource2> {
-        return m_write_textures_2;
-    }
-
 private:
-    std::vector<std::string> m_read_textures;
-    std::vector<RenderGraphImageResource> m_write_textures;
-
-    std::vector<RenderGraphImageResource2> m_read_textures_2;
-    std::vector<RenderGraphImageResource2> m_write_textures_2;
+    std::vector<RenderGraphImageResource2> m_read_textures;
+    std::vector<RenderGraphImageResource2> m_write_textures;
 };
 
 struct RenderGraphTextureCreateInfo {
@@ -110,9 +91,19 @@ class RenderGraph {
         DependencyTracker dependency_tracker;
     };
 
-    struct SetupPass {
-        ExecuteFunction execute_function;
-        RenderGraphBuilder render_graph_builder;
+    enum struct AccessType {
+        Read,
+        Write
+    };
+
+    struct TouchType {
+        uint32_t pass_index;
+        AccessType access_type;
+    };
+
+    struct ResourceLifetime {
+        uint32_t first{ reinterpret_cast<uint32_t>(std::numeric_limits<uint32_t>::max) };
+        uint32_t last{ 0 };
     };
 
 public:
@@ -126,8 +117,7 @@ public:
 
     void compile();
 
-    void execute(const vk::CommandBuffer command_buffer, const uint32_t frame_index,
-                 const std::span<const GpuStaticMesh> meshes);
+    void execute(vk::CommandBuffer command_buffer, uint32_t frame_index, std::span<const GpuStaticMesh> meshes);
 
 private:
     [[nodiscard]] auto getResourceIfExist(std::string_view texture_name)
@@ -136,10 +126,14 @@ private:
 
     [[nodiscard]] auto buildAdjacencyList() -> std::vector<std::vector<int>>;
     [[nodiscard]] auto topologicalSort(const std::vector<std::vector<int>>& adjacency_list) -> std::vector<int>;
+    [[nodiscard]] auto recordResourcesTouches() const -> std::vector<std::vector<TouchType>>;
+    [[nodiscard]] auto computeResourceLifetime(const std::vector<std::vector<TouchType>>& touches_list) const
+            -> std::vector<ResourceLifetime>;
+    [[nodiscard]] auto cullPasses(const std::vector<std::vector<TouchType>>& touches_list) const -> std::vector<bool>;
 
 private:
     std::vector<Pass> m_passes;
-    std::vector<SetupPass> m_setup_passes;
+    std::vector<RenderGraphBuilder> m_setup_passes;
 
     std::vector<ExecutePass> m_execute_passes;
 
