@@ -14,7 +14,7 @@ export [[nodiscard]] auto getMaxUsableSampleCount(vk::PhysicalDevice device) noe
 export [[nodiscard]] auto filterDevices(std::span<const vk::raii::PhysicalDevice> physical_devices,
                                         vk::SurfaceKHR surface) -> std::vector<vk::raii::PhysicalDevice>;
 
-export [[nodiscard]] auto createLogicalDevice(const vk::raii::PhysicalDevice& physical_device, uint32_t queue_index)
+export [[nodiscard]] auto createLogicalDevice(const vk::raii::PhysicalDevice& physical_device, std::uint32_t queue_index)
         -> vk::raii::Device;
 
 export class PhysicalDevice2 {

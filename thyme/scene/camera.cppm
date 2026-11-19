@@ -242,7 +242,8 @@ private:
     float m_move_speed{ 1.0f };
     float m_rotate_speed{ 5.0f };
 
-    glm::vec2 m_move_offset{ 0.0f, 0.0f };
+    glm::vec2 m_move_keyboard_offset{ 0.0f, 0.0f };
+    glm::vec2 m_move_scroll_offset{0.0f, 0.0f};
     glm::vec2 m_rotate_offset{ 0.0f, 0.0f };
 };
 

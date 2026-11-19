@@ -10,7 +10,7 @@ namespace th {
 
 auto GpuStaticMesh::create(const vma::raii::Allocator& allocator, const vk::Device device,
                            const vk::CommandPool command_pool, const vk::Queue graphic_queue,
-                           const std::span<const uint32_t> indices, const std::span<const Vertex> vertices)
+                           const std::span<const std::uint32_t> indices, const std::span<const Vertex> vertices)
         -> GpuStaticMesh {
     const auto vertex_buffer_size = static_cast<uint32_t>(vertices.size()) * sizeof(Vertex);
     auto vertex_buffer = createVertexBuffer(allocator, vertex_buffer_size);

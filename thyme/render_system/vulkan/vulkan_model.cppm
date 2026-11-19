@@ -20,7 +20,7 @@ export class GpuStaticMesh {
 public:
     static [[nodiscard]] auto create(const vma::raii::Allocator& allocator, vk::Device device,
                                      vk::CommandPool command_pool, vk::Queue graphic_queue,
-                                     std::span<const uint32_t> indices, std::span<const Vertex> vertices)
+                                     std::span<const std::uint32_t> indices, std::span<const Vertex> vertices)
             -> GpuStaticMesh;
 
     vma::raii::Buffer vertex_buffer{ nullptr };

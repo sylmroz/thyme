@@ -39,7 +39,7 @@ public:
         int width{};
         int height{};
         glfwGetFramebufferSize(m_window.get(), &width, &height);
-        return { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
+        return { static_cast<std::uint32_t>(width), static_cast<std::uint32_t>(height) };
     }
 
     static void initializeContext() {

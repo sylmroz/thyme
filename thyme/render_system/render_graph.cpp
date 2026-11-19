@@ -2,13 +2,15 @@ module;
 
 module th.render_system.render_graph;
 
+import std;
+
 auto th::RenderGraph::addTextureResource(const std::string_view texture_name, RenderTarget& resource)
         -> RenderGraphResource {
     return getResourceIfExist(texture_name)
             .or_else([&](auto) -> std::expected<RenderGraphResource, std::monostate> {
                 m_resources.emplace_back(
                         RenderGraphPersistentTarget{ .target = resource, .name = std::string(texture_name) });
-                return RenderGraphResource{ .id = static_cast<uint32_t>(m_resources.size() - 1) };
+                return RenderGraphResource{ .id = static_cast<std::uint32_t>(m_resources.size() - 1) };
             })
             .value();
 }
@@ -17,7 +19,7 @@ auto th::RenderGraph::addTextureResource(const std::string_view texture_name) ->
     return getResourceIfExist(texture_name)
             .or_else([&](auto) -> std::expected<RenderGraphResource, std::monostate> {
                 m_resources.emplace_back(RenderGraphTransientTarget{ .name = std::string(texture_name) });
-                return RenderGraphResource{ .id = static_cast<uint32_t>(m_resources.size() - 1) };
+                return RenderGraphResource{ .id = static_cast<std::uint32_t>(m_resources.size() - 1) };
             })
             .value();
 }
@@ -30,9 +32,8 @@ void th::RenderGraph::compile() {
     const auto touches = recordResourcesTouches();
     const auto resource_lifetime = computeResourceLifetime(touches);
 
-    const auto sorted = topologicalSort(adjacency_list);
-
-    for (const auto index : sorted) {
+    topologicalSort(adjacency_list);
+    for (const auto index : m_sorted_passes) {
 
         auto& render_graph_builder = m_setup_passes[index];
         auto& dependency_tracker = m_execute_passes[index].dependency_tracker;
@@ -61,8 +62,9 @@ void th::RenderGraph::compile() {
         }
     }
 }
+
 void th::RenderGraph::execute(const vk::CommandBuffer command_buffer,
-                              const uint32_t frame_index,
+                              const std::uint32_t frame_index,
                               const std::span<const GpuStaticMesh>
                                       meshes) {
     const RenderGraphContext render_graph_context{
@@ -70,7 +72,8 @@ void th::RenderGraph::execute(const vk::CommandBuffer command_buffer,
         .targets = m_resources,
         .meshes = meshes,
     };
-    for (auto& [exec, dependencies] : m_execute_passes) {
+    for (const auto index : m_sorted_passes) {
+        auto& [exec, dependencies] = m_execute_passes[index];
         dependencies.flush(command_buffer);
         exec(render_graph_context, command_buffer);
     }
@@ -130,7 +133,7 @@ auto th::RenderGraph::buildAdjacencyList() -> std::vector<std::vector<int>> {
     return adjacency_list;
 }
 
-auto th::RenderGraph::topologicalSort(const std::vector<std::vector<int>>& adjacency_list) -> std::vector<int> {
+void th::RenderGraph::topologicalSort(const std::vector<std::vector<int>>& adjacency_list) {
     std::vector<int> indegree(adjacency_list.size(), 0);
     for (const auto adj : adjacency_list) {
         for (const auto next : adj) {
@@ -145,11 +148,11 @@ auto th::RenderGraph::topologicalSort(const std::vector<std::vector<int>>& adjac
         }
     }
 
-    std::vector<int> list;
+    m_sorted_passes.clear();
     while (!q.empty()) {
         const auto top = q.front();
         q.pop();
-        list.push_back(top);
+        m_sorted_passes.push_back(top);
         for (const auto next : adjacency_list[top]) {
             --indegree[next];
             if (indegree[next] == 0) {
@@ -157,7 +160,6 @@ auto th::RenderGraph::topologicalSort(const std::vector<std::vector<int>>& adjac
             }
         }
     }
-    return list;
 }
 
 auto th::RenderGraph::recordResourcesTouches() const -> std::vector<std::vector<TouchType>> {

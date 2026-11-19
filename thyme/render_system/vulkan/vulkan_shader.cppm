@@ -112,7 +112,7 @@ public:
         initializeContext();
     }
 
-    [[nodiscard]] auto compile() const -> std::vector<uint32_t>;
+    [[nodiscard]] auto compile() const -> std::vector<std::uint32_t>;
 
 private:
     static void initializeContext() {
@@ -132,9 +132,9 @@ public:
     Slang::ComPtr<slang::IBlob> m_spir_vv_code;
 };
 
-export [[nodiscard]] auto compileSlangShader(std::string_view shader_name) -> std::vector<uint32_t>;
+export [[nodiscard]] auto compileSlangShader(std::string_view shader_name) -> std::vector<std::uint32_t>;
 
-export auto createShaderModule(const vk::raii::Device& device, const std::span<const uint32_t> spir_v,
+export auto createShaderModule(const vk::raii::Device& device, const std::span<const std::uint32_t> spir_v,
                                const Logger& logger) -> vk::raii::ShaderModule {
     try {
         return device.createShaderModule(

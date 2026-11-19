@@ -33,5 +33,13 @@ auto readFile(const std::filesystem::path& file_path) -> Container {
 export template<typename T, typename ... U>
 concept either = (std::same_as<T, U> || ...);
 
+export template <typename... Ts>
+struct Overload: Ts... {
+    using Ts::operator()...;
+};
+
+export template <class... Ts>
+Overload(Ts...) -> Overload<Ts...>;
+
 
 }// namespace th

@@ -8,7 +8,7 @@ import th.core.logger;
 
 namespace th {
 
-const auto terminate_handler = [](const std::string_view message) -> void {
+const auto g_terminateHandler = [](const std::string_view message) -> void {
     glfwTerminate();
     throw std::runtime_error(message.data());
 };
@@ -21,11 +21,11 @@ public:
         });
         if (glfwInit() == glfw_false) {
             constexpr auto message = "Failed to initialize GLFW!";
-            terminate_handler(message);
+            g_terminateHandler(message);
         }
         if (glfwVulkanSupported() == glfw_false) {
             constexpr auto message = "GLFW3 does not support vulkan!";
-            terminate_handler(message);
+            g_terminateHandler(message);
         }
         glfwWindowHint(glfw_client_api, glfw_no_api);
     }
@@ -36,7 +36,7 @@ public:
     auto operator=(GlfwContext&&) -> GlfwContext& = delete;
 
     [[nodiscard]] static auto getExtensions() noexcept -> std::vector<std::string> {
-        uint32_t instance_extension_count{ 0 };
+        std::uint32_t instance_extension_count{ 0 };
         auto* instance_extension_buffer = glfwGetRequiredInstanceExtensions(&instance_extension_count);
         std::vector<std::string> instance_extensions(instance_extension_count);
         std::copy_n(instance_extension_buffer, instance_extension_count, instance_extensions.begin());

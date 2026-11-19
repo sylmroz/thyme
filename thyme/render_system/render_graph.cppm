@@ -8,7 +8,7 @@ import th.render_system.vulkan;
 export namespace th {
 
 struct RenderGraphResource {
-    uint32_t id;
+    std::uint32_t id;
 };
 
 struct RenderGraphImageResource {
@@ -55,12 +55,13 @@ struct RenderGraphTextureCreateInfo {
     vk::ImageAspectFlags m_aspect_flags;
     vk::SampleCountFlagBits m_msaa;
     vk::ImageTiling tiling;
-    uint32_t m_mip_levels{ 1 };
+    std::uint32_t m_mip_levels{ 1 };
     std::string name;
 };
 
 struct RenderGraphTransientTarget {
     std::string name;
+    vk::Image image; // temporary here
 };
 
 struct RenderGraphPersistentTarget {
@@ -71,7 +72,7 @@ struct RenderGraphPersistentTarget {
 using RenderGraphTarget = std::variant<RenderGraphPersistentTarget, RenderGraphTransientTarget>;
 
 struct RenderGraphContext {
-    uint32_t frame_index;
+    std::uint32_t frame_index;
     std::span<const RenderGraphTarget> targets;
     std::span<const GpuStaticMesh> meshes;
 };
@@ -97,13 +98,13 @@ class RenderGraph {
     };
 
     struct TouchType {
-        uint32_t pass_index;
+        std::uint32_t pass_index;
         AccessType access_type;
     };
 
     struct ResourceLifetime {
-        uint32_t first{ reinterpret_cast<uint32_t>(std::numeric_limits<uint32_t>::max) };
-        uint32_t last{ 0 };
+        std::uint32_t first{ reinterpret_cast<std::uint32_t>(std::numeric_limits<std::uint32_t>::max) };
+        std::uint32_t last{ 0 };
     };
 
 public:
@@ -117,7 +118,7 @@ public:
 
     void compile();
 
-    void execute(vk::CommandBuffer command_buffer, uint32_t frame_index, std::span<const GpuStaticMesh> meshes);
+    void execute(vk::CommandBuffer command_buffer, std::uint32_t frame_index, std::span<const GpuStaticMesh> meshes);
 
 private:
     [[nodiscard]] auto getResourceIfExist(std::string_view texture_name)
@@ -125,7 +126,7 @@ private:
     void setupPasses();
 
     [[nodiscard]] auto buildAdjacencyList() -> std::vector<std::vector<int>>;
-    [[nodiscard]] auto topologicalSort(const std::vector<std::vector<int>>& adjacency_list) -> std::vector<int>;
+    void topologicalSort(const std::vector<std::vector<int>>& adjacency_list);
     [[nodiscard]] auto recordResourcesTouches() const -> std::vector<std::vector<TouchType>>;
     [[nodiscard]] auto computeResourceLifetime(const std::vector<std::vector<TouchType>>& touches_list) const
             -> std::vector<ResourceLifetime>;
@@ -140,6 +141,8 @@ private:
     std::unordered_map<std::string, RenderTarget*> m_textures;
 
     std::vector<RenderGraphTarget> m_resources;
+
+    std::vector<std::uint32_t> m_sorted_passes;
 };
 
 }// namespace th

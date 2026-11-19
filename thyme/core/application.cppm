@@ -31,7 +31,7 @@ public:
 
     virtual void update(float dt, RenderGraph& render_graph) = 0;
 
-    [[nodiscard]] constexpr auto getMaxFramesInFlight() const noexcept -> uint32_t {
+    [[nodiscard]] constexpr auto getMaxFramesInFlight() const noexcept -> std::uint32_t {
         return 2;
     }
 
@@ -43,7 +43,7 @@ protected:
     vk::raii::SurfaceKHR m_surface;
 
     PhysicalDevices2 m_physical_devices;
-    uint32_t m_queue_family_index;
+    std::uint32_t m_queue_family_index;
     vk::raii::Device m_logical_device;
 
     vma::raii::Allocator m_allocator;

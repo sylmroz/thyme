@@ -19,7 +19,7 @@ struct Vertex {
 class Mesh {
 public:
     std::vector<Vertex> vertices;
-    std::vector<uint32_t> indices;
+    std::vector<std::uint32_t> indices;
 };
 
 class Model {

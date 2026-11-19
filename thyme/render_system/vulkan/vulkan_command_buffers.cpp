@@ -57,7 +57,7 @@ void VulkanCommandBuffer2::submit(const vk::PipelineStageFlags stage, const vk::
 
     m_queue.submit(
             vk::SubmitInfo{
-                    .waitSemaphoreCount = static_cast<uint32_t>(m_depend_semaphores.size()),
+                    .waitSemaphoreCount = static_cast<std::uint32_t>(m_depend_semaphores.size()),
                     .pWaitSemaphores = m_depend_semaphores.data(),
                     .pWaitDstStageMask = &stage,
                     .commandBufferCount = 1u,

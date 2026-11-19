@@ -10,7 +10,7 @@ import :utils;
 
 namespace th {
 
-[[nodiscard]] auto createVertexBuffer(const vma::raii::Allocator& allocator, const uint32_t size) -> vma::raii::Buffer {
+[[nodiscard]] auto createVertexBuffer(const vma::raii::Allocator& allocator, const std::uint32_t size) -> vma::raii::Buffer {
     return allocator.createBuffer(
             vk::BufferCreateInfo{
                     .size = size,

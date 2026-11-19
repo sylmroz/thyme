@@ -126,17 +126,17 @@ void VulkanScenePipeline::draw(const vk::CommandBuffer command_buffer, const std
 }*/
 
 [[nodiscard]] auto DescriptorLayoutBuilder::getDescriptorTypesRatio() const
-        -> std::vector<std::pair<vk::DescriptorType, uint32_t>> {
+        -> std::vector<std::pair<vk::DescriptorType, std::uint32_t>> {
     return m_descriptor_types_ratio | std::views::transform([](auto pair) {
                return pair;
            })
-           | std::ranges::to<std::vector<std::pair<vk::DescriptorType, uint32_t>>>();
+           | std::ranges::to<std::vector<std::pair<vk::DescriptorType, std::uint32_t>>>();
 }
 
 [[nodiscard]] auto DescriptorLayoutBuilder::build(const vk::raii::Device& device) const
         -> vk::raii::DescriptorSetLayout {
     return device.createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo{
-            .bindingCount = static_cast<uint32_t>(m_descriptor_sets_layout_bindings.size()),
+            .bindingCount = static_cast<std::uint32_t>(m_descriptor_sets_layout_bindings.size()),
             .pBindings = m_descriptor_sets_layout_bindings.data() });
 }
 
@@ -196,7 +196,7 @@ auto VulkanGraphicsPipelineBuilder::build(const vk::raii::Device& device, const 
                                                    .blendConstants = std::array{ 0.0f, 0.0f, 0.0f, 0.0f } };
     constexpr auto dynamic_states = std::array{ vk::DynamicState::eViewport, vk::DynamicState::eScissor };
     const auto dynamic_state_create_info = vk::PipelineDynamicStateCreateInfo{
-        .dynamicStateCount = static_cast<uint32_t>(dynamic_states.size()),
+        .dynamicStateCount = static_cast<std::uint32_t>(dynamic_states.size()),
         .pDynamicStates = dynamic_states.data(),
     };
 
@@ -204,7 +204,7 @@ auto VulkanGraphicsPipelineBuilder::build(const vk::raii::Device& device, const 
     return device.createGraphicsPipeline(pipeline_cache,
                                          vk::GraphicsPipelineCreateInfo{
                                                  .pNext = &m_rendering_create_info,
-                                                 .stageCount = static_cast<uint32_t>(m_shader_stages.size()),
+                                                 .stageCount = static_cast<std::uint32_t>(m_shader_stages.size()),
                                                  .pStages = m_shader_stages.data(),
                                                  .pVertexInputState = &m_vertex_input_state_create_info,
                                                  .pInputAssemblyState = &m_input_assembly_state_create_info,
@@ -276,7 +276,7 @@ auto VulkanGraphicsPipelineBuilder::setColorAttachmentFormats(std::span<const vk
         -> VulkanGraphicsPipelineBuilder& {
     m_color_attachment_formats.clear();
     std::ranges::copy(formats, std::back_inserter(m_color_attachment_formats));
-    m_rendering_create_info.colorAttachmentCount = static_cast<uint32_t>(m_color_attachment_formats.size());
+    m_rendering_create_info.colorAttachmentCount = static_cast<std::uint32_t>(m_color_attachment_formats.size());
     m_rendering_create_info.pColorAttachmentFormats = m_color_attachment_formats.data();
     return *this;
 }
@@ -322,7 +322,7 @@ auto createVulkanGraphicsPipeline(const vk::raii::Device& logical_device,
         -> vk::raii::Pipeline {
     constexpr auto dynamic_states = std::array{ vk::DynamicState::eViewport, vk::DynamicState::eScissor };
     const auto dynamic_state_create_info = vk::PipelineDynamicStateCreateInfo{
-        .dynamicStateCount = static_cast<uint32_t>(dynamic_states.size()),
+        .dynamicStateCount = static_cast<std::uint32_t>(dynamic_states.size()),
         .pDynamicStates = dynamic_states.data(),
     };
     constexpr auto binding_description = getBindingDescription();
@@ -330,7 +330,7 @@ auto createVulkanGraphicsPipeline(const vk::raii::Device& logical_device,
     const auto vertex_input_state_create_info = vk::PipelineVertexInputStateCreateInfo{
         .vertexBindingDescriptionCount = 1,
         .pVertexBindingDescriptions = &binding_description,
-        .vertexAttributeDescriptionCount = static_cast<uint32_t>(attribute_descriptions.size()),
+        .vertexAttributeDescriptionCount = static_cast<std::uint32_t>(attribute_descriptions.size()),
         .pVertexAttributeDescriptions = attribute_descriptions.data(),
     };
     constexpr auto input_assembly_state_create_info = vk::PipelineInputAssemblyStateCreateInfo{
@@ -391,7 +391,7 @@ auto createVulkanGraphicsPipeline(const vk::raii::Device& logical_device,
     return logical_device.createGraphicsPipeline(nullptr,
                                                  vk::GraphicsPipelineCreateInfo{
                                                          .pNext = &pipeline_rendering_create_info,
-                                                         .stageCount = static_cast<uint32_t>(shader_stages.size()),
+                                                         .stageCount = static_cast<std::uint32_t>(shader_stages.size()),
                                                          .pStages = shader_stages.data(),
                                                          .pVertexInputState = &vertex_input_state_create_info,
                                                          .pInputAssemblyState = &input_assembly_state_create_info,

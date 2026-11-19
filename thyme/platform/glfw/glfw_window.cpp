@@ -1,5 +1,6 @@
 module;
 
+#include <print>
 #include <vulkan/vulkan.h>
 
 module th.platform.glfw.glfw_window;
@@ -57,7 +58,7 @@ GlfwWindow::GlfwWindow(const WindowConfig& config, WindowEventsHandlers& event_h
 
     glfwSetScrollCallback(m_window.get(), [](GLFWwindow* window, double x, double y) {
         const auto glfw_window = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
-        glfw_window->m_event_handlers.onEvent(MouseWheelEvent{ { x, y } });
+        glfw_window->m_event_handlers.onEvent(MouseWheelEvent{ { y, x } });
     });
 
     glfwSetKeyCallback(m_window.get(),

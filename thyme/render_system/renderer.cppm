@@ -19,12 +19,12 @@ public:
     Renderer(const vk::raii::Device& device, std::uint32_t graphic_queue_index, std::uint32_t max_frames_in_flight,
              Logger& logger);
 
-    [[nodiscard]] auto getCurrentFrameIndex() const noexcept -> uint32_t {
+    [[nodiscard]] auto getCurrentFrameIndex() const noexcept -> std::uint32_t {
         return m_command_buffers_pool.currentIndex();
     }
 
-    [[nodiscard]] auto getFramesInFlightCount() const noexcept -> uint32_t {
-        return static_cast<uint32_t>(m_command_buffers_pool.size());
+    [[nodiscard]] auto getFramesInFlightCount() const noexcept -> std::uint32_t {
+        return static_cast<std::uint32_t>(m_command_buffers_pool.size());
     }
 
     template <typename T>

@@ -1,8 +1,10 @@
 module th.scene.camera;
 
 import std;
+
 import th.core.mouse_codes;
 import th.core.key_codes;
+import th.core.utils;
 
 namespace th {
 
@@ -145,34 +147,37 @@ void CameraController::dispatchEvent(const MouseButtonReleasedEvent& mouse_butto
 
 void CameraController::dispatchEvent(const KeyPressedEvent& key_pressed_event) {
     switch (key_pressed_event.code) {
-        case KeyCode::w: m_move_offset.x += m_move_speed; break;
-        case KeyCode::s: m_move_offset.x -= m_move_speed; break;
-        case KeyCode::a: m_move_offset.y -= m_move_speed; break;
-        case KeyCode::d: m_move_offset.y += m_move_speed; break;
+        case KeyCode::w: m_move_keyboard_offset.x += m_move_speed; break;
+        case KeyCode::s: m_move_keyboard_offset.x -= m_move_speed; break;
+        case KeyCode::a: m_move_keyboard_offset.y -= m_move_speed; break;
+        case KeyCode::d: m_move_keyboard_offset.y += m_move_speed; break;
         default:;
     }
 }
 
-void CameraController::dispatchEvent(const KeyRepeatedEvent& key_repeated_event) const {}
+void CameraController::dispatchEvent([[maybe_unused]] const KeyRepeatedEvent& key_repeated_event) const {}
 
 void CameraController::dispatchEvent(const KeyReleasedEvent& key_released_event) {
     switch (key_released_event.code) {
-        case KeyCode::w: m_move_offset.x -= m_move_speed; break;
-        case KeyCode::s: m_move_offset.x += m_move_speed; break;
-        case KeyCode::a: m_move_offset.y += m_move_speed; break;
-        case KeyCode::d: m_move_offset.y -= m_move_speed; break;
+        case KeyCode::w: m_move_keyboard_offset.x -= m_move_speed; break;
+        case KeyCode::s: m_move_keyboard_offset.x += m_move_speed; break;
+        case KeyCode::a: m_move_keyboard_offset.y += m_move_speed; break;
+        case KeyCode::d: m_move_keyboard_offset.y -= m_move_speed; break;
         default:;
     }
 }
 
-void CameraController::dispatchEvent(const MouseWheelEvent& mouse_wheel_event) {}
+void CameraController::dispatchEvent(const MouseWheelEvent& mouse_wheel_event) {
+    m_move_scroll_offset += mouse_wheel_event.wheel * m_move_speed * 2;
+}
 
 void CameraController::update(float dt) {
     std::visit(
             [this, dt](auto camera) {
-                camera.get().move(m_move_offset * dt);
+                camera.get().move((m_move_scroll_offset + m_move_keyboard_offset) * dt);
                 camera.get().rotate(m_rotate_offset * dt * m_rotate_speed);
                 m_rotate_offset = glm::vec2(0.0f, 0.0f);
+                m_move_scroll_offset = glm::vec2(0.0f, 0.0f);
             },
             m_camera);
 }

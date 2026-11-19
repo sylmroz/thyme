@@ -36,9 +36,9 @@ public:
         return getSwapchainFrameInternal(index);
     }
 
-    [[nodiscard]] auto getImageMemoryBarrier(uint32_t i, const ImageTransition& transition) -> vk::ImageMemoryBarrier2;
+    [[nodiscard]] auto getImageMemoryBarrier(std::uint32_t i, const ImageTransition& transition) -> vk::ImageMemoryBarrier2;
 
-    void transitImageLayout(uint32_t i, vk::CommandBuffer command_buffer, const ImageTransition& transition);
+    void transitImageLayout(std::uint32_t i, vk::CommandBuffer command_buffer, const ImageTransition& transition);
 
 private:
     [[nodiscard]] auto getSwapchainFrameInternal(const std::uint32_t index) const -> SwapchainFrame {
@@ -69,7 +69,7 @@ export struct SwapChainFrameSemaphores {
 export class VulkanSwapchain2: public RenderTarget {
 public:
     VulkanSwapchain2(const vk::raii::PhysicalDevice& physical_device, const vk::raii::Device& device,
-                     uint32_t queue_family_index, vk::SurfaceKHR surface,
+                     std::uint32_t queue_family_index, vk::SurfaceKHR surface,
                      std::function<vk::Extent2D()> get_frame_buffer_size, Logger& logger);
 
     auto prepareFrame(const vk::raii::PhysicalDevice& physical_device, const vk::raii::Device& device)
@@ -95,7 +95,7 @@ private:
     void createSwapchain(const vk::raii::PhysicalDevice& physical_device, const vk::raii::Device& device);
     [[nodiscard]] auto getExtent() const noexcept -> vk::Extent2D;
 
-    uint32_t m_current_image_index{ 0 };
+    std::uint32_t m_current_image_index{ 0 };
     vk::SurfaceKHR m_surface;
     std::function<vk::Extent2D()> m_get_frame_buffer_size;
     SwapChainSupportDetails m_swapchain_details;
@@ -106,7 +106,7 @@ private:
     SwapchainFrames m_swapchain_frames;
     std::vector<vk::raii::Semaphore> m_image_available_semaphores;
     std::vector<vk::raii::Semaphore> m_image_render_semaphores;
-    uint32_t m_image_available_semaphore_index{ 0 };
+    std::uint32_t m_image_available_semaphore_index{ 0 };
 
     bool m_should_recreate_swapchain{ false };
 

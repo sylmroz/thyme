@@ -1,15 +1,13 @@
 module;
 
-#include <cstdint>
-
 module th.platform.window_settings;
 
 import std;
 import nlohmann.json;
 
 struct WindowConfigFile {
-    uint32_t width;
-    uint32_t height;
+    std::uint32_t width;
+    std::uint32_t height;
     bool maximized;
 };
 

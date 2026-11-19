@@ -78,7 +78,7 @@ auto filterDevices(const std::span<const vk::raii::PhysicalDevice> physical_devi
     return filtered_devices;
 }
 
-auto createLogicalDevice(const vk::raii::PhysicalDevice& physical_device, uint32_t queue_index) -> vk::raii::Device {
+auto createLogicalDevice(const vk::raii::PhysicalDevice& physical_device, std::uint32_t queue_index) -> vk::raii::Device {
     float queue_priority{ 1.0 };
     const auto device_queue_create_infos = std::array{ vk::DeviceQueueCreateInfo{
             .queueFamilyIndex = queue_index,
@@ -112,9 +112,9 @@ auto createLogicalDevice(const vk::raii::PhysicalDevice& physical_device, uint32
     const auto feature_chain = vk::StructureChain{ features, vulkan11_features, vulkan12_features, vulkan13_features };
 
     const auto device_create_info = vk::StructureChain(
-            vk::DeviceCreateInfo{ .queueCreateInfoCount = static_cast<uint32_t>(device_queue_create_infos.size()),
+            vk::DeviceCreateInfo{ .queueCreateInfoCount = static_cast<std::uint32_t>(device_queue_create_infos.size()),
                                   .pQueueCreateInfos = device_queue_create_infos.data(),
-                                  .enabledExtensionCount = static_cast<uint32_t>(g_sDeviceExtensions.size()),
+                                  .enabledExtensionCount = static_cast<std::uint32_t>(g_sDeviceExtensions.size()),
                                   .ppEnabledExtensionNames = g_sDeviceExtensions.data() },
             feature_chain.get<vk::PhysicalDeviceFeatures2>());
     return vk::raii::Device(physical_device, device_create_info.get<vk::DeviceCreateInfo>());
@@ -133,7 +133,7 @@ std::vector<PhysicalDevice2>
                                 return PhysicalDevice2(physical_device);
                             })
                             | std::ranges::to<std::vector<PhysicalDevice2>>();
-    static std::unordered_map<vk::PhysicalDeviceType, uint32_t> priorities = {
+    static std::unordered_map<vk::PhysicalDeviceType, std::uint32_t> priorities = {
         { vk::PhysicalDeviceType::eOther, 0 },       { vk::PhysicalDeviceType::eCpu, 1 },
         { vk::PhysicalDeviceType::eVirtualGpu, 2 },  { vk::PhysicalDeviceType::eIntegratedGpu, 3 },
         { vk::PhysicalDeviceType::eDiscreteGpu, 4 },

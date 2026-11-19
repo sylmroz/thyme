@@ -3,6 +3,7 @@ export module th.render_system.vulkan:texture;
 import std;
 
 import vulkan;
+import vk_mem_alloc;
 
 import th.scene.texture_data;
 
@@ -23,16 +24,27 @@ struct ImageMemoryImageView {
     vk::raii::ImageView image_view;
 };
 
+export struct ImageMemoryImageView2 {
+    vma::raii::Image image;
+    vk::raii::ImageView image_view;
+};
+
 export class VulkanImageMemoryCreator {
 public:
     VulkanImageMemoryCreator(vk::Format format, vk::ImageUsageFlags image_usage_flags,
                              vk::MemoryPropertyFlags memory_property_flags, vk::ImageAspectFlags aspect_flags,
-                             vk::SampleCountFlagBits msaa, uint32_t mip_levels);
+                             vk::SampleCountFlagBits msaa, std::uint32_t mip_levels);
 
     [[nodiscard]] auto create(const vk::raii::PhysicalDevice& physical_device, const vk::raii::Device& device,
                               vk::Extent3D resolution) const -> ImageMemoryImageView;
 
-    [[nodiscard]] auto getMipLevels() const -> uint32_t {
+    [[nodiscard]] auto create2(const vma::raii::Allocator& allocator, const vk::raii::Device& device,
+                               vk::Extent3D resolution) const -> ImageMemoryImageView2;
+    [[nodiscard]] auto createUnique(const vma::raii::Allocator& allocator, const vk::raii::Device& device,
+                                    vk::Extent3D resolution) const -> std::unique_ptr<ImageMemoryImageView2>;
+
+
+    [[nodiscard]] auto getMipLevels() const -> std::uint32_t {
         return m_mip_levels;
     }
 
@@ -46,7 +58,7 @@ private:
     vk::MemoryPropertyFlags m_memory_property_flags;
     vk::ImageAspectFlags m_aspect_flags;
     vk::SampleCountFlagBits m_msaa;
-    uint32_t m_mip_levels{ 1 };
+    std::uint32_t m_mip_levels{ 1 };
 };
 
 /*export class VulkanImageMemory: public RenderTarget {

@@ -73,7 +73,7 @@ void WindowedApplication::run() {
     rect_vertices[2].color = { 1, 0, 0, 1 };
     rect_vertices[3].color = { 0, 1, 0, 1 };
 
-    std::array<uint32_t, 6> rect_indices;
+    std::array<std::uint32_t, 6> rect_indices;
 
     rect_indices[0] = 0;
     rect_indices[1] = 1;

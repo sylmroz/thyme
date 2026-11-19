@@ -93,7 +93,7 @@ private:
 
 export class DescriptorLayoutBuilder {
 public:
-    void addBinding(const uint32_t binding, const vk::DescriptorType type, const vk::ShaderStageFlagBits stage) {
+    void addBinding(const std::uint32_t binding, const vk::DescriptorType type, const vk::ShaderStageFlagBits stage) {
         addBinding(vk::DescriptorSetLayoutBinding{
                 .binding = binding,
                 .descriptorType = type,
@@ -109,13 +109,13 @@ public:
                 : m_descriptor_types_ratio[binding.descriptorType] = 1;
     }
 
-    [[nodiscard]] auto getDescriptorTypesRatio() const -> std::vector<std::pair<vk::DescriptorType, uint32_t>>;
+    [[nodiscard]] auto getDescriptorTypesRatio() const -> std::vector<std::pair<vk::DescriptorType, std::uint32_t>>;
 
     [[nodiscard]] auto build(const vk::raii::Device& device) const -> vk::raii::DescriptorSetLayout;
 
 private:
     std::vector<vk::DescriptorSetLayoutBinding> m_descriptor_sets_layout_bindings;
-    std::map<vk::DescriptorType, uint32_t> m_descriptor_types_ratio;
+    std::map<vk::DescriptorType, std::uint32_t> m_descriptor_types_ratio;
 };
 
 class GradientPipeline {

@@ -84,21 +84,21 @@ public:
         }
     }
 
-    auto subscribe(Dispatcher&& fn) noexcept -> uint32_t {
+    auto subscribe(Dispatcher&& fn) noexcept -> std::uint32_t {
         m_handlers.emplace_back(std::make_pair(std::forward<Dispatcher>(fn), m_handler_id));
         return m_handler_id++;
     }
 
-    void unsubscribe(const uint32_t id) noexcept {
-        if (const auto it = std::ranges::find(m_handlers, id, &std::pair<Dispatcher, uint32_t>::second);
+    void unsubscribe(const std::uint32_t id) noexcept {
+        if (const auto it = std::ranges::find(m_handlers, id, &std::pair<Dispatcher, std::uint32_t>::second);
             it != m_handlers.end()) {
             m_handlers.erase(it);
         }
     }
 
 private:
-    uint32_t m_handler_id{ 0 };
-    std::vector<std::pair<Dispatcher, uint32_t>> m_handlers;
+    std::uint32_t m_handler_id{ 0 };
+    std::vector<std::pair<Dispatcher, std::uint32_t>> m_handlers;
 };
 
 template <typename T>
@@ -118,14 +118,6 @@ struct EventDispatcher: crtp<EventDispatcherType> {
     }
     void operator()(const auto&) const {}
 };
-
-template <typename... Ts>
-struct Overload: Ts... {
-    using Ts::operator()...;
-};
-
-template <class... Ts>
-Overload(Ts...) -> Overload<Ts...>;
 
 template <typename EventType>
 using EventTypeFunctionDispatcher = GenericEventHandler<EventType, std::function<void(EventType)>>;

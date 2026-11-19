@@ -58,9 +58,9 @@ VulkanFramework::VulkanFramework(const InitInfo& info,
             return vk::InstanceCreateInfo{
                 .flags = vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR,
                 .pApplicationInfo = &application_info,
-                .enabledLayerCount = static_cast<uint32_t>(g_validationLayers.size()),
+                .enabledLayerCount = static_cast<std::uint32_t>(g_validationLayers.size()),
                 .ppEnabledLayerNames = g_validationLayers.data(),
-                .enabledExtensionCount = static_cast<uint32_t>(enabled_extensions.size()),
+                .enabledExtensionCount = static_cast<std::uint32_t>(enabled_extensions.size()),
                 .ppEnabledExtensionNames = enabled_extensions.data(),
             };
         }
@@ -69,7 +69,7 @@ VulkanFramework::VulkanFramework(const InitInfo& info,
         return vk::InstanceCreateInfo{
             .flags = vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR,
             .pApplicationInfo = &application_info,
-            .enabledExtensionCount = static_cast<uint32_t>(enabled_extensions.size()),
+            .enabledExtensionCount = static_cast<std::uint32_t>(enabled_extensions.size()),
             .ppEnabledExtensionNames = enabled_extensions.data(),
         };
     }();
@@ -80,7 +80,7 @@ VulkanFramework::VulkanFramework(const InitInfo& info,
             instance_create_info,
             VulkanDebug::createDebugUtilsMessengerCreateInfo(&m_logger),
             vk::ValidationFeaturesEXT{
-                    .enabledValidationFeatureCount = static_cast<uint32_t>(enabled_validation_features.size()),
+                    .enabledValidationFeatureCount = static_cast<std::uint32_t>(enabled_validation_features.size()),
                     .pEnabledValidationFeatures = enabled_validation_features.data(),
             });
 #else

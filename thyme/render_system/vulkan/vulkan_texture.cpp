@@ -5,7 +5,7 @@ module th.render_system.vulkan;
 namespace th {
 
 [[nodiscard]] static auto createImageSampler(const vk::raii::Device& device, const float max_sampler_anisotropy,
-                                             const uint32_t mip_levels) -> vk::raii::Sampler {
+                                             const std::uint32_t mip_levels) -> vk::raii::Sampler {
     return device.createSampler(vk::SamplerCreateInfo{ .magFilter = vk::Filter::eLinear,
                                                        .minFilter = vk::Filter::eLinear,
                                                        .mipmapMode = vk::SamplerMipmapMode::eLinear,
@@ -26,6 +26,20 @@ namespace th {
 void copyImage(const vk::CommandBuffer command_buffer, const vk::Image src_image, const vk::Extent3D src_resolution,
                const vk::Image dst_image) {
     const auto copy_region = vk::ImageCopy2{
+        .srcSubresource =
+                vk::ImageSubresourceLayers{
+                        .aspectMask = vk::ImageAspectFlagBits::eColor,
+                        .mipLevel = 0,
+                        .baseArrayLayer = 0,
+                        .layerCount = 1,
+                },
+        .dstSubresource =
+                vk::ImageSubresourceLayers{
+                        .aspectMask = vk::ImageAspectFlagBits::eColor,
+                        .mipLevel = 0,
+                        .baseArrayLayer = 0,
+                        .layerCount = 1,
+                },
         .extent = src_resolution,
     };
     command_buffer.copyImage2(vk::CopyImageInfo2{ .srcImage = src_image,
@@ -84,7 +98,7 @@ void blitImage(const vk::CommandBuffer command_buffer, const vk::Image src_image
 VulkanImageMemoryCreator::VulkanImageMemoryCreator(const vk::Format format, const vk::ImageUsageFlags image_usage_flags,
                                                    const vk::MemoryPropertyFlags memory_property_flags,
                                                    const vk::ImageAspectFlags aspect_flags,
-                                                   const vk::SampleCountFlagBits msaa, const uint32_t mip_levels)
+                                                   const vk::SampleCountFlagBits msaa, const std::uint32_t mip_levels)
     : m_format{ format }, m_image_usage_flags{ image_usage_flags }, m_memory_property_flags{ memory_property_flags },
       m_aspect_flags{ aspect_flags }, m_msaa{ msaa }, m_mip_levels{ mip_levels } {}
 
@@ -120,6 +134,41 @@ auto VulkanImageMemoryCreator::create(const vk::raii::PhysicalDevice& physical_d
     return ImageMemoryImageView{ .image = std::move(image),
                                  .memory = std::move(memory),
                                  .image_view = std::move(image_view) };
+}
+
+auto VulkanImageMemoryCreator::create2(const vma::raii::Allocator& allocator, const vk::raii::Device& device,
+                                       const vk::Extent3D resolution) const -> ImageMemoryImageView2 {
+    auto image = allocator.createImage(
+            vk::ImageCreateInfo{
+                    .imageType = vk::ImageType::e2D,
+                    .format = m_format,
+                    .extent = resolution,
+                    .mipLevels = m_mip_levels,
+                    .arrayLayers = 1,
+                    .samples = m_msaa,
+                    .tiling = vk::ImageTiling::eOptimal,
+                    .usage = m_image_usage_flags,
+                    .sharingMode = vk::SharingMode::eExclusive,
+            },
+            vma::AllocationCreateInfo{ .flags = vma::AllocationCreateFlagBits::eDedicatedMemory,
+                                       .usage = vma::MemoryUsage::eAuto });
+    auto image_view = device.createImageView(
+            vk::ImageViewCreateInfo{ .image = image,
+                                     .viewType = vk::ImageViewType::e2D,
+                                     .format = m_format,
+                                     .subresourceRange = vk::ImageSubresourceRange{ .aspectMask = m_aspect_flags,
+                                                                                    .baseMipLevel = 0,
+                                                                                    .levelCount = m_mip_levels,
+                                                                                    .baseArrayLayer = 0,
+                                                                                    .layerCount = 1 } });
+    return ImageMemoryImageView2{ .image = std::move(image), .image_view = std::move(image_view) };
+}
+
+[[nodiscard]] auto VulkanImageMemoryCreator::createUnique(const vma::raii::Allocator& allocator,
+                                                          const vk::raii::Device& device,
+                                                          const vk::Extent3D resolution) const
+        -> std::unique_ptr<ImageMemoryImageView2> {
+    return std::make_unique<ImageMemoryImageView2>(create2(allocator, device, resolution));
 }
 
 /*VulkanImageMemory::VulkanImageMemory(const VulkanDevice& device, const vk::Extent3D resolution,

@@ -1,3 +1,7 @@
+module;
+
+#include <cstddef>
+
 export module th.render_system.vulkan:utils;
 
 import std;
@@ -10,9 +14,9 @@ import th.scene.model;
 export namespace th {
 
 [[nodiscard]] auto selectQueueFamilyIndex(vk::PhysicalDevice device, vk::QueueFlags flag_bits,
-                                          std::optional<vk::SurfaceKHR> surface) -> uint32_t;
+                                          std::optional<vk::SurfaceKHR> surface) -> std::uint32_t;
 
-[[nodiscard]] auto selectQueueFamilyIndex(vk::PhysicalDevice device, vk::QueueFlags flag_bits) -> uint32_t;
+[[nodiscard]] auto selectQueueFamilyIndex(vk::PhysicalDevice device, vk::QueueFlags flag_bits) -> std::uint32_t;
 
 struct QueueFamilyIndices {
     explicit QueueFamilyIndices(vk::PhysicalDevice device, std::optional<vk::SurfaceKHR> surface);
@@ -123,8 +127,8 @@ public:
 
 [[nodiscard]] inline auto
         createDescriptorPool(const vk::raii::Device& device,
-                             const std::span<const std::pair<vk::DescriptorType, uint32_t>> descriptor_sizes,
-                             const uint32_t max_set) -> vk::raii::DescriptorPool {
+                             const std::span<const std::pair<vk::DescriptorType, std::uint32_t>> descriptor_sizes,
+                             const std::uint32_t max_set) -> vk::raii::DescriptorPool {
 
     const auto descriptor_pool_sizes =
             descriptor_sizes | std::views::transform([max_set](auto pair) {
@@ -134,7 +138,7 @@ public:
     return device.createDescriptorPool(vk::DescriptorPoolCreateInfo{
             .flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
             .maxSets = max_set,
-            .poolSizeCount = static_cast<uint32_t>(descriptor_pool_sizes.size()),
+            .poolSizeCount = static_cast<std::uint32_t>(descriptor_pool_sizes.size()),
             .pPoolSizes = descriptor_pool_sizes.data(),
     });
 }
@@ -144,8 +148,8 @@ public:
         -> vk::raii::DescriptorPool {
     const auto max_set = std::accumulate(std::begin(descriptor_sizes),
                                          std::end(descriptor_sizes),
-                                         uint32_t{ 0 },
-                                         [](const uint32_t sum, const vk::DescriptorPoolSize& descriptorPoolSize) {
+                                         std::uint32_t{ 0 },
+                                         [](const std::uint32_t sum, const vk::DescriptorPoolSize& descriptorPoolSize) {
                                              return sum + descriptorPoolSize.descriptorCount;
                                          });
 
@@ -153,7 +157,7 @@ public:
     return device.createDescriptorPool(vk::DescriptorPoolCreateInfo{
             .flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
             .maxSets = max_set,
-            .poolSizeCount = static_cast<uint32_t>(descriptor_sizes.size()),
+            .poolSizeCount = static_cast<std::uint32_t>(descriptor_sizes.size()),
             .pPoolSizes = descriptor_sizes.data(),
     });
 }
@@ -204,10 +208,10 @@ constexpr auto getAttributeDescriptions() -> std::array<vk::VertexInputAttribute
 }
 
 
-[[nodiscard]] inline auto findMemoryType(const vk::PhysicalDevice device, const uint32_t type_filter,
-                                         const vk::MemoryPropertyFlags properties) -> uint32_t {
+[[nodiscard]] inline auto findMemoryType(const vk::PhysicalDevice device, const std::uint32_t type_filter,
+                                         const vk::MemoryPropertyFlags properties) -> std::uint32_t {
     const auto& mem_properties = device.getMemoryProperties();
-    for (uint32_t i{ 0 }; i < mem_properties.memoryTypeCount; ++i) {
+    for (std::uint32_t i{ 0 }; i < mem_properties.memoryTypeCount; ++i) {
         if ((type_filter & (1 << i)) && (mem_properties.memoryTypes[i].propertyFlags & properties) == properties) {
             return i;
         }
@@ -241,12 +245,12 @@ struct ImageTransition {
     vk::ImageLayout layout{ vk::ImageLayout::eUndefined };
     vk::PipelineStageFlags2 pipeline_stage{ vk::PipelineStageFlagBits2::eAllCommands };
     vk::AccessFlags2 access_flag_bits{ vk::AccessFlagBits2::eNone };
-    uint32_t queue_family_index{ vk::QueueFamilyIgnored };
+    std::uint32_t queue_family_index{ vk::QueueFamilyIgnored };
 };
 
 class ImageLayoutTransitionState {
 public:
-    explicit ImageLayoutTransitionState(vk::Image image, vk::ImageAspectFlags aspect_flags, uint32_t mip_levels,
+    explicit ImageLayoutTransitionState(vk::Image image, vk::ImageAspectFlags aspect_flags, std::uint32_t mip_levels,
                                         ImageTransition initial_state);
 
     void transitTo(vk::CommandBuffer command_buffer, const ImageTransition& new_state);
@@ -260,17 +264,17 @@ public:
 private:
     vk::Image m_image;
     vk::ImageAspectFlags m_aspect_flags;
-    uint32_t m_mip_levels;
+    std::uint32_t m_mip_levels;
     ImageTransition m_image_transition;
 };
 
 void transitImageLayout(vk::CommandBuffer command_buffer, vk::Image image, ImageLayoutTransition layout_transition,
-                        uint32_t mip_levels);
+                        std::uint32_t mip_levels);
 
 void transitImageLayout(vk::CommandBuffer command_buffer, vk::Image image, ImageLayoutTransition layout_transition,
                         ImagePipelineStageTransition stage_transition,
                         ImageAccessFlagsTransition access_flags_transition, vk::ImageAspectFlags aspect_flags,
-                        uint32_t mip_levels);
+                        std::uint32_t mip_levels);
 
 inline void copyBufferToImage(vk::Device device, const vk::CommandPool command_pool, const vk::Queue graphic_queue,
                               const vk::Buffer buffer, const vk::Image image, const glm::uvec2& resolution) {
@@ -306,9 +310,9 @@ inline void copyBufferToImage(vk::Device device, const vk::CommandPool command_p
 void setCommandBufferFrameSize(vk::CommandBuffer command_buffer, vk::Extent2D frame_size);
 
 auto selectQueueFamilyIndex(const vk::PhysicalDevice device, const vk::QueueFlags flag_bits,
-                            const std::optional<vk::SurfaceKHR> surface) -> uint32_t {
+                            const std::optional<vk::SurfaceKHR> surface) -> std::uint32_t {
     const auto queue_family_properties = device.getQueueFamilyProperties();
-    for (uint32_t index{ 0 }; const auto properties : queue_family_properties) {
+    for (std::uint32_t index{ 0 }; const auto properties : queue_family_properties) {
         if (properties.queueCount <= 0) {
             continue;
         }
@@ -323,14 +327,14 @@ auto selectQueueFamilyIndex(const vk::PhysicalDevice device, const vk::QueueFlag
     throw std::runtime_error{ "No suitable queue family found!" };
 }
 
-auto selectQueueFamilyIndex(const vk::PhysicalDevice device, const vk::QueueFlags flag_bits) -> uint32_t {
+auto selectQueueFamilyIndex(const vk::PhysicalDevice device, const vk::QueueFlags flag_bits) -> std::uint32_t {
     return selectQueueFamilyIndex(device, flag_bits, {});
 }
 
 QueueFamilyIndices::QueueFamilyIndices(const vk::PhysicalDevice device, const std::optional<vk::SurfaceKHR> surface)
     : m_requested_surface_support{ surface.has_value() } {
     const auto& queue_families = device.getQueueFamilyProperties2();
-    for (uint32_t i{ 0 }; i < queue_families.size(); i++) {
+    for (std::uint32_t i{ 0 }; i < queue_families.size(); i++) {
         const auto& queue_family = queue_families[i];
         const auto& queue_family_properties = queue_family.queueFamilyProperties;
         if (queue_family_properties.queueCount <= 0) {
@@ -357,7 +361,7 @@ SwapChainSupportDetails::SwapChainSupportDetails(const vk::PhysicalDevice& devic
 }
 
 ImageLayoutTransitionState::ImageLayoutTransitionState(const vk::Image image, const vk::ImageAspectFlags aspect_flags,
-                                                       const uint32_t mip_levels, ImageTransition initial_state)
+                                                       const std::uint32_t mip_levels, ImageTransition initial_state)
     : m_image{ image }, m_aspect_flags{ aspect_flags }, m_mip_levels{ mip_levels },
       m_image_transition{ std::move(initial_state) } {}
 

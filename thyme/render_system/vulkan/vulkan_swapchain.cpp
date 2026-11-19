@@ -22,12 +22,12 @@ SwapchainFrames::SwapchainFrames(const vk::raii::Device& device, const vk::raii:
     }
 }
 
-auto SwapchainFrames::getImageMemoryBarrier(const uint32_t i, const ImageTransition& transition)
+auto SwapchainFrames::getImageMemoryBarrier(const std::uint32_t i, const ImageTransition& transition)
         -> vk::ImageMemoryBarrier2 {
     return m_transition_states[i].getImageMemoryBarrier(transition);
 }
 
-void SwapchainFrames::transitImageLayout(const uint32_t i, const vk::CommandBuffer command_buffer,
+void SwapchainFrames::transitImageLayout(const std::uint32_t i, const vk::CommandBuffer command_buffer,
                                          const ImageTransition& transition) {
     return m_transition_states[i].transitTo(command_buffer, transition);
 }
@@ -58,7 +58,7 @@ auto createSwapChain(const vk::raii::PhysicalDevice& physical_device, const vk::
 }
 
 VulkanSwapchain2::VulkanSwapchain2(const vk::raii::PhysicalDevice& physical_device, const vk::raii::Device& device,
-                                   const uint32_t queue_family_index, const vk::SurfaceKHR surface,
+                                   const std::uint32_t queue_family_index, const vk::SurfaceKHR surface,
                                    std::function<vk::Extent2D()> get_frame_buffer_size, Logger& logger)
     : m_surface(surface), m_get_frame_buffer_size(std::move(get_frame_buffer_size)),
       m_swapchain_details(physical_device, surface), m_swapchain_frame_extent(getExtent()),
