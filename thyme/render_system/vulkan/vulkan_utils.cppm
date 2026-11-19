@@ -398,7 +398,7 @@ void transitImageLayout(const vk::CommandBuffer command_buffer, const vk::Image 
                         const ImageLayoutTransition layout_transition,
                         const ImagePipelineStageTransition stage_transition,
                         const ImageAccessFlagsTransition access_flags_transition,
-                        const vk::ImageAspectFlags aspect_flags, const uint32_t mip_levels) {
+                        const vk::ImageAspectFlags aspect_flags, const std::uint32_t mip_levels) {
     const auto [src_access_flag, dst_access_flag] = access_flags_transition;
     const auto [old_layout, new_layout] = layout_transition;
     const auto [src_stages, dst_stages] = stage_transition;
@@ -420,7 +420,7 @@ void transitImageLayout(const vk::CommandBuffer command_buffer, const vk::Image 
 }
 
 void transitImageLayout(const vk::CommandBuffer command_buffer, const vk::Image image,
-                        const ImageLayoutTransition layout_transition, const uint32_t mip_levels,
+                        const ImageLayoutTransition layout_transition, const std::uint32_t mip_levels,
                         const vk::ImageAspectFlags aspect_flags) {
     // const auto [old_layout, new_layout] = layout_transition;
     /*if (old_layout == vk::ImageLayout::eUndefined && new_layout == vk::ImageLayout::eTransferDstOptimal) {
@@ -554,4 +554,16 @@ public:
     [[nodiscard]] virtual auto getResolution() const noexcept -> vk::Extent2D = 0;
 };
 
-}// namespace th
+}
+
+export template <>
+struct std::formatter<vk::Extent3D> {
+    constexpr auto parse(std::format_parse_context& ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const vk::Extent3D& ex, FormatContext& ctx) const {
+        return std::format_to(ctx.out(), "({}, {}, {})", ex.width, ex.height, ex.depth);
+    }
+};// namespace th

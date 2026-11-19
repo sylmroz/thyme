@@ -4,6 +4,7 @@ SET(MODULE_FILES
 )
 
 set(SRC_FILES
+        passes.cpp
 )
 
 target_sources(${PROJECT_NAME}

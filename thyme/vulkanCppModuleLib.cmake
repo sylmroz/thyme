@@ -15,7 +15,7 @@ target_link_libraries(VulkanCppModule
         Vulkan::Vulkan
 )
 
-set_target_properties(VulkanCppModule PROPERTIES CXX_STANDARD 23)
+set_target_properties(VulkanCppModule PROPERTIES CXX_STANDARD 26)
 
 # Add MSVC-specific compiler options for proper C++ module support
 if(MSVC)

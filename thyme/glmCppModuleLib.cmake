@@ -17,7 +17,7 @@ target_link_libraries(glmCppModule
         glm::glm
 )
 
-set_target_properties(glmCppModule PROPERTIES CXX_STANDARD 23)
+set_target_properties(glmCppModule PROPERTIES CXX_STANDARD 26)
 
 # Add MSVC-specific compiler options for proper C++ module support
 if(MSVC)

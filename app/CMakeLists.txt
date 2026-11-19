@@ -4,7 +4,9 @@ set(header_path "${${PROJECT_NAME}_SOURCE_DIR}/include")
 
 add_executable(${PROJECT_NAME} "src/main.cpp")
 
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
+set_target_properties(${PROJECT_NAME} PROPERTIES
+		CXX_STANDARD 26
+		CXX_EXTENSIONS OFF)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_BINARY_DIR} ${header_path})
 

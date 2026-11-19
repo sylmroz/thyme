@@ -108,8 +108,8 @@ class RenderGraph {
     };
 
 public:
-    void addPass(const std::string_view pass_name, setup_function setup) {
-        m_passes.emplace_back(std::move(setup), std::string(pass_name));
+    void addPass(std::string pass_name, setup_function setup) {
+        m_passes.emplace_back(std::move(setup), std::move(pass_name));
     }
 
     [[nodiscard]] auto addTextureResource(std::string_view texture_name, RenderTarget& resource) -> RenderGraphResource;

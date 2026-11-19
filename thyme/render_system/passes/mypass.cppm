@@ -199,48 +199,4 @@ private:
     std::vector<vk::raii::DescriptorSet> m_descriptor_sets;
 };
 
-export class CopyTextureToTexturePass {
-public:
-    void setup(RenderGraph& render_graph, const RenderGraphResource from, const RenderGraphResource to) const {
-        render_graph.addPass("textureToSwapchain", [from, to](RenderGraphBuilder& builder) -> ExecuteFunction {
-            builder.read(from,
-
-                         ImageTransition{ .layout = vk::ImageLayout::eTransferSrcOptimal,
-                                          .pipeline_stage = vk::PipelineStageFlagBits2::eAllCommands,
-                                          .access_flag_bits = vk::AccessFlagBits2::eTransferRead });
-            builder.write(to,
-                          ImageTransition{
-                                  .layout = vk::ImageLayout::eTransferDstOptimal,
-                                  .pipeline_stage = vk::PipelineStageFlagBits2::eAllCommands,
-                                  .access_flag_bits = vk::AccessFlagBits2::eTransferWrite,
-                          });
-            return [=](const RenderGraphContext& context, const vk::CommandBuffer command_buffer) -> void {
-                struct Info {
-                    vk::Image image;
-                    vk::Extent3D resolution;
-                };
-                const auto returnTargetInfo = [](const RenderGraphTarget& target) {
-                    return std::visit(Overload{ [](const RenderGraphPersistentTarget& persistent_target) {
-                                                   const auto [width, height] =
-                                                           persistent_target.target.getResolution();
-                                                   return Info{ .image = persistent_target.target.getImage(),
-                                                                .resolution = vk::Extent3D(width, height, 1) };
-                                               },
-                                                [](const RenderGraphTransientTarget& transient_target) {
-                                                    // should call kind of texture manager to create texture on demand, if you need
-                                                    return Info{
-                                                        .image = transient_target.image,
-                                                    };
-                                                } },
-                                      target);
-                };
-
-                const auto [from_image, from_resolution] = returnTargetInfo(context.targets[from.id]);
-                const auto [to_image, to_resolution] = returnTargetInfo(context.targets[to.id]);
-                copyImage(command_buffer, from_image, from_resolution, to_image);
-            };
-        });
-    }
-};
-
 }// namespace th

@@ -86,9 +86,10 @@ public:
         m_uniform_buffer.update(m_camera.getViewProjectionMatrix());
         // m_temporary_render_target = TemporaryRenderTarget(m_swapchain, m_allocator, m_logical_device);
         const auto resource = render_graph.addTextureResource("new_resource", m_temporary_render_target);
-        const auto swapchain_resource = render_graph.addTextureResource("swapchain", m_swapchain);
-        th::CopyTextureToTexturePass{}.setup(render_graph, resource, swapchain_resource);
         m_my_pass.setup(render_graph, resource);
+
+        const auto swapchain_resource = render_graph.addTextureResource("swapchain", m_swapchain);
+        th::copyTextureToTexturePass("textureToSwapChain", render_graph, resource, swapchain_resource);
     }
     ~ThymeApp() override = default;
 

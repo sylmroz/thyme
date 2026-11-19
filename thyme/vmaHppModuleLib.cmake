@@ -12,7 +12,7 @@ target_link_libraries(VulkanMemoryAllocator-HppModule
         GPUOpen::VulkanMemoryAllocator
 )
 
-set_target_properties(VulkanMemoryAllocator-HppModule PROPERTIES CXX_STANDARD 23)
+set_target_properties(VulkanMemoryAllocator-HppModule PROPERTIES CXX_STANDARD 26)
 
 # Add MSVC-specific compiler options for proper C++ module support
 if(MSVC)

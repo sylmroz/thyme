@@ -39,7 +39,16 @@ add_subdirectory(render_system)
 add_subdirectory(scene)
 add_subdirectory(ui)
 
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20 cxx_std_23)
+set_target_properties(${PROJECT_NAME} PROPERTIES
+		CXX_STANDARD 26
+		CXX_EXTENSIONS OFF)
+
+if(MSVC)
+	set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD_REQUIRED OFF)
+	target_compile_options(${PROJECT_NAME} PRIVATE /std:c++latest)
+else()
+	set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD_REQUIRED ON)
+endif()
 
 if (LOGGER_USE_STD_PRINT)
 	add_compile_definitions(LOGGER_USE_STD_PRINT)
